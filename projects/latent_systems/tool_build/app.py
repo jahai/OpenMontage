@@ -20,6 +20,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+import audit
 import db
 import dispatcher
 
@@ -544,3 +545,148 @@ def routing_events(limit: int = 25) -> dict[str, Any]:
     except (FileNotFoundError, sqlite3.Error) as e:
         payload["error"] = str(e)
     return payload
+
+
+# --- Phase 2 Wave A — Feature 4: audit viewer (non-AI mode) ---
+
+
+class AuditSessionCreate(BaseModel):
+    rubric_version: str = "1.0"
+    mode: str = "quick_pass"
+    scope_concept_id: Optional[str] = None
+    scope_section: Optional[str] = None
+    scope_filter: Optional[dict[str, Any]] = None
+    notes: Optional[str] = None
+
+
+class VerdictCreate(BaseModel):
+    verdict: str
+    verdict_reasoning: Optional[str] = None
+    audited_by: str = "human"
+    audit_session_id: Optional[str] = None
+    rubric_version: Optional[str] = None
+    rubric_used: Optional[str] = None
+    rubric_criteria_match: Optional[dict[str, Any]] = None
+    flags_needs_second_look: bool = False
+    supersedes_verdict_id: Optional[str] = None
+
+
+class VerdictFlagsUpdate(BaseModel):
+    needs_second_look: Optional[bool] = None
+
+
+@app.post("/audit/sessions", status_code=201)
+def create_audit_session_endpoint(body: AuditSessionCreate) -> dict[str, Any]:
+    """Start a new audit session (Wave A). Returns session record."""
+    try:
+        return audit.create_audit_session(
+            rubric_version=body.rubric_version, mode=body.mode,
+            scope_concept_id=body.scope_concept_id,
+            scope_section=body.scope_section,
+            scope_filter=body.scope_filter, notes=body.notes,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/audit/sessions")
+def list_audit_sessions_endpoint(
+    limit: int = 50, active_only: bool = False,
+) -> dict[str, Any]:
+    """List audit sessions (newest first). active_only filters to ended IS NULL."""
+    return {"sessions": audit.list_audit_sessions(limit=limit, active_only=active_only)}
+
+
+@app.get("/audit/sessions/{session_id}")
+def get_audit_session_endpoint(session_id: str) -> dict[str, Any]:
+    record = audit.get_audit_session(session_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"audit_session {session_id} not found")
+    return record
+
+
+@app.post("/audit/sessions/{session_id}/end")
+def end_audit_session_endpoint(session_id: str) -> dict[str, Any]:
+    """Mark a session as ended. Idempotent."""
+    try:
+        return audit.end_audit_session(session_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/audit/render/{render_id}")
+def audit_render_detail_endpoint(render_id: str) -> dict[str, Any]:
+    """Render detail for audit viewer: image metadata + concept + lineage
+    + latest non-superseded verdict."""
+    record = audit.get_render_detail(render_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"render {render_id} not found")
+    return record
+
+
+@app.post("/audit/render/{render_id}/verdict", status_code=201)
+def capture_verdict_endpoint(render_id: str, body: VerdictCreate) -> dict[str, Any]:
+    """Instant filesystem write per F8 (no save button). YAML before SQL."""
+    try:
+        return audit.capture_verdict(
+            render_id=render_id, verdict=body.verdict,
+            verdict_reasoning=body.verdict_reasoning,
+            audited_by=body.audited_by,
+            audit_session_id=body.audit_session_id,
+            rubric_version=body.rubric_version,
+            rubric_used=body.rubric_used,
+            rubric_criteria_match=body.rubric_criteria_match,
+            flags_needs_second_look=body.flags_needs_second_look,
+            supersedes_verdict_id=body.supersedes_verdict_id,
+        )
+    except ValueError as e:
+        # 400 for invalid value (verdict type, audited_by); 404 for
+        # missing references. Distinguish by message-prefix sniff —
+        # cleaner alternative is to raise a typed exception, but
+        # ValueError discipline matches the rest of the codebase.
+        msg = str(e)
+        if "not found" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
+@app.patch("/audit/verdicts/{verdict_id}/flags")
+def update_verdict_flags_endpoint(
+    verdict_id: str, body: VerdictFlagsUpdate,
+) -> dict[str, Any]:
+    """Toggle verdict flags (currently needs_second_look only per Q3 minimal scope)."""
+    try:
+        return audit.update_verdict_flags(
+            verdict_id, needs_second_look=body.needs_second_look,
+        )
+    except ValueError as e:
+        msg = str(e)
+        if "not found" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
+@app.get("/audit/queue")
+def audit_queue_endpoint(
+    only_unverdicted: bool = False, tool: Optional[str] = None,
+    section: Optional[str] = None, flagged_only: bool = False,
+    needs_review_paths: bool = False,
+    limit: int = 50, offset: int = 0,
+) -> dict[str, Any]:
+    """Audit queue with composable filters. Default order: newest first."""
+    return audit.list_audit_queue(
+        only_unverdicted=only_unverdicted, tool_filter=tool,
+        section_filter=section, flagged_only=flagged_only,
+        needs_review_paths=needs_review_paths,
+        limit=limit, offset=offset,
+    )
+
+
+@app.get("/audit/cost")
+def audit_cost_endpoint(session_id: str) -> dict[str, Any]:
+    """Cost rollup for a session. Wave A: $0 baseline (no AI consultations).
+    Wave B layers ai_consultations.cost_usd into total_cost_usd."""
+    record = audit.get_session_cost(session_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"audit_session {session_id} not found")
+    return record
