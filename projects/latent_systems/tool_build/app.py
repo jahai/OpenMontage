@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -690,3 +690,33 @@ def audit_cost_endpoint(session_id: str) -> dict[str, Any]:
     if record is None:
         raise HTTPException(status_code=404, detail=f"audit_session {session_id} not found")
     return record
+
+
+@app.get("/audit/thumbnail/{render_id}")
+def audit_thumbnail_endpoint(render_id: str):
+    """Serve thumbnail with hash-stable invalidation per design notes §5.
+    Cache hit: source_hash == renders.canonical_hash AND file exists.
+    Cache miss / stale: generate new thumbnail (max edge 1568px JPEG).
+    Returns 404 if render not in db OR file missing OR processing failed."""
+    import thumbnails
+    info = thumbnails.get_or_generate(render_id)
+    if info is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"render {render_id} not found, file missing, or unprocessable",
+        )
+    return FileResponse(str(info["thumbnail_abs_path"]), media_type="image/jpeg")
+
+
+@app.get("/audit/render/{render_id}/file")
+def audit_render_file_endpoint(render_id: str):
+    """Serve the full original render file (for serial-view fullsize
+    display). No downscaling — Joseph audits at native resolution.
+    For grid view's smaller previews, use /audit/thumbnail/{render_id}."""
+    import thumbnails
+    abs_path = thumbnails.get_render_abs_path(render_id)
+    if abs_path is None:
+        raise HTTPException(
+            status_code=404, detail=f"render {render_id} not found or file missing",
+        )
+    return FileResponse(str(abs_path))

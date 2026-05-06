@@ -38,8 +38,9 @@ psutil~=6.1.0
 # machine so server-side clipboard write reaches Joseph's clipboard.
 pyperclip~=1.9.0
 
-# Image read for hash-based dedupe + sidecar metadata
-# DEFERRED: Pillow 11.x has no Python 3.14 wheels yet; not needed for Day 3
-# walker (uses stdlib hashlib for SHA256). Restore when 3.14 wheels land or
-# when sidecar image metadata becomes Phase 2 work.
-# Pillow~=11.0.0
+# Image processing — Phase 2 Wave A audit thumbnails (downscale +
+# JPEG cache for /audit/thumbnail/{render_id} per design notes §5).
+# Anthropic vision API max edge 1568px (per §1 4.8) drives the
+# downscale target. Pillow 12.x has Python 3.14 wheels (un-deferred
+# from Phase 1 requirements where 11.x didn't).
+Pillow>=12.0

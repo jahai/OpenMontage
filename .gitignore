@@ -63,6 +63,11 @@ projects/latent_systems/tool_build/_data/_*.txt
 projects/latent_systems/tool_build/_data/_*.log
 projects/latent_systems/tool_build/_data/_*.tmp
 projects/latent_systems/tool_build/_data/_server.shutdown
+# Phase 2 Wave A audit thumbnail cache (regenerable via
+# thumbnails.get_or_generate; never source-of-truth)
+projects/latent_systems/tool_build/_data/_audit_thumbnails/
+# Test scratch dirs (created by test_thumbnails.py and similar)
+projects/latent_systems/tool_build/_data/_test_*/
 # But keep the _inbox_review tooling tracked (operational scripts + ledger
 # = audit trail of stray-routing decisions):
 !projects/latent_systems/tool_build/_data/_inbox_review/
