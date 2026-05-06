@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-06 (Phase 2 v0.2 design notes: F5 hero promotion moved Phase 2→Phase 3 default per Q1 call; Position B sequencing confirmed; effort re-estimate 4-5 weeks)
+**Updated:** 2026-05-06 (Phase 2 Day 1+2 close: Week 1 banked-flush complete via filename-pattern recovery, 71.6%; router_log cross-reference superseded; 21 _unclassified/ triage moved to Wave A audit viewer review queue)
 
 ---
 
@@ -35,8 +35,8 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 | Item | Origin |
 |---|---|
 | Native-API generation path alongside clipboard handoff (mixed-path) — see detail below | Phase 1.5 e2e debrief 2026-05-05 |
-| `tools/router_log.md` cross-reference for tool attribution recovery on existing 1698 pre_v1 renders (~84% currently `unknown_image`) | Day 3 §4.1 + Day 5-9 §6.2 (high-priority) |
-| 21 `_unclassified/` GPT renders triage to specific Phase 1 directions | Day 5-9 §6.1 |
+| ~~`tools/router_log.md` cross-reference for tool attribution recovery on existing 1698 pre_v1 renders~~ | Day 3 §4.1 + Day 5-9 §6.2 — **superseded 2026-05-06**: Day 1 inspection showed router_log has only 1 logged run (recovery rate ~0%). Replaced by filename-pattern extension in walker.classify() (Day 1 commit 76069fd: 71.6% recovery via `_mj_<hex>_` infix + frame_extract category + flux/kontext markers + broader gpt). Forward-looking value: router_log captures attribution for new renders going forward — that mechanism is correct, just doesn't help with existing pre_v1 backlog. |
+| ~~21 `_unclassified/` GPT renders triage to specific Phase 1 directions~~ | Day 5-9 §6.1 — **moved to Wave A 2026-05-06**: per visual_identity_phase1_references/README.md, `_unclassified/` is BY DESIGN a hold queue for user's Phase 2 visual-identity evaluation work (5 directions + 6 criteria already specified). Editorial decision-work, not mechanical. Deferred to Wave A audit viewer review queue (filter on `WHERE filepath LIKE '%_unclassified%'`). All 21 already correctly tagged `gpt_image_2` from Day 1's pattern recovery. |
 | `needs_review_reason` promote from render YAML to state.db column (revisit at scale) | Day 5-9 §4.10 |
 | Structured `attempt_events` table parsing notes-string history | Day 5-9 §4.12 |
 | `pending_downloads` promote from JSON to state.db table (when query friction surfaces) | Day 5-9 §4.1 |
