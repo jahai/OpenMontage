@@ -57,10 +57,17 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 | Browser-side clipboard | Day 5-9 §4.5 | Multi-machine deployment ever happens |
 | needs_review_reason as column | Day 5-9 §4.10 | Render count > ~50k (currently 1698 + slow growth) |
 
+## Phase 2 territory (in flight from 2026-05-06)
+
+Phase 2 kickoff committed `phase2_design_notes.md` v0.1 (3a4-class commit; awaiting cross-Claude review wave). Joseph picked **Position B** for sequencing: banked-flush first (router_log cross-reference + 21 _unclassified/ triage, ~1.5 days), then audit viewer.
+
+- **Audit viewer (Feature 4) + AI evaluation flow** — moved from "Phase 3 territory" 2026-05-06 once spec re-read confirmed F4 is Phase 2. Design notes §1-§5.
+- **Hero promotion atomic action (Feature 5)** — Phase 2 stretch goal Week 4-5 per design notes §6; slips to Phase 3 Week 1 if Phase 2 timeline runs long.
+- **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — depends on Phase 1 successful_examples accumulation. Phase 2 ships Anthropic vision config only; expansion when seed data justifies (per Q3).
+- **3a hardening** — largely landed in Phase 1 Day 12 + v0.4 amendment. Phase 2 Week 4 review confirms no remaining gaps.
+
 ## Phase 3 territory (not Phase 1 or Phase 2 — full features)
 
-- Audit viewer (Feature 4) + AI evaluation flow (Feature 4 sub-feature)
-- Hero promotion atomic action (Feature 5)
 - **Render-group compare-and-rank view (Feature 5+ extension)** — grid
   view of generations grouped by prompt (default) or by concept; drag
   or click to rank; ranking reflected in filesystem via rank-slot
