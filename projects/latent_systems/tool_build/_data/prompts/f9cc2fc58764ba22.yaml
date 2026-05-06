@@ -1,0 +1,26 @@
+id: f9cc2fc58764ba22
+concept_id: c62d8ecf71149e6b
+tool: midjourney
+text: 'Mid-century behavioral research technical illustration: a laboratory rat inside
+  a Skinner box operant conditioning chamber, paw extended pulling a slot-machine
+  lever mounted on the chamber wall, viewed from a three-quarter angle. Cutaway diagram
+  showing chamber interior, food pellet dispenser, response lever mechanism. Clean
+  line work, muted neutral palette of bone, slate, and oxidized brass. Educational
+  textbook plate aesthetic circa 1960s, flat even illumination, no shadows, no human
+  figures, no color saturation, no photographic depth — pure schematic apparatus rendering
+  with labeled component clarity. --ar 16:9 --v 7'
+status: draft
+drafted_by: claude-opus-4-7
+discipline_version: '1.0'
+created: '2026-05-05T12:55:54.105459+00:00'
+concept_text: 'Schematic apparatus illustration: a rat in a Skinner box pulling a
+  slot-machine lever, viewed from a 3/4 angle. Educational diagram aesthetic, technical
+  precision, neutral palette.'
+api_call_id: call_88215f3e3726408c
+draft_metadata:
+  tokens_in: 85
+  tokens_out: 355
+  cache_read_tokens: 0
+  cache_creation_tokens: 2080
+  cost_usd: 0.0223
+  latency_s: 12.992

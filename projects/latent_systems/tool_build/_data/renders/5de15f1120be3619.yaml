@@ -1,0 +1,10 @@
+id: 5de15f1120be3619
+discipline_version: pre_v1
+filename: 06b_WSJ_TikTok_EyeTracking.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/03_Fair_Use_YouTube/06b_WSJ_TikTok_EyeTracking.mp4
+canonical_hash: 3e54293723e45f6105ec3bb7f35fa71caf79150cda55a96dc3b3cbe2b7b46a4e
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.751558+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

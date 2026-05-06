@@ -1,0 +1,10 @@
+id: 243b88646609e486
+discipline_version: pre_v1
+filename: EP1_H6_picture_v1.mp4
+filepath: projects/latent_systems/ep1/h6_streak/assembled/EP1_H6_picture_v1.mp4
+canonical_hash: 0f8b56836480dbe5aabd81108d559b426ae73cb543090e9c80362656764b1594
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.105474+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 6fd17879a33f4b12
+discipline_version: pre_v1
+filename: shotA_plus_maskedcut_plus_shotB.mp4
+filepath: projects/latent_systems/ep1/cold_open/assembled/shotA_plus_maskedcut_plus_shotB.mp4
+canonical_hash: 7afa64b6566a925084aff2ca2c1b11b6cfee42bf1b801b0f94e7883d645911f5
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.608218+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

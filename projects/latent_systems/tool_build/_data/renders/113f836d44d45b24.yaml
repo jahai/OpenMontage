@@ -1,0 +1,10 @@
+id: 113f836d44d45b24
+discipline_version: pre_v1
+filename: H4_protag_kling_v2.mp4
+filepath: projects/latent_systems/ep1/h4_match_cut/sources/H4_protag_kling_v2.mp4
+canonical_hash: 47ae4b1e99f2f9f605ab5145d058f6c7a99cfadbfa1e80173401a380884f0b43
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.253574+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

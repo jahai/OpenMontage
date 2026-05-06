@@ -1,0 +1,10 @@
+id: 1046937dac6f8a31
+discipline_version: pre_v1
+filename: shotA_with_glow.mp4
+filepath: projects/latent_systems/ep1/cold_open/assembled/shotA_with_glow.mp4
+canonical_hash: 36b33f3e2c102338e22af1d6abba57a54bb6a6d02e047776051fc0cb36743c21
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.615273+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

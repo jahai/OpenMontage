@@ -1,0 +1,10 @@
+id: d747ee2bf5c68054
+discipline_version: pre_v1
+filename: subbass_padded.mp3
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/subbass_padded.mp3
+canonical_hash: 4eaf5ada427a6546cbc2f7f5acc422eaf0dfc125e3d15e314af87f6c068db868
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.998081+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

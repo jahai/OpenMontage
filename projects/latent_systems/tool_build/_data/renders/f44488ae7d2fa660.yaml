@@ -1,0 +1,10 @@
+id: f44488ae7d2fa660
+discipline_version: pre_v1
+filename: motion_test_phase1_composite_bed_1136.mp4
+filepath: projects/latent_systems/shared/visual_identity_phase1_references/_motion_tests/motion_test_phase1_composite_bed_1136.mp4
+canonical_hash: 8d9662fe488f6e50be368ca63f7e7376c5febb9b9a30cb1999a0bbae16425f84
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.556652+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

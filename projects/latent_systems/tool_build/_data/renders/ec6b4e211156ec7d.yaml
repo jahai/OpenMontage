@@ -1,0 +1,10 @@
+id: ec6b4e211156ec7d
+discipline_version: pre_v1
+filename: density_exemplar_02_stuck_roomba_residue.png
+filepath: projects/latent_systems/shared/render_craft_exemplars/density_exemplar_02_stuck_roomba_residue.png
+canonical_hash: ba362fe38948d2597d19b0c02e9eca4d5f3849626e9d138a435db5b25fc82373
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:49.956816+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

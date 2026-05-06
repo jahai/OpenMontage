@@ -1,0 +1,10 @@
+id: 1d0eb08a34b56fdf
+discipline_version: pre_v1
+filename: v3_11_phone_face_down.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/01_Sora_Atmospheric/v3_11_phone_face_down.mp4
+canonical_hash: 62911b53db88a550bc2d3f3bea18dc0043753de38e6760ad919da36df37781f8
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.099137+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

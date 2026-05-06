@@ -1,0 +1,10 @@
+id: de0908cd0d6d1bac
+discipline_version: pre_v1
+filename: v4_12b_morning_sunlight_ULTRA.mp4
+filepath: projects/latent_systems/ep1/_legacy/clips_act_scheme/06_resolution/v4_12b_morning_sunlight_ULTRA.mp4
+canonical_hash: cb9942b788e3cae3733f22424b7bbd65ee4268d1e3b1f8013b60108ad6aa7bfa
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.644022+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

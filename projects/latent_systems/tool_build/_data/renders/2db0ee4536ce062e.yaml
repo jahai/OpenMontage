@@ -1,0 +1,10 @@
+id: 2db0ee4536ce062e
+discipline_version: pre_v1
+filename: motion_test_phase1_single_anon_919.mp4
+filepath: projects/latent_systems/shared/visual_identity_phase1_references/_motion_tests/motion_test_phase1_single_anon_919.mp4
+canonical_hash: b35f76793b5f00dd991cb4a144919a44ef96430936107ffa503f55810a5678ae
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.634380+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

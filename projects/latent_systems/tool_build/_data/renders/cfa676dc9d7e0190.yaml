@@ -1,0 +1,10 @@
+id: cfa676dc9d7e0190
+discipline_version: pre_v1
+filename: EP1_H9_picture_v1_mask_bleed_BUG.mp4
+filepath: projects/latent_systems/ep1/h9_ep2_tease/reference/rejected/EP1_H9_picture_v1_mask_bleed_BUG.mp4
+canonical_hash: ae3bcf61951995fc00c14e71cc6482481f2ce97fd0a4c31c678774b1a26f9b07
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.046243+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

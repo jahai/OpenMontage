@@ -1,0 +1,22 @@
+id: 0b326e70ccbc025a
+concept_id: null
+tool: midjourney
+text: 1940s archival B&W behavioral research observation, anonymous subject leaning
+  over a complex mechanical apparatus on a wooden desk, gleaming metal rods and brass
+  dials and glass tubes catching light in midground, subject in foreground reduced
+  to silhouette and shadow, apparatus rendered in shallow background bokeh, single
+  desk lamp practical light pooling on brass, no face-forward portraiture, no white
+  coat, no clinical fluorescents, calm observational register, shot on 50mm prime
+  --ar 16:9 --v 7
+status: draft
+drafted_by: claude-opus-4-7
+discipline_version: '1.0'
+created: '2026-05-04T15:56:45.084503+00:00'
+api_call_id: call_37bfbea48af347e8
+draft_metadata:
+  tokens_in: 180
+  tokens_out: 180
+  cache_read_tokens: 0
+  cache_creation_tokens: 2080
+  cost_usd: 0.0184
+  latency_s: 5.019

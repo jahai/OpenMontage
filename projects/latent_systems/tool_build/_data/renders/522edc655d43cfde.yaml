@@ -1,0 +1,10 @@
+id: 522edc655d43cfde
+discipline_version: pre_v1
+filename: ident_verify_fadeout.png
+filepath: projects/latent_systems/shared/ident_remotion/out/ident_verify_fadeout.png
+canonical_hash: e63251c90d3e0c491aad5e00f4427db879dce179cc81d7e9612457ec661e6ba8
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.500750+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

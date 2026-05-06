@@ -1,0 +1,10 @@
+id: a33543c151bbf0a8
+discipline_version: pre_v1
+filename: EP1_H5_picture_v1.mp4
+filepath: projects/latent_systems/ep1/h5_slot_machine/assembled/EP1_H5_picture_v1.mp4
+canonical_hash: 2c5a26618d2f3d4b1846f1caa131cc00ed9a4ed05f816642d87a9d06daae8b08
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.141095+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

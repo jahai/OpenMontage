@@ -1,0 +1,10 @@
+id: 113376e2c852aeea
+discipline_version: pre_v1
+filename: ident_verify_mid_reveal.png
+filepath: projects/latent_systems/shared/ident_remotion/out/ident_verify_mid_reveal.png
+canonical_hash: 4e64e435a1a66acd4f1619ea441dc906f0086d89ac750c3d33f5133c0e67a929
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.504601+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

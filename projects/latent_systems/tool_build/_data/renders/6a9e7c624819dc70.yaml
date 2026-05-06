@@ -1,0 +1,10 @@
+id: 6a9e7c624819dc70
+discipline_version: pre_v1
+filename: beat04_black.mp4
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/beat04_black.mp4
+canonical_hash: 02ed6be8ccf3195c0bd28d94286f97fe35e4dfedc75664d125751150ea381225
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.284125+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

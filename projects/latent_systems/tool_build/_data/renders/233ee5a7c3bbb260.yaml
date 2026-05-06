@@ -1,0 +1,10 @@
+id: 233ee5a7c3bbb260
+discipline_version: pre_v1
+filename: H4_protag_match_frame_1080_v2_wrong_target.png
+filepath: projects/latent_systems/ep1/h4_match_cut/reference/rejected/H4_protag_match_frame_1080_v2_wrong_target.png
+canonical_hash: c0a621d28ec7beb8381826fff10ac1a7a6ebdcf6964554e90cf80a2cb69c1e2c
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:59.073031+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

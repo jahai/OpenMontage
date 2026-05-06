@@ -1,0 +1,10 @@
+id: 33385183c21e2fae
+discipline_version: pre_v1
+filename: EP1_K1_radio_news_host_X22_take3.mp3
+filepath: projects/latent_systems/ep1/audio/v1_4_radio_news_host/load_bearing_validation/EP1_K1_radio_news_host_X22_take3.mp3
+canonical_hash: ec594d782e8a1c44fec837c3be54164ed8fecd1ac54a80e26d92a172555ad619
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:03.138734+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,22 @@
+id: a1e9b7a81079e6d2
+discipline_version: '1.0'
+filename: nycwillow_Mid-century_behavioral_research_technical_illustrat_9d757936-6106-4c43-86cd-c78dc56e6378_3.png
+filepath: projects/latent_systems/shared/visual_identity_phase1_references/_inbox/nycwillow_Mid-century_behavioral_research_technical_illustrat_9d757936-6106-4c43-86cd-c78dc56e6378_3.png
+canonical_hash: 81e1ea895525c0d0c75be62e5f59c53b68d117254d2e581b4c9ef727b3d4f198
+tool: midjourney
+variant: 3
+hero_status: null
+created: '2026-05-05T13:08:48.888131+00:00'
+notes: Routed by tools/downloads_router.py at 2026-05-05T09:08:47.973284; confidence=low.
+download_hash: null
+routed_from: nycwillow_Mid-century_behavioral_research_technical_illustrat_9d757936-6106-4c43-86cd-c78dc56e6378_3.png
+routed_at: '2026-05-05T09:08:47.973284'
+routing_confidence: low
+routing_reason: No taxonomy match — routed to inbox for manual review
+needs_review_reason: orphan
+attempt_id: att_f9cc2fc58764ba22_2
+prompt_id: f9cc2fc58764ba22
+binding:
+  method: tool_match
+  bound_at: '2026-05-05T13:16:25.538198+00:00'
+  tool_mismatch_overridden: false

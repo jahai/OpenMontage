@@ -1,0 +1,10 @@
+id: ce74ce86c45b264f
+discipline_version: pre_v1
+filename: EP1_H3_block_v2.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/assembled/EP1_H3_block_v2.mp4
+canonical_hash: 462ae136c6258c4254e17e9262825388a1572427aaad2e960d17b6831f2c4b88
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.318508+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

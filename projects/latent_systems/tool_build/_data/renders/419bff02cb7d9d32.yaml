@@ -1,0 +1,10 @@
+id: 419bff02cb7d9d32
+discipline_version: pre_v1
+filename: ident_S01E01_verify.mp4
+filepath: projects/latent_systems/shared/remotion_project/out/ident_S01E01_verify.mp4
+canonical_hash: 96947ac5e4f97fcd56c52cfb19e9b260252f3bb5aa42d7973e63d1115e76a31b
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.686477+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

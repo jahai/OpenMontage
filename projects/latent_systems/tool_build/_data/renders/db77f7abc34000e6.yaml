@@ -1,0 +1,10 @@
+id: db77f7abc34000e6
+discipline_version: pre_v1
+filename: daniel_section_09_harris.wav.mp3
+filepath: projects/latent_systems/ep1/audio/daniel_section_09_harris.wav.mp3
+canonical_hash: 6975091e1058b7b52f1860efcaaf7b6e2c4278d2f5afdd1c3fca6f4ccdd18b77
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.788497+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

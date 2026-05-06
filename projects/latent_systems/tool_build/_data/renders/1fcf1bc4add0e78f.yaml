@@ -1,0 +1,10 @@
+id: 1fcf1bc4add0e78f
+discipline_version: pre_v1
+filename: EP1_chime_v1_tone2loud.mp3
+filepath: projects/latent_systems/shared/sfx/chime/reference/rejected/EP1_chime_v1_tone2loud.mp3
+canonical_hash: 05d6860813bd1913dff83e64e973958916ac5ff4fc85960c2c0962d399e1b87b
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:53.178332+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

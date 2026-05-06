@@ -1,0 +1,10 @@
+id: b22112a9225cb12b
+discipline_version: pre_v1
+filename: concept_card_parker_exploit.mp4
+filepath: projects/latent_systems/ep1/typography/concept/concept_card_parker_exploit.mp4
+canonical_hash: 8ffe1811edcb146c18667ff59dd890d4e9f092fb9ae5967cfd03a782ed6bd40f
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.733600+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

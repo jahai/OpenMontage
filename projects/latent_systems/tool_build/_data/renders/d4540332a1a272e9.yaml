@@ -1,0 +1,10 @@
+id: d4540332a1a272e9
+discipline_version: pre_v1
+filename: kling_05b_walking_no_phone.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/02_Kling_Human/kling_05b_walking_no_phone.mp4
+canonical_hash: f7ef8b9579c4db33a429fa93f002ed61a594feb033067bb747ab4391838c9399
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.376662+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

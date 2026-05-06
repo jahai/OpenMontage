@@ -1,0 +1,13 @@
+id: 992fa028f62efcf3
+filename: Two_brief_synthetic__#1-1776743708666.wav
+ext: .wav
+size_bytes: 384078
+size_kb: 375.1
+mtime: '2026-04-20 23:55:18'
+sha256: 8ebcd3471608e98c4afa827017cc8e102c2085a1712a1c9dbbc2887db4e2a3b4
+current_path: C:\Users\josep\Downloads\Two_brief_synthetic__#1-1776743708666.wav
+suggested_destination: projects/latent_systems/shared/audio_library/sfx/two_brief_synthetic_v1.wav
+confidence: medium
+proposed_action: route
+notes: 'Synthetic sound effect take #1. Audio library candidate. The numeric suffix
+  is a generation ID.'

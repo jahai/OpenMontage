@@ -1,0 +1,10 @@
+id: 7b160bdfe16bec7c
+discipline_version: pre_v1
+filename: H5_clip1_pull_LOCKED.mp4
+filepath: projects/latent_systems/ep1/h5_slot_machine/sources/H5_clip1_pull_LOCKED.mp4
+canonical_hash: a4c75083cba4d00ac64741b284e6200b1abedb11a0ea7708fd218f1b8c36298e
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.158371+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

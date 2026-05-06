@@ -1,0 +1,10 @@
+id: 1e41410e35196ac1
+discipline_version: pre_v1
+filename: H2_kling_v1.mp4
+filepath: projects/latent_systems/ep1/h2_face_glow/sources/H2_kling_v1.mp4
+canonical_hash: d4abb96d4a2daaf5f3da0357829df0a7d9212e2452cca3875e170152e10da895
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.527648+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

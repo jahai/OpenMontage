@@ -1,0 +1,14 @@
+id: 7dd57dbc4d2a451f
+filename: HANDOFF_2026-05-03.md
+ext: .md
+size_bytes: 14929
+size_kb: 14.6
+mtime: '2026-05-03 12:49:04'
+sha256: 338af73f00b9674f871c9ae0dbb21a215f594770e93eac0a93aeb8dfd68af8ea
+current_path: C:\Users\josep\Downloads\HANDOFF_2026-05-03.md
+suggested_destination: projects/latent_systems/docs/HANDOFF_2026-05-03.md
+confidence: high
+proposed_action: route
+notes: May 3 session handoff doc. Fits the existing docs/HANDOFF_<date>.md series
+  referenced in router_config.yaml doc pattern. Contains 5 latent-space prompts pending
+  MJ run.

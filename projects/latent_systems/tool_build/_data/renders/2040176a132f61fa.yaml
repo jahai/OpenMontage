@@ -1,0 +1,10 @@
+id: 2040176a132f61fa
+discipline_version: pre_v1
+filename: H8_kling_v1_rejected.mp4
+filepath: projects/latent_systems/ep1/h8_tiktok_mirror/reference/rejected/H8_kling_v1_rejected.mp4
+canonical_hash: 182ea926dc5171e29916fdc018fcd32fba3a9a88e9a4682f11df1e3cb0e8c9c6
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.070077+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

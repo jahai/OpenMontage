@@ -1,0 +1,10 @@
+id: e9e205edd43008de
+discipline_version: pre_v1
+filename: v2_baseline_t10.png
+filepath: projects/latent_systems/ep1/h9_ep2_tease/_work/verify_v2/v2_baseline_t10.png
+canonical_hash: b33f438487bb11b8b313805d42cbef70fe45b2c2a9f05f5175e6fff031949194
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:57.469290+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

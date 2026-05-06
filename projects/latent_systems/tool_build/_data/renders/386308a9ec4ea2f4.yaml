@@ -1,0 +1,10 @@
+id: 386308a9ec4ea2f4
+discipline_version: pre_v1
+filename: shotA_glow_t2s.png
+filepath: projects/latent_systems/ep1/cold_open/assembled/shotA_glow_t2s.png
+canonical_hash: cea8a64f7d6e1776487500ccf926f7ebbc628e49353cfd9b9f27f7fba0694fd2
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:59.586049+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

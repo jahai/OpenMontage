@@ -1,0 +1,12 @@
+id: e97ecf291f764491
+filename: clip_A_last_frame.jpg
+ext: .jpg
+size_bytes: 178553
+size_kb: 174.4
+mtime: '2026-04-15 11:47:03'
+sha256: 15b1e5e76babee487795ff267ba920520075b55068d2e612869ecbe1abe59756
+current_path: C:\Users\josep\Downloads\clip_A_last_frame.jpg
+suggested_destination: projects/latent_systems/ep1/_continuity/clip_A_last_frame.jpg
+confidence: high
+proposed_action: route
+notes: Last-frame extract for clip-to-clip continuity.

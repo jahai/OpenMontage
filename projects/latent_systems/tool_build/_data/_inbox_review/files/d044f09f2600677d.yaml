@@ -1,0 +1,13 @@
+id: d044f09f2600677d
+filename: LatentSystems_ElevenLabs_ProductionGuide.pdf
+ext: .pdf
+size_bytes: 346194
+size_kb: 338.1
+mtime: '2026-04-09 11:10:49'
+sha256: 9db56dea256f27b85910c1e8935d98dee26eeb8930128011c2c6cdf79dea90cd
+current_path: C:\Users\josep\Downloads\LatentSystems_ElevenLabs_ProductionGuide.pdf
+suggested_destination: projects/latent_systems/docs/production_guides/LatentSystems_ElevenLabs_ProductionGuide.pdf
+confidence: high
+proposed_action: route
+notes: Production guide for ElevenLabs voiceover work. Cross-episode reference — belongs
+  in docs/.

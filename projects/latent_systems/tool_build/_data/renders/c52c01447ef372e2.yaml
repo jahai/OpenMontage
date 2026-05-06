@@ -1,0 +1,10 @@
+id: c52c01447ef372e2
+discipline_version: pre_v1
+filename: h7_assembled_raw.mp4
+filepath: projects/latent_systems/ep1/h7_system_works/_work/h7_assembled_raw.mp4
+canonical_hash: d67012a814d84287ae15fc26f5970282a452727c9eed40edbaec65d4e9a8397a
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.078228+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

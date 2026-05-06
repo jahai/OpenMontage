@@ -1,0 +1,10 @@
+id: 09e6a4a6c3ff0c7b
+discipline_version: pre_v1
+filename: H9_flicker_raw_v2_DEPRECATED_pre_v3_mask_tightening.mp4
+filepath: projects/latent_systems/ep1/h9_ep2_tease/_work/H9_flicker_raw_v2_DEPRECATED_pre_v3_mask_tightening.mp4
+canonical_hash: f86f5050f7423f1165d3a98717a31501f89a63382db0ffbedeb24f8362cea49e
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.024155+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

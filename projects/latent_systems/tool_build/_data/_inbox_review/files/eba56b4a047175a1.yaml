@@ -1,0 +1,15 @@
+id: eba56b4a047175a1
+filename: ElevenLabs_2026-04-09T13_47_27_Adam - American, Dark and Tough_pvc_sp97_s45_sb75_se5_b_m2
+  (1).mp3
+ext: .mp3
+size_bytes: 272444
+size_kb: 266.1
+mtime: '2026-04-09 09:49:12'
+sha256: 65960164f311480b5739b338d685d2d2e234ab5290e1e2689b4738ebf5ec9a56
+current_path: C:\Users\josep\Downloads\ElevenLabs_2026-04-09T13_47_27_Adam - American,
+  Dark and Tough_pvc_sp97_s45_sb75_se5_b_m2 (1).mp3
+suggested_destination: projects/latent_systems/ep1/_audio/vo_takes/Adam_2026-04-09T13_47_27_take2.mp3
+confidence: high
+proposed_action: route
+notes: Second ElevenLabs generation at the same timestamp prompt (hash differs from
+  primary — distinct take, not a dup). Preserved as alternate take.

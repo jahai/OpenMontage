@@ -1,0 +1,45 @@
+# LATENT SYSTEMS tool_build v1 — Phase 1 dependencies
+# Pinned per phase1_design_notes.md Section 6 + Section 9
+#
+# Compatible-release pins (~=X.Y) chosen for libs with stable APIs and
+# routine bugfix releases. Exact pins for libs with frequent breaking
+# changes (anthropic SDK schema migrations).
+
+# Web server (Section 9: FastAPI default)
+fastapi~=0.115.0
+uvicorn[standard]~=0.32.0
+
+# Frontend templating (HTMX is browser-side; Jinja2 for server-side templates)
+jinja2~=3.1.0
+
+# Persistence (Section 2: SQLite cache + Alembic migrations)
+SQLAlchemy~=2.0.0
+alembic~=1.13.0
+
+# YAML round-trip for source-of-truth artifacts (Section 5)
+PyYAML~=6.0.2
+
+# AI provider SDKs (Section 6 estimate)
+# anthropic 0.39 was too old for Opus 4.7 + incompatible with current httpx
+# (used removed `proxies=` kwarg). Upgraded to latest stable on Day 11.
+anthropic~=0.97.0
+openai==1.54.0
+
+# Filesystem watcher (Section 7 multi-Claude state coordination — external
+# YAML edit detection; Section 4 — Downloads watcher for Feature 3b)
+watchdog~=5.0.0
+
+# Process inspection — cross-platform PID liveness check that handles the
+# Windows PermissionError edge case `os.kill(pid, 0)` cannot.
+# Replaces os.kill(pid, 0) in serve.py is_running() per Day 1-2 review B1.
+psutil~=6.1.0
+
+# Clipboard for Feature 3b clipboard handoff. Server runs on Joseph's
+# machine so server-side clipboard write reaches Joseph's clipboard.
+pyperclip~=1.9.0
+
+# Image read for hash-based dedupe + sidecar metadata
+# DEFERRED: Pillow 11.x has no Python 3.14 wheels yet; not needed for Day 3
+# walker (uses stdlib hashlib for SHA256). Restore when 3.14 wheels land or
+# when sidecar image metadata becomes Phase 2 work.
+# Pillow~=11.0.0

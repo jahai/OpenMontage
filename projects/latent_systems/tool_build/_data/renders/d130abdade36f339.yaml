@@ -1,0 +1,10 @@
+id: d130abdade36f339
+discipline_version: pre_v1
+filename: 02_state2_pitched.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/sources/02_state2_pitched.mp4
+canonical_hash: b4e42be7cdd074e214a84f484818743f9b1b7f6dae16dae3dba18512e63e4ddc
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.366899+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: c3124bb22100c52a
+discipline_version: pre_v1
+filename: H5_kling_v3_ghost_lever_forward_tilt.mp4
+filepath: projects/latent_systems/ep1/h5_slot_machine/reference/rejected/H5_kling_v3_ghost_lever_forward_tilt.mp4
+canonical_hash: 04040b2eaffbad9cfd30903c77069a020c9920129b655d539943fb857e3ccaa1
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.234581+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

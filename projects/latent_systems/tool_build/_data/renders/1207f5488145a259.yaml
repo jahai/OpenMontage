@@ -1,0 +1,10 @@
+id: 1207f5488145a259
+discipline_version: pre_v1
+filename: EP1_Music_Premix.mp3
+filepath: projects/latent_systems/ep1/audio/music/EP1_Music_Premix.mp3
+canonical_hash: b6e17cfa2f479681aa4d4a1db7186c42de656b0edf6e7f904a16b572ad09c0d7
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:03.108983+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

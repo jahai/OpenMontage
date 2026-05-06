@@ -1,0 +1,10 @@
+id: 4df3420e6939b6f7
+discipline_version: pre_v1
+filename: h7_beat1_RAW_normalized.mp4
+filepath: projects/latent_systems/ep1/h7_system_works/_work/h7_beat1_RAW_normalized.mp4
+canonical_hash: 2ac4b17a0103c4d51eaf5a43d7b491f16582727c52e043f74f55a1b7d5a798ba
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.085378+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

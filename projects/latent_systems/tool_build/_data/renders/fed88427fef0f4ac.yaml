@@ -1,0 +1,10 @@
+id: fed88427fef0f4ac
+discipline_version: pre_v1
+filename: stat_card_500m_users.mp4
+filepath: projects/latent_systems/ep1/typography/stat/stat_card_500m_users.mp4
+canonical_hash: adb770fe334cf45aebcc7c72aeb244885e80447c287cf326950f2fb49d68cf93
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.814714+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

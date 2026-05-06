@@ -1,0 +1,10 @@
+id: 2c3744da348a4d69
+discipline_version: pre_v1
+filename: v3_10_city_crowd.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/01_Sora_Atmospheric/v3_10_city_crowd.mp4
+canonical_hash: 7af06dd75059cb81fb842dab5fcf274926fc3b16bc662fbabaf24826999195ec
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.084225+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

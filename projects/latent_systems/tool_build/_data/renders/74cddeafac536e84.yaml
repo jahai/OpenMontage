@@ -1,0 +1,10 @@
+id: 74cddeafac536e84
+discipline_version: pre_v1
+filename: daniel_section_18_ep2_tease.wav.mp3
+filepath: projects/latent_systems/ep1/audio/daniel_section_18_ep2_tease.wav.mp3
+canonical_hash: 78d84c629f7ebc47dfcd14a532e884c570a40c21d730b8f4a9d90b7750880a43
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.812946+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

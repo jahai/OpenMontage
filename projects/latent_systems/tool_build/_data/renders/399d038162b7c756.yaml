@@ -1,0 +1,10 @@
+id: 399d038162b7c756
+discipline_version: pre_v1
+filename: v3_05_family_dinner.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/01_Sora_Atmospheric/v3_05_family_dinner.mp4
+canonical_hash: a436cf4c5e5d0b1ac4221ab29361feb575f9d2cc4c486184326b651f83804726
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.015687+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

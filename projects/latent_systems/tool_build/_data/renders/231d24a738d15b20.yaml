@@ -1,0 +1,10 @@
+id: 231d24a738d15b20
+discipline_version: pre_v1
+filename: daniel_section_14_philip_morris.wav.mp3
+filepath: projects/latent_systems/ep1/audio/daniel_section_14_philip_morris.wav.mp3
+canonical_hash: e7329cd1ad0875f5399f26352a6dd8c81eb5a2c3810374d99e08f13d10469dc6
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.797811+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: d56112375b0ef0fa
+discipline_version: pre_v1
+filename: beat08_bed.mp4
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/beat08_bed.mp4
+canonical_hash: 0c690fec581446fde4fedfb35a0c52fcfc359d432066c0b2827b6ce0d00d040b
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.338985+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 1fd6eceb120648db
+discipline_version: pre_v1
+filename: beat14_corp.mp4
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/beat14_corp.mp4
+canonical_hash: ed30426bc34543f79d189fac2c3dd89b95f36c80af494201ebf421e5fe09045d
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.455935+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

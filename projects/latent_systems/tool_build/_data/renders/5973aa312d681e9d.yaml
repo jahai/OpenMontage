@@ -1,0 +1,10 @@
+id: 5973aa312d681e9d
+discipline_version: pre_v1
+filename: motion_test_phase1_composite_livingroom_1634.mp4
+filepath: projects/latent_systems/shared/visual_identity_phase1_references/_motion_tests/motion_test_phase1_composite_livingroom_1634.mp4
+canonical_hash: 8bf5207e5f1bcf6dbc6ded121e9139ea529592c47d63399eefd7f95e46afd30d
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:52.578381+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

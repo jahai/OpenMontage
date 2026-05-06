@@ -1,0 +1,13 @@
+id: db278aec9207440c
+filename: LatentSystems_EP1_Premiere_v3.xml
+ext: .xml
+size_bytes: 23523
+size_kb: 23.0
+mtime: '2026-04-13 01:08:31'
+sha256: aeba8635681cf7f858f23a0b01b163f8f5c6a4871c73cbb459b8a5f4dcc61b33
+current_path: C:\Users\josep\Downloads\LatentSystems_EP1_Premiere_v3.xml
+suggested_destination: projects/latent_systems/ep1/_editorial/LatentSystems_EP1_Premiere_v3.xml
+confidence: high
+proposed_action: route
+notes: Latest Premiere project file with structured bins (Sora_Atmospheric, Kling_Human,
+  etc.). Editorial canonical. Likely needs ep1/_editorial/ created.

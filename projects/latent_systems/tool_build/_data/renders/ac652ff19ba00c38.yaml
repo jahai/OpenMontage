@@ -1,0 +1,10 @@
+id: ac652ff19ba00c38
+discipline_version: pre_v1
+filename: narration_padded.mp3
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/narration_padded.mp3
+canonical_hash: 7eb505bb20d1fde925fe57b51899a2b6defc60e5ca523c3207d2c36189d1d273
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.990715+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

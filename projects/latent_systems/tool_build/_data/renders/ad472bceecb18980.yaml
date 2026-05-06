@@ -1,0 +1,10 @@
+id: ad472bceecb18980
+discipline_version: pre_v1
+filename: EP1_chime_v1.mp3
+filepath: projects/latent_systems/shared/sfx/chime/EP1_chime_v1.mp3
+canonical_hash: a490cfe65445e41851a49f7eaa003757835ec3add6f615b67426ecaf9aaab85d
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:53.168478+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

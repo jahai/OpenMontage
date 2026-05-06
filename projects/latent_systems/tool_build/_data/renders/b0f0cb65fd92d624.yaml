@@ -1,0 +1,10 @@
+id: b0f0cb65fd92d624
+discipline_version: pre_v1
+filename: 01_state1.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/trimmed/01_state1.mp4
+canonical_hash: d7a1a6d01bbedeb31cdeb518e90e87147e1cf6483d79f405148fb9b28c76b905
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.396100+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: b1a2e5b04adba0a5
+discipline_version: pre_v1
+filename: sequence_preview_lowercase_15s.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/reference/rejected/sequence_preview_lowercase_15s.mp4
+canonical_hash: d664232e1638ccb8a784c32050d7ce4ce24e45f8166714611ecc6a7db61ba0c2
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.514035+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

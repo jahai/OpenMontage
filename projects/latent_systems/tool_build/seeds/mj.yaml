@@ -1,0 +1,99 @@
+# MidJourney tool-grammar config — verbatim from phase1_design_notes.md Section 3.
+# Seed for Phase 1 prompt drafting. Loaded once by seeds_loader.py at --init,
+# copied into _data/tool_grammar_configs/mj.yaml as the source of truth.
+#
+# Per Q3 (hybrid bootstrapping): hand-authored seed + auto-population from
+# successful prompt+output bindings over time (when verdict ∈ {hero_zone, strong}).
+# Phase 1 ships this seed; Phase 2 auto-populates successful_examples.
+
+tool: mj
+version: v7
+discipline_version: 1.0
+
+syntax_rules:
+  - name: aspect_ratio
+    pattern: "--ar 16:9"
+    when: "all renders unless square or vertical needed"
+    rationale: "channel format is 16:9; deviations are exceptions"
+  - name: version_flag
+    pattern: "--v 7"
+    when: "always (current MJ version)"
+    rationale: "v7 is current; older versions produce different aesthetic"
+  - name: lens_specification
+    pattern: "shot on <lens>mm <camera_type>"
+    when: "cinematic register required"
+    examples:
+      - "shot on 35mm anamorphic"
+      - "shot on 85mm prime"
+    rationale: "lens vocabulary calibrates depth/feel"
+
+vocabulary_priors:
+  - phrase: "1940s archival B&W"
+    register: "schematic apparatus / lab"
+    confidence: high
+  - phrase: "behavioral research observation"
+    register: "schematic apparatus"
+    confidence: high
+  - phrase: "fluorescent overhead lighting"
+    register: "clinical / institutional"
+    confidence: medium
+  - phrase: "desk lamp practical light"
+    register: "intimate / focused"
+    confidence: high
+  - phrase: "subject in foreground, apparatus in background bokeh"
+    register: "subject-imagery"
+    confidence: high
+  - phrase: "split-focus composition"
+    register: "dual-subject foreground/midground separation"
+    confidence: high
+    note: "proven in 8 craft-test renders"
+  - phrase: "echo-anchor"
+    register: "presence-by-absence (e.g., empty recliner with implied subject)"
+    confidence: high
+    note: "produces subject presence through environmental traces"
+
+failure_modes:
+  - mode: "white-coat collapse"
+    trigger: "explicit researcher mention"
+    mitigation: "describe apparatus-as-architecture instead"
+    severity: high
+  - mode: "register-relativity break"
+    trigger: "mixing modern + period vocabulary in same prompt"
+    mitigation: "commit to single era"
+    severity: high
+  - mode: "thesis-image overload"
+    trigger: "too many concept elements stacked in one render"
+    mitigation: "one concept per render; spread for layered ideas"
+    severity: medium
+  - mode: "movie-trailer drift"
+    trigger: "performative-ominous language ('haunting', 'mysterious', 'shocking')"
+    mitigation: "calm-observational register"
+    severity: high
+  - mode: "MJ schematic-precision weakness"
+    trigger: "expecting MJ to render precise diagrammatic content"
+    mitigation: "route schematic-precise content to GPT Image 2"
+    severity: medium
+  - mode: "novel-concept resistance"
+    trigger: "subject combinations unusual enough that MJ training data lacks direct precedent"
+    mitigation: |
+      Two-part: (1) explicit negation of nearest-stock-image MJ defaults;
+      (2) redundant compositional anchoring — specify foreground/midground/background plane assignments redundantly to force structural attention.
+    severity: high
+
+successful_examples:
+  - prompt_id: "<populated_after_phase_1_seed_run>"
+    note: "D4 P3 archival lab — held register at 100%, exemplary craft"
+
+drafting_notes: |
+  When drafting MJ prompts:
+  - Lead with subject, then setting, then register.
+  - Apply syntax rules unconditionally unless prompt specifies override.
+  - Check vocabulary priors first.
+  - Run failure-mode check.
+  - For novel composite subjects, apply novel-concept-resistance mitigation aggressively.
+
+  Prompt length sensitivity:
+  - Target 50-80 words for atmospheric photographic register.
+  - High-density apparatus renders can extend to 90 words.
+  - Above 100 words MJ visibly degrades on register coherence.
+  - Below 30 words MJ defaults to its native aesthetic (often unwanted).

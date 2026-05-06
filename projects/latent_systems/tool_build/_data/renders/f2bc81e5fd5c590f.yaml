@@ -1,0 +1,10 @@
+id: f2bc81e5fd5c590f
+discipline_version: pre_v1
+filename: state1_backup_rejected.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/reference/state1_backup_rejected.mp4
+canonical_hash: 2612bb10262e53532a0cc496ba282413da8f852ddfc580c9dbcb1a8cfe3b2f1f
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.346018+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

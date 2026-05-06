@@ -1,0 +1,10 @@
+id: 469bef1cf2d62ec4
+discipline_version: pre_v1
+filename: H5_kling_v2_face_intrusion.mp4
+filepath: projects/latent_systems/ep1/h5_slot_machine/reference/rejected/H5_kling_v2_face_intrusion.mp4
+canonical_hash: aa4c03433c8cec60b208008d99e3a1a39f9e152c636a288f30453ee5cf1149cf
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.216469+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

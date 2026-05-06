@@ -1,0 +1,10 @@
+id: def3d9fcd51f7481
+discipline_version: pre_v1
+filename: h6_streak_RAW_normalized.mp4
+filepath: projects/latent_systems/ep1/h6_streak/_work/h6_streak_RAW_normalized.mp4
+canonical_hash: 631f624cec0cb33b5b7bd010e516556adb76cc26c4e0d2eb5303c8c1c792751a
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.119135+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

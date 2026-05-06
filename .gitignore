@@ -21,8 +21,52 @@ output/
 pipeline/
 tests/qa/output/
 
-# Project workspaces (generated assets, renders — all regenerable)
-projects/
+# Project workspaces (generated assets, renders — all regenerable).
+# Use projects/* (not projects/) so Git can recurse and apply the
+# Latent Systems carve-outs below.
+projects/*
+
+# --- Latent Systems carve-outs (Phase 1 Day 10 / Day 5-9 review §2-A) ---
+# Latent Systems structural content is git-tracked. Generated assets
+# (PNGs, MP4s, MP3s, WAVs, JPGs) under ep1/ and shared/ stay ignored;
+# structural docs (NOTES.md, README.md, *.md docs, source code, config)
+# get carved back in. Activates AD-5 hook enforcement on real commits
+# and makes spec §5 backup-via-git story factually correct.
+!projects/latent_systems/
+projects/latent_systems/*
+!projects/latent_systems/PROJECT_ARCHITECTURE.md
+!projects/latent_systems/NOTES.md
+!projects/latent_systems/docs/
+!projects/latent_systems/tools/
+!projects/latent_systems/tool_build/
+!projects/latent_systems/ep1/
+!projects/latent_systems/shared/
+
+# Inside ep1/ and shared/, default-ignore everything; whitelist NOTES.md
+# + README.md + structural-doc *.md anywhere in the subtree.
+projects/latent_systems/ep1/**
+!projects/latent_systems/ep1/**/
+!projects/latent_systems/ep1/**/NOTES.md
+!projects/latent_systems/ep1/**/README.md
+projects/latent_systems/shared/**
+!projects/latent_systems/shared/**/
+!projects/latent_systems/shared/**/NOTES.md
+!projects/latent_systems/shared/**/README.md
+
+# Re-ignore tool_build/_data runtime files (state.db cache + operational JSON/log).
+# Per AD-5, state.db is cache; canonical YAMLs at _data/<artifact_type>/*.yaml
+# stay tracked as source of truth.
+projects/latent_systems/tool_build/_data/state.db
+projects/latent_systems/tool_build/_data/state.db-*
+projects/latent_systems/tool_build/_data/_*.json
+projects/latent_systems/tool_build/_data/_*.txt
+projects/latent_systems/tool_build/_data/_*.log
+projects/latent_systems/tool_build/_data/_*.tmp
+projects/latent_systems/tool_build/_data/_server.shutdown
+# But keep the _inbox_review tooling tracked (operational scripts + ledger
+# = audit trail of stray-routing decisions):
+!projects/latent_systems/tool_build/_data/_inbox_review/
+!projects/latent_systems/tool_build/_data/_inbox_review/**
 
 # Corpus directories (downloaded stock clips, thumbnails, embeddings —
 # regenerable from source APIs via corpus_builder). Explicit rule even

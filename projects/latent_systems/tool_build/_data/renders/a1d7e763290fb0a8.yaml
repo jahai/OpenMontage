@@ -1,0 +1,10 @@
+id: a1d7e763290fb0a8
+discipline_version: pre_v1
+filename: maskedcut_pre.png
+filepath: projects/latent_systems/ep1/cold_open/assembled/maskedcut_pre.png
+canonical_hash: 730a9c1cdf1b02e0a0530aefeb83066b24bda201b2845f8650d0b4c24885951c
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:59.579633+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

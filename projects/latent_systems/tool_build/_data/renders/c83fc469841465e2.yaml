@@ -1,0 +1,10 @@
+id: c83fc469841465e2
+discipline_version: pre_v1
+filename: protag_clip_aligned.mp4
+filepath: projects/latent_systems/ep1/h4_match_cut/_work/protag_clip_aligned.mp4
+canonical_hash: 0e7412b1df96940eda7b4a28bd7f2b26faf64802a1c46aae7b90ab4cb2962503
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.259827+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

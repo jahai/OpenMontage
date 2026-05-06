@@ -1,0 +1,10 @@
+id: 0e800bc51c519df6
+discipline_version: pre_v1
+filename: H5_hand_gripping_mj_32bf720a_1.png
+filepath: projects/latent_systems/ep1/h5_slot_machine/reference/rejected/H5_hand_gripping_mj_32bf720a_1.png
+canonical_hash: 8c90d289249f772f2bbd9c7feddaa9d0882cfa6289b1c9855dc768e002eb3c5e
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:58.017454+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 5bf47e181dc7fe2a
+discipline_version: pre_v1
+filename: craft_exemplar_02_empty_recliner_echo_anchor_b.png
+filepath: projects/latent_systems/shared/render_craft_exemplars/craft_exemplar_02_empty_recliner_echo_anchor_b.png
+canonical_hash: 6657f5361f630d64e3bc34c0dbfffefb8f7be810115e94663720221a3b09a717
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:49.891540+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

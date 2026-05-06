@@ -1,0 +1,10 @@
+id: 2aa019b9945ec70d
+discipline_version: pre_v1
+filename: EP1_section_17_para_6_radio_news_host_X20_periodhack_take1.mp3
+filepath: projects/latent_systems/ep1/audio/v1_4_radio_news_host/section_17/EP1_section_17_para_6_radio_news_host_X20_periodhack_take1.mp3
+canonical_hash: f04e1172b5a9a6ae56df472d267a109ed4f5dea2a593a9756a998a1897cdc465
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:03.173006+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

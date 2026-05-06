@@ -1,0 +1,10 @@
+id: b61a6756ce6dff7f
+discipline_version: pre_v1
+filename: sub_bass_hit.mp3
+filepath: projects/latent_systems/ep1/audio/sfx/sub_bass_hit.mp3
+canonical_hash: baf35deeb100d6504e9e73bd2d59b3317e53f73156f2025d96ac32ab6e7aa474
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:03.133944+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

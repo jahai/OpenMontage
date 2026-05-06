@@ -1,0 +1,10 @@
+id: 421fc52079776357
+discipline_version: pre_v1
+filename: EP1_card2_picture_v1.mp4
+filepath: projects/latent_systems/ep1/card2_doom_scrolling/assembled/EP1_card2_picture_v1.mp4
+canonical_hash: b0ab92daeaf8fbe6ffdc3305449a9302be834fbfe274195d8f3ad9437ab3eb94
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.756848+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

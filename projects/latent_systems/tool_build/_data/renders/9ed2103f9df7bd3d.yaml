@@ -1,0 +1,10 @@
+id: 9ed2103f9df7bd3d
+discipline_version: pre_v1
+filename: v4_15b_walking_path_ULTRA.mp4
+filepath: projects/latent_systems/ep1/_legacy/clips_act_scheme/_existing/v4_15b_walking_path_ULTRA.mp4
+canonical_hash: a752a41edb198fb9a1114df8e3a68718b8703deb0d6fea73a92bac389cd9dcdb
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.667179+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

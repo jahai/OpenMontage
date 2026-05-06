@@ -1,0 +1,10 @@
+id: 7bd7cc9d8d887b13
+discipline_version: pre_v1
+filename: steelman_comparison.mp3
+filepath: projects/latent_systems/ep1/audio/steelman_comparison.mp3
+canonical_hash: f6b12b573848a68cb048b77fc560600cdde4b41d4acd23611f3592126930ce0e
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.948448+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

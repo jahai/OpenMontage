@@ -1,0 +1,10 @@
+id: 1193429c4260f5cf
+discipline_version: pre_v1
+filename: v3_logo_silence_hold.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/01_Sora_Atmospheric/v3_logo_silence_hold.mp4
+canonical_hash: 20fd2241dd2ab95369a05c09d3d7c498afaed0d05f2d3c25a4e1978fca1d0639
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.104670+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

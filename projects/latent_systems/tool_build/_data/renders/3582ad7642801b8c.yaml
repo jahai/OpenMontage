@@ -1,0 +1,10 @@
+id: 3582ad7642801b8c
+discipline_version: pre_v1
+filename: v3_01b_phone_dark_room_OVERHEAD.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/01_Sora_Atmospheric/v3_01b_phone_dark_room_OVERHEAD.mp4
+canonical_hash: c64e23a90920662a901b014ec72c054c799397cec7b84957f1602d110e49e23b
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:59.967694+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

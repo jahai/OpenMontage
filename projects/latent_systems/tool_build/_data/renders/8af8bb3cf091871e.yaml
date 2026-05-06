@@ -1,0 +1,10 @@
+id: 8af8bb3cf091871e
+discipline_version: pre_v1
+filename: rat_still_4s.mp4
+filepath: projects/latent_systems/ep1/h4_match_cut/_work/rat_still_4s.mp4
+canonical_hash: 61d5f4f3f8cfc4f135d85e09251d8e3506b78885886e5d6edf8d8a81a06e3f99
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.265218+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

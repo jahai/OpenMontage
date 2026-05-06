@@ -1,0 +1,12 @@
+id: 25c3723858780235
+filename: NOTES (1).md
+ext: .md
+size_bytes: 7945
+size_kb: 7.8
+mtime: '2026-04-20 09:42:17'
+sha256: 79b550a044a0b6d046b88f8578867bd6dcd0b739046c17d457b6ceca3e620f27
+current_path: C:\Users\josep\Downloads\NOTES (1).md
+suggested_destination: DELETE (content-duplicate of NOTES.md)
+confidence: high
+proposed_action: dedupe
+notes: Hash matches NOTES.md. Browser dedup. Safe to delete.

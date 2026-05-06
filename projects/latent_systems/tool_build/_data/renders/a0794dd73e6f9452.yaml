@@ -1,0 +1,10 @@
+id: a0794dd73e6f9452
+discipline_version: pre_v1
+filename: 04_state4_prone.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/sources/04_state4_prone.mp4
+canonical_hash: 196d2cece2ec4a4118c9af87a3381703c0d05ea78dd525018e34695a1c7f00e0
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.385742+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

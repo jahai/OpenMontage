@@ -1,0 +1,11 @@
+id: c62d8ecf71149e6b
+name: e2e_skinner_box_lever_pull
+ep: ep1
+section: h5_slot_machine
+subject: rat at slot machine lever
+register: schematic_apparatus
+status: archived
+discipline_version: '1.0'
+yaml_path: projects/latent_systems/tool_build/_data/concepts/c62d8ecf71149e6b.yaml
+created: '2026-05-05T12:55:31.597878+00:00'
+modified: '2026-05-05T13:00:41.057476+00:00'

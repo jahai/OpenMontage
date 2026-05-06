@@ -1,0 +1,10 @@
+id: 61f94bb7db763487
+discipline_version: pre_v1
+filename: shotA_kling_take1_camera_push.mp4
+filepath: projects/latent_systems/ep1/cold_open/reference/rejected/shotA_kling_take1_camera_push.mp4
+canonical_hash: 8af3dee085dacff2fe5324bce7f415c1e393379deeae4b0ea812c0ecd2a124ec
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.708515+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

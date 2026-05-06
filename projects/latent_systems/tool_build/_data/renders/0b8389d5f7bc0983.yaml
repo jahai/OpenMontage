@@ -1,0 +1,10 @@
+id: 0b8389d5f7bc0983
+discipline_version: pre_v1
+filename: cold_open_v1_capcut.mp4
+filepath: projects/latent_systems/ep1/cold_open/reference/rejected/cold_open_v1_capcut.mp4
+canonical_hash: cf9bd1985b84821b483c2339613bbc789ae3fa0d820978e69001ef85f42823fe
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.646274+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

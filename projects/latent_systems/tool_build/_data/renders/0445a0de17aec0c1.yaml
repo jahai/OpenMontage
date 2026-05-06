@@ -1,0 +1,10 @@
+id: 0445a0de17aec0c1
+discipline_version: pre_v1
+filename: beat03_eyes_ecu.mp4
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/beat03_eyes_ecu.mp4
+canonical_hash: 9903e62c6739e6533d60090df0c89e554308434457e6b2959e24e33b091cd477
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.262451+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

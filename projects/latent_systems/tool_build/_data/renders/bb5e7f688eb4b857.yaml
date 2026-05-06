@@ -1,0 +1,10 @@
+id: bb5e7f688eb4b857
+discipline_version: pre_v1
+filename: music_padded.mp3
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/music_padded.mp3
+canonical_hash: 9d1425a08f29aba1be2608851d67b812c45ec0581699b77172cd180db6d4424a
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.972966+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,13 @@
+id: 7e5684053fbec762
+filename: shot1_last_frame.jpg
+ext: .jpg
+size_bytes: 175119
+size_kb: 171.0
+mtime: '2026-04-15 11:05:52'
+sha256: 25ebe24fa5741f1712df5861421ab9db2f2dbae9513df9d892466dc621511a25
+current_path: C:\Users\josep\Downloads\shot1_last_frame.jpg
+suggested_destination: projects/latent_systems/ep1/_continuity/shot1_last_frame.jpg
+confidence: high
+proposed_action: route
+notes: 'Last-frame extract for image-to-video continuity (Kling/Sora pattern: feed
+  last frame of shot N as first-frame ref for shot N+1). _continuity/ may need creating.'

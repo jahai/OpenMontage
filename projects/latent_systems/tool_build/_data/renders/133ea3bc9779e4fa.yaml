@@ -1,0 +1,10 @@
+id: 133ea3bc9779e4fa
+discipline_version: pre_v1
+filename: H5_clip3_release_RAW.mp4
+filepath: projects/latent_systems/ep1/h5_slot_machine/sources/H5_clip3_release_RAW.mp4
+canonical_hash: 1cc50b7dc5a6ecafb05a2757c86b2d97bbf106b4969074fb1ee6f7a99d4ae7b4
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.178558+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

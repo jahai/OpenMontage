@@ -1,0 +1,10 @@
+id: b3da0371c68996d0
+discipline_version: pre_v1
+filename: cold_open_v3_picture.mp4
+filepath: projects/latent_systems/ep1/cold_open/assembled/cold_open_v3_picture.mp4
+canonical_hash: f4c943181151d114b7087b855dccd11c11c54081ea9f3dbac82963a4408f5170
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.579315+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

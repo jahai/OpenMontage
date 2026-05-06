@@ -1,0 +1,10 @@
+id: 22110f06d1c9bdb8
+discipline_version: pre_v1
+filename: sequence_preview.mp4
+filepath: projects/latent_systems/ep1/h3_skinner/reference/sequence_preview.mp4
+canonical_hash: a319df66d0565586a9d09c54cfbc8416211825e00f4187c3829759a95a1119e7
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.335496+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

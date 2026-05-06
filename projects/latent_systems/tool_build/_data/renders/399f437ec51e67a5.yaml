@@ -1,0 +1,10 @@
+id: 399f437ec51e67a5
+discipline_version: pre_v1
+filename: EP1_card_l1_picture_v1.mp4
+filepath: projects/latent_systems/ep1/card_l1_inhabitants/assembled/EP1_card_l1_picture_v1.mp4
+canonical_hash: b4a1c548ebb866796c3c37a78fc9470131ce6223e27b76bd57e681ea1007ff81
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.713253+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 3bb1c173b147fd19
+discipline_version: pre_v1
+filename: cold_open_v3_check_45s.png
+filepath: projects/latent_systems/ep1/cold_open/assembled/cold_open_v3_check_45s.png
+canonical_hash: bd29c4588a4b22ea25a8f83e1314469372294388272c655f2beabd8c6e8e7f65
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:59.547164+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,13 @@
+id: 75df342049e850c7
+filename: Perplexity_Sora_Brief.md
+ext: .md
+size_bytes: 3824
+size_kb: 3.7
+mtime: '2026-04-15 10:26:51'
+sha256: 88306bb7151cebc544b0a61d63bee50bbc28b26767773899307e1f3d575571a5
+current_path: C:\Users\josep\Downloads\Perplexity_Sora_Brief.md
+suggested_destination: projects/latent_systems/ep1/cold_open/reference/Perplexity_Sora_Brief.md
+confidence: high
+proposed_action: route
+notes: Sora generation brief for the two LS notification clips. Pairs with LS_iphone_notification_*.mp4
+  (also in this batch). Keeps prompt next to its outputs.

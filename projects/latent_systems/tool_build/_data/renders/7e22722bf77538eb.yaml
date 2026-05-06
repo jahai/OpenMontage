@@ -1,0 +1,10 @@
+id: 7e22722bf77538eb
+discipline_version: pre_v1
+filename: ident_S01E01_original_partialcolor.mp4
+filepath: projects/latent_systems/shared/ident_remotion/reference/rejected/ident_S01E01_original_partialcolor.mp4
+canonical_hash: 8df444158fe2fe8bca36769dda98fcc76d1c213822aec22911aab4ed9d7eb940
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:19:53.155258+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

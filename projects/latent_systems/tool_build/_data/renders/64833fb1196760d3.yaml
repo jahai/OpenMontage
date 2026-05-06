@@ -1,0 +1,10 @@
+id: 64833fb1196760d3
+discipline_version: pre_v1
+filename: harris_seam_v3.mp3
+filepath: projects/latent_systems/ep1/audio/harris_seam_v3.mp3
+canonical_hash: 61874645db35ff8dd9a7042af99d98cfcba58a5fb995a51543e7eeed0ef0482a
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.927949+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

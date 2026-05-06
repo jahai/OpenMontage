@@ -1,0 +1,12 @@
+id: 665c3c804bfaf983
+filename: clip_A_last_frame (1).jpg
+ext: .jpg
+size_bytes: 178553
+size_kb: 174.4
+mtime: '2026-04-15 11:47:04'
+sha256: 15b1e5e76babee487795ff267ba920520075b55068d2e612869ecbe1abe59756
+current_path: C:\Users\josep\Downloads\clip_A_last_frame (1).jpg
+suggested_destination: DELETE (content-duplicate of clip_A_last_frame.jpg)
+confidence: high
+proposed_action: dedupe
+notes: Hash matches clip_A_last_frame.jpg. Browser dedup. Safe to delete.

@@ -1,0 +1,10 @@
+id: c9f67fe0fb472b3d
+discipline_version: pre_v1
+filename: narration_first180s.mp3
+filepath: projects/latent_systems/ep1/audio/narration/narration_first180s.mp3
+canonical_hash: 750c6cbf19e4c3b44c78d608e7840fed305bc35c73944a1a0609799b7e92d828
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:03.118855+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

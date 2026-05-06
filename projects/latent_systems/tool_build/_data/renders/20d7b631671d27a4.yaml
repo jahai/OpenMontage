@@ -1,0 +1,10 @@
+id: 20d7b631671d27a4
+discipline_version: pre_v1
+filename: kling_07_crowd_phones.mp4
+filepath: projects/latent_systems/ep1/_legacy_clips/02_Kling_Human/kling_07_crowd_phones.mp4
+canonical_hash: 7ac811ce108942404655382e8d9aa6a5fb6f68cd65e3c4ec8826fdd10750068d
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:00.422198+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

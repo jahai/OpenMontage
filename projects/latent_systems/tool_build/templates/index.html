@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tool_build v1 — prompt drafting</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         max-width: 900px; margin: 2em auto; padding: 0 1em; color: #222; }
+  h1 { margin-bottom: 0; }
+  .subtitle { color: #666; margin-top: 0.25em; font-size: 0.9em; }
+  fieldset { border: 1px solid #ccc; padding: 1em; margin: 1em 0; }
+  legend { font-weight: 600; padding: 0 0.5em; }
+  textarea { width: 100%; min-height: 8em; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+             font-size: 0.9em; padding: 0.5em; box-sizing: border-box; }
+  input[type=text], select { padding: 0.4em; font-size: 0.95em; }
+  button { padding: 0.5em 1em; cursor: pointer; font-size: 0.95em; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+  th, td { text-align: left; padding: 0.4em 0.6em; border-bottom: 1px solid #eee; }
+  th { background: #f6f6f6; }
+  .status { display: inline-block; padding: 0.1em 0.5em; border-radius: 0.25em; font-size: 0.85em; }
+  .status-draft { background: #eee; color: #444; }
+  .status-awaiting_return { background: #fef3c7; color: #92400e; }
+  .status-locked { background: #dbeafe; color: #1e40af; }
+  .status-failed { background: #fee2e2; color: #991b1b; }
+  .status-completed { background: #d1fae5; color: #065f46; }
+  .age-in_flight { color: #555; }
+  .age-still_waiting { color: #92400e; font-weight: 600; }
+  .age-stale_check { color: #991b1b; font-weight: 600; }
+  .age-closed { color: #999; }
+  .small { font-size: 0.85em; color: #666; }
+  .ok { color: #059669; }
+  .err { color: #b91c1c; }
+  .actions button { margin-right: 0.3em; font-size: 0.85em; padding: 0.2em 0.5em; }
+</style>
+</head>
+<body>
+<h1>tool_build v1</h1>
+<p class="subtitle">Phase 1 — concept persistence + clipboard handoff + drafting + binding.</p>
+
+<div id="status-banner" style="display:none; background:#fef3c7; border:1px solid #f59e0b; padding:0.6em; margin:0.5em 0; border-radius:0.25em;"></div>
+
+<fieldset>
+<legend>Cost &amp; status (Day 13)</legend>
+<div id="cost-panel" class="small">Loading…</div>
+</fieldset>
+
+<fieldset>
+<legend>Discipline-drift query (Feature 9 — F10 visibility)</legend>
+<div id="discipline-panel" class="small">Loading…</div>
+</fieldset>
+
+<fieldset>
+<legend>Concepts (Feature 1 — Day 14)</legend>
+<form id="concept-form" style="margin-bottom:1em;">
+  <p>
+    <label>Name: <input type="text" name="name" required size="30"></label>
+    &nbsp;
+    <label>EP: <input type="text" name="ep" size="6" placeholder="ep1"></label>
+    &nbsp;
+    <label>Section: <input type="text" name="section" size="20" placeholder="h5_slot_machine"></label>
+  </p>
+  <p>
+    <label>Subject: <input type="text" name="subject" size="50"></label>
+  </p>
+  <p>
+    <label>Register: <input type="text" name="register" size="30" placeholder="schematic_apparatus"></label>
+    &nbsp;
+    <label>Status:
+      <select name="status">
+        <option value="drafting" selected>drafting</option>
+        <option value="generating">generating</option>
+        <option value="evaluated">evaluated</option>
+        <option value="locked">locked</option>
+      </select>
+    </label>
+    &nbsp;
+    <button type="submit">Create concept</button>
+  </p>
+</form>
+<p class="small">
+  Filter:
+  <input type="text" id="concept-filter-ep" placeholder="ep" size="6">
+  <input type="text" id="concept-filter-section" placeholder="section" size="15">
+  <select id="concept-filter-status">
+    <option value="">(any status)</option>
+    <option>drafting</option>
+    <option>generating</option>
+    <option>evaluated</option>
+    <option>locked</option>
+    <option>archived</option>
+  </select>
+  <button onclick="refreshConcepts()">Apply</button>
+</p>
+<div id="concepts-list">Loading…</div>
+<div id="concept-detail" style="margin-top:1em;"></div>
+</fieldset>
+
+<fieldset>
+<legend>Draft new prompt (manual or via Claude API)</legend>
+<form id="draft-form">
+  <p>
+    <label>Tool:
+      <select name="tool">
+        <option value="midjourney">midjourney</option>
+        <option value="kling">kling</option>
+      </select>
+    </label>
+    &nbsp;
+    <label>Concept:
+      <select name="concept_id" id="draft-concept-select">
+        <option value="">(none)</option>
+      </select>
+    </label>
+  </p>
+  <p class="small"><strong>Manual prompt:</strong> type below + Save draft.<br>
+  <strong>Claude API draft:</strong> select a concept, type the concept text below + click "Draft via Claude API".</p>
+  <textarea name="text" placeholder="Cinematic film still. ...  (or: a concept description if drafting via API)" required></textarea>
+  <p>
+    <button type="submit">Save manual draft</button>
+    &nbsp;
+    <button type="button" onclick="draftViaApi()">Draft via Claude API</button>
+  </p>
+</form>
+<div id="draft-result"></div>
+</fieldset>
+
+<fieldset>
+<legend>Awaiting return (Feature 3b — failure mode 3b.1/3b.2/3b.4)</legend>
+<div id="awaiting-list">Loading…</div>
+</fieldset>
+
+<fieldset>
+<legend>Unbound renders (Feature 3b — binding loop, Day 9)</legend>
+<p class="small">Renders that arrived via router but didn't auto-bind (orphan / multi-prompt / tool-mismatch).</p>
+<div id="unbound-list">Loading…</div>
+</fieldset>
+
+<fieldset>
+<legend>Inbox renders (Feature 3b — failure mode 3b.5)</legend>
+<p class="small">Low-confidence routes from the router. Review to determine final canonical destination.</p>
+<div id="inbox-list">Loading…</div>
+</fieldset>
+
+<fieldset>
+<legend>Recent prompts</legend>
+<div id="prompt-list">Loading…</div>
+</fieldset>
+
+<script>
+async function refreshPrompts() {
+  const r = await fetch('/prompts');
+  const data = await r.json();
+  const div = document.getElementById('prompt-list');
+  if (!data.prompts || data.prompts.length === 0) {
+    div.innerHTML = '<p class="small">No prompts yet.</p>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Created</th><th>Tool</th><th>Status</th><th>Attempts</th><th>Preview</th><th></th></tr></thead><tbody>';
+  for (const p of data.prompts) {
+    const created = p.created.replace('T', ' ').substring(0, 19);
+    const dispatchBtn = p.status === 'draft' || p.status === 'awaiting_return'
+      ? `<button onclick="dispatch('${p.id}')">Dispatch${p.attempts > 0 ? ' (re-roll)' : ''}</button>`
+      : '';
+    html += `<tr>
+      <td class="small">${created}</td>
+      <td>${p.tool}</td>
+      <td><span class="status status-${p.status}">${p.status}</span></td>
+      <td>${p.attempts}</td>
+      <td class="small">${escapeHtml(p.text_preview || '')}</td>
+      <td>${dispatchBtn}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  div.innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+document.getElementById('draft-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    text: fd.get('text'),
+    tool: fd.get('tool'),
+    concept_id: fd.get('concept_id') || null,
+  };
+  const r = await fetch('/prompts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const result = await r.json();
+  const out = document.getElementById('draft-result');
+  if (r.ok) {
+    out.innerHTML = `<p class="ok">Saved prompt <code>${result.id}</code>.</p>`;
+    e.target.reset();
+    refreshPrompts();
+  } else {
+    out.innerHTML = `<p class="err">Error: ${result.detail || 'unknown'}</p>`;
+  }
+});
+
+async function dispatch(promptId) {
+  const r = await fetch(`/prompts/${promptId}/dispatch`, { method: 'POST' });
+  const result = await r.json();
+  const out = document.getElementById('draft-result');
+  if (r.ok) {
+    let msg = `Dispatched. Attempt #${result.attempt_number}. Clipboard: ${result.clipboard_written ? '✓' : '✗'}. Browser: ${result.browser_opened ? '✓' : '✗'}.`;
+    if (result.errors && result.errors.length) msg += ' Errors: ' + result.errors.join('; ');
+    out.innerHTML = `<p class="${result.errors && result.errors.length ? 'err' : 'ok'}">${escapeHtml(msg)}</p>`;
+    refreshPrompts();
+  } else {
+    out.innerHTML = `<p class="err">Dispatch error: ${result.detail || 'unknown'}</p>`;
+  }
+}
+
+async function refreshAwaiting() {
+  const r = await fetch('/prompts/awaiting');
+  const data = await r.json();
+  const div = document.getElementById('awaiting-list');
+  if (!data.prompts || data.prompts.length === 0) {
+    div.innerHTML = '<p class="small">No prompts awaiting return.</p>';
+    return;
+  }
+  let html = '';
+  for (const p of data.prompts) {
+    html += `<div style="margin-bottom:1em; padding:0.5em; border-left:3px solid #ccc;">
+      <div><strong>${escapeHtml((p.text_preview || '').substring(0, 100))}…</strong></div>
+      <div class="small">tool: ${p.tool} · prompt id: ${p.id}</div>
+      <table style="margin-top:0.5em;"><thead><tr>
+        <th>#</th><th>Started</th><th>Elapsed</th><th>Age</th><th>Status</th><th>Actions</th>
+      </tr></thead><tbody>`;
+    for (const a of p.attempts) {
+      const elapsedH = (a.elapsed_s / 3600).toFixed(2);
+      const elapsedM = Math.round(a.elapsed_s / 60);
+      const elapsedDisplay = a.elapsed_s < 3600 ? `${elapsedM}m` : `${elapsedH}h`;
+      const startedShort = a.started.replace('T',' ').substring(0, 19);
+      const actions = a.status === 'in_flight' ? `
+        <button onclick="kick('${a.id}')">Still waiting</button>
+        <button onclick="manualComplete('${a.id}')">Got it</button>
+        <button onclick="markFailed('${a.id}')">Mark failed</button>
+      ` : '<span class="small">—</span>';
+      html += `<tr>
+        <td>#${a.attempt_number}</td>
+        <td class="small">${startedShort}</td>
+        <td>${elapsedDisplay}</td>
+        <td><span class="age-${a.age_status}">${a.age_status}</span></td>
+        <td><span class="status status-${a.status}">${a.status}</span></td>
+        <td class="actions">${actions}</td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+  div.innerHTML = html;
+}
+
+async function refreshInbox() {
+  const r = await fetch('/inbox_renders');
+  const data = await r.json();
+  const div = document.getElementById('inbox-list');
+  if (!data.renders || data.renders.length === 0) {
+    div.innerHTML = '<p class="small">Inbox empty.</p>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Created</th><th>Filename</th><th>Tool</th><th>Path</th></tr></thead><tbody>';
+  for (const r of data.renders) {
+    const created = (r.created || '').replace('T', ' ').substring(0, 19);
+    html += `<tr>
+      <td class="small">${created}</td>
+      <td>${escapeHtml(r.filename)}</td>
+      <td>${r.tool}</td>
+      <td class="small">${escapeHtml(r.filepath)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  div.innerHTML = html;
+}
+
+async function kick(attemptId) {
+  await fetch(`/attempts/${attemptId}/kick`, { method: 'POST' });
+  refreshAll();
+}
+async function manualComplete(attemptId) {
+  const note = prompt('Optional note (e.g., "found in canonical via manual move"):') || '';
+  const r = await fetch(`/attempts/${attemptId}/manual_complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  refreshAll();
+}
+async function markFailed(attemptId) {
+  const reason = prompt('Failure reason:');
+  if (!reason) return;
+  await fetch(`/attempts/${attemptId}/mark_failed`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+  refreshAll();
+}
+
+async function refreshUnbound() {
+  const r = await fetch('/unbound_renders');
+  const data = await r.json();
+  const div = document.getElementById('unbound-list');
+  if (!data.renders || data.renders.length === 0) {
+    div.innerHTML = '<p class="small">No unbound renders.</p>';
+    return;
+  }
+  // Build attempt picker options once.
+  const opts = (data.open_attempts || []).map(a =>
+    `<option value="${a.attempt_id}">${a.tool} #${a.attempt_number} — ${escapeHtml((a.text_preview || '').substring(0,60))}</option>`
+  ).join('');
+  let html = '<table><thead><tr><th>Created</th><th>Filename</th><th>Tool</th><th>Reason</th><th>Bind to</th></tr></thead><tbody>';
+  for (const r of data.renders) {
+    const created = (r.created || '').replace('T',' ').substring(0,19);
+    const reason = r.needs_review_reason || '—';
+    const candidate = r.candidate_attempt_id || '';
+    const selectId = `picker-${r.id}`;
+    const action = (data.open_attempts && data.open_attempts.length > 0) ? `
+      <select id="${selectId}">${opts}</select>
+      <button onclick="bindRender('${r.id}', false)">Bind</button>
+      <button onclick="bindRender('${r.id}', true)">Force-bind</button>
+    ` : '<span class="small">no open attempts</span>';
+    html += `<tr>
+      <td class="small">${created}</td>
+      <td class="small">${escapeHtml(r.filename)}</td>
+      <td>${r.tool}</td>
+      <td><span class="status status-failed">${reason}</span>${candidate ? `<br><span class="small">candidate: ${candidate}</span>` : ''}</td>
+      <td class="actions">${action}<br><button onclick="markOrphan('${r.id}')">Mark orphan</button></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  div.innerHTML = html;
+}
+
+async function bindRender(renderId, force) {
+  const sel = document.getElementById(`picker-${renderId}`);
+  const attemptId = sel ? sel.value : null;
+  if (!attemptId) { alert('No open attempt selected'); return; }
+  const r = await fetch(`/renders/${renderId}/bind`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ attempt_id: attemptId, force: !!force }),
+  });
+  if (r.status === 409) {
+    const data = await r.json();
+    if (confirm(`Tool mismatch (render=${data.detail.render_tool}, attempt=${data.detail.attempt_tool}). Bind anyway?`)) {
+      return bindRender(renderId, true);
+    }
+    return;
+  }
+  refreshAll();
+}
+
+async function markOrphan(renderId) {
+  const note = prompt('Optional note (why this is orphan):') || '';
+  await fetch(`/renders/${renderId}/mark_orphan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  refreshAll();
+}
+
+async function refreshApiStatus() {
+  const r = await fetch('/api_status');
+  const data = await r.json();
+  const banner = document.getElementById('status-banner');
+  if (data.banner) {
+    banner.textContent = data.banner;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+  const panel = document.getElementById('cost-panel');
+  const cb = data.cost_breakdown || {};
+  let html = `
+    <table>
+      <tr>
+        <td><strong>Today:</strong> $${(cb.today_usd ?? 0).toFixed(4)}</td>
+        <td><strong>Past 7d:</strong> $${(cb.past_7d_usd ?? 0).toFixed(4)}</td>
+        <td><strong>Past 30d:</strong> $${(cb.past_30d_usd ?? 0).toFixed(4)}</td>
+      </tr>
+      <tr>
+        <td colspan="3" class="small">
+          30d calls: ${cb.total_calls_30d ?? 0} •
+          tokens: ${(cb.total_tokens_30d_in ?? 0).toLocaleString()} in / ${(cb.total_tokens_30d_out ?? 0).toLocaleString()} out
+        </td>
+      </tr>`;
+  if (cb.by_purpose && Object.keys(cb.by_purpose).length) {
+    html += '<tr><td colspan="3" class="small"><strong>By purpose (30d):</strong> ';
+    html += Object.entries(cb.by_purpose).map(([p, c]) => `${p}: $${c.toFixed(4)}`).join(' • ');
+    html += '</td></tr>';
+  }
+  if (cb.by_status_30d && Object.keys(cb.by_status_30d).length) {
+    html += '<tr><td colspan="3" class="small"><strong>By status (30d):</strong> ';
+    html += Object.entries(cb.by_status_30d).map(([s, n]) => `${s}: ${n}`).join(' • ');
+    html += '</td></tr>';
+  }
+  html += '</table>';
+  panel.innerHTML = html;
+}
+
+async function refreshDisciplineDrift() {
+  const r = await fetch('/discipline_drift');
+  const data = await r.json();
+  const panel = document.getElementById('discipline-panel');
+  const baseline = data.current_baseline;
+  const versions = data.versions || {};
+  const totals = data.totals_by_version || {};
+  if (!Object.keys(versions).length) {
+    panel.innerHTML = '<p>No artifacts yet.</p>';
+    return;
+  }
+  let html = `<p>Current baseline: <strong>${baseline}</strong></p>`;
+  // Status badge: how many at non-baseline versions?
+  const nonBaseline = Object.entries(totals).filter(([v, _]) => v !== baseline);
+  if (nonBaseline.length) {
+    const total = nonBaseline.reduce((s, [_, n]) => s + n, 0);
+    html += `<p><span class="status status-failed">${total} artifacts at earlier discipline versions</span> — review available below.</p>`;
+  }
+  // Version breakdown table
+  const types = ['concepts', 'prompts', 'renders', 'verdicts', 'hero_promotions', 'lineage_edges', 'cross_ai_captures'];
+  html += '<table><thead><tr><th>Version</th>';
+  for (const t of types) html += `<th>${t.replace('_', ' ')}</th>`;
+  html += '<th>Total</th><th></th></tr></thead><tbody>';
+  for (const ver of Object.keys(versions).sort()) {
+    const counts = versions[ver];
+    const isBaseline = ver === baseline;
+    const verLabel = isBaseline ? `<strong>${ver}</strong> (current)` : ver;
+    html += `<tr>${isBaseline ? '' : ''}<td>${verLabel}</td>`;
+    for (const t of types) {
+      const v = counts[t] || 0;
+      html += `<td>${v > 0 ? v : '—'}</td>`;
+    }
+    html += `<td><strong>${totals[ver]}</strong></td>`;
+    html += `<td><button onclick="showVersionDrillDown('${ver}')">Drill down</button></td>`;
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  // Stale lineage edges
+  const stale = data.stale_lineage_edges || [];
+  if (stale.length) {
+    html += `<p class="small"><strong>${stale.length} stale lineage edges</strong> (valid_to_version set, or valid_from_version != baseline)</p>`;
+  }
+  html += '<div id="version-detail"></div>';
+  panel.innerHTML = html;
+}
+
+async function showVersionDrillDown(version) {
+  const div = document.getElementById('version-detail');
+  div.innerHTML = `<p class="small">Loading ${version}...</p>`;
+  const r = await fetch(`/discipline_drift/version/${encodeURIComponent(version)}`);
+  const data = await r.json();
+  const arts = data.artifacts || {};
+  let html = `<h4>Artifacts at version ${version}</h4>`;
+  for (const [type, items] of Object.entries(arts)) {
+    if (!items.length) continue;
+    html += `<details><summary>${type} (${items.length})</summary>`;
+    html += '<table><tbody>';
+    for (const item of items) {
+      const summary = item.name || item.text_preview || item.filename || item.verdict || item.source || JSON.stringify(item).substring(0, 80);
+      html += `<tr><td class="small">${item.id}</td><td class="small">${escapeHtml(String(summary).substring(0, 120))}</td></tr>`;
+    }
+    html += '</tbody></table></details>';
+  }
+  div.innerHTML = html;
+}
+
+async function refreshConcepts() {
+  const ep = document.getElementById('concept-filter-ep').value || '';
+  const section = document.getElementById('concept-filter-section').value || '';
+  const status = document.getElementById('concept-filter-status').value || '';
+  const params = new URLSearchParams();
+  if (ep) params.set('ep', ep);
+  if (section) params.set('section', section);
+  if (status) {
+    params.set('status', status);
+    if (status === 'archived') params.set('include_archived', 'true');
+  }
+  const r = await fetch('/concepts' + (params.toString() ? '?' + params : ''));
+  const data = await r.json();
+  const div = document.getElementById('concepts-list');
+  const concepts = data.concepts || [];
+
+  // Update concept-selector dropdown on draft form
+  const sel = document.getElementById('draft-concept-select');
+  if (sel) {
+    const current = sel.value;
+    sel.innerHTML = '<option value="">(none)</option>' +
+      concepts.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`).join('');
+    sel.value = current;
+  }
+
+  if (!concepts.length) {
+    div.innerHTML = '<p class="small">No concepts yet.</p>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Name</th><th>EP</th><th>Section</th><th>Register</th><th>Status</th><th>v.</th><th>Modified</th><th></th></tr></thead><tbody>';
+  for (const c of concepts) {
+    const modified = (c.modified || '').replace('T', ' ').substring(0, 19);
+    html += `<tr>
+      <td><strong>${escapeHtml(c.name)}</strong>${c.subject ? `<br><span class="small">${escapeHtml(c.subject)}</span>` : ''}</td>
+      <td>${c.ep || '—'}</td>
+      <td>${c.section || '—'}</td>
+      <td>${c.register || '—'}</td>
+      <td><span class="status status-${c.status}">${c.status}</span></td>
+      <td class="small">${c.discipline_version}</td>
+      <td class="small">${modified}</td>
+      <td><button onclick="showConceptDetail('${c.id}')">Open</button></td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  div.innerHTML = html;
+}
+
+async function showConceptDetail(conceptId) {
+  const div = document.getElementById('concept-detail');
+  div.innerHTML = '<p class="small">Loading…</p>';
+  const r = await fetch(`/concepts/${conceptId}`);
+  if (!r.ok) {
+    div.innerHTML = `<p class="err">Not found: ${conceptId}</p>`;
+    return;
+  }
+  const c = await r.json();
+  let html = `<h3>Concept: ${escapeHtml(c.name)}</h3>`;
+  html += `<p class="small">id: <code>${c.id}</code> · ep: ${c.ep || '—'} · section: ${c.section || '—'} · register: ${c.register || '—'} · status: <span class="status status-${c.status}">${c.status}</span> · discipline: ${c.discipline_version}</p>`;
+  if (c.subject) html += `<p>${escapeHtml(c.subject)}</p>`;
+  // Inline edit
+  html += `<details><summary>Edit fields</summary>
+    <form onsubmit="event.preventDefault(); editConcept('${c.id}');">
+      <p><label>Name: <input type="text" id="edit-name" value="${escapeHtml(c.name)}" size="30"></label></p>
+      <p><label>Subject: <input type="text" id="edit-subject" value="${escapeHtml(c.subject || '')}" size="50"></label></p>
+      <p><label>Register: <input type="text" id="edit-register" value="${escapeHtml(c.register || '')}" size="30"></label>
+      &nbsp;<label>Status: <select id="edit-status">
+        ${['drafting','generating','evaluated','locked','archived'].map(s =>
+          `<option value="${s}"${c.status===s?' selected':''}>${s}</option>`).join('')}
+      </select></label></p>
+      <p><button type="submit">Save</button>
+      &nbsp;<button type="button" onclick="archiveConcept('${c.id}')">Archive</button></p>
+      <p class="small">Substantive edits (name/subject/register/ep/section) bump discipline_version to current.</p>
+    </form>
+  </details>`;
+  // Linked artifacts
+  if (c.prompts && c.prompts.length) {
+    html += `<h4>Prompts (${c.prompts.length})</h4><table><tbody>`;
+    for (const p of c.prompts) {
+      html += `<tr><td class="small">${p.id}</td><td>${p.tool}</td><td><span class="status status-${p.status}">${p.status}</span></td><td class="small">${p.drafted_by}</td><td class="small">${escapeHtml((p.text_preview || '').substring(0, 100))}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  } else {
+    html += '<p class="small">No prompts yet.</p>';
+  }
+  if (c.renders && c.renders.length) {
+    html += `<h4>Renders (${c.renders.length})</h4><table><tbody>`;
+    for (const r of c.renders) {
+      html += `<tr><td class="small">${r.id}</td><td>${r.tool}</td><td>${r.hero_status || ''}</td><td class="small">${escapeHtml(r.filename)}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  if (c.hero_promotions && c.hero_promotions.length) {
+    html += `<h4>Hero promotions (${c.hero_promotions.length})</h4>`;
+  }
+  div.innerHTML = html;
+}
+
+async function editConcept(conceptId) {
+  const body = {
+    name: document.getElementById('edit-name').value,
+    subject: document.getElementById('edit-subject').value,
+    register: document.getElementById('edit-register').value,
+    status: document.getElementById('edit-status').value,
+  };
+  const r = await fetch(`/concepts/${conceptId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (r.ok) {
+    refreshConcepts();
+    showConceptDetail(conceptId);
+  } else {
+    alert('Edit failed: ' + (await r.text()));
+  }
+}
+
+async function archiveConcept(conceptId) {
+  if (!confirm('Archive this concept? It stays in state.db but is hidden from default list.')) return;
+  const r = await fetch(`/concepts/${conceptId}/archive`, { method: 'POST' });
+  if (r.ok) {
+    refreshConcepts();
+    document.getElementById('concept-detail').innerHTML = '<p class="ok">Archived.</p>';
+  }
+}
+
+document.getElementById('concept-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    name: fd.get('name'),
+    ep: fd.get('ep') || null,
+    section: fd.get('section') || null,
+    subject: fd.get('subject') || null,
+    register: fd.get('register') || null,
+    status: fd.get('status') || 'drafting',
+  };
+  const r = await fetch('/concepts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (r.ok) {
+    e.target.reset();
+    refreshConcepts();
+  } else {
+    alert('Create failed: ' + (await r.text()));
+  }
+});
+
+async function draftViaApi() {
+  const form = document.getElementById('draft-form');
+  const fd = new FormData(form);
+  const conceptText = fd.get('text');
+  const tool = fd.get('tool');
+  const conceptId = fd.get('concept_id') || null;
+  if (!conceptText.trim()) {
+    alert('Type the concept description in the textarea, then click "Draft via Claude API".');
+    return;
+  }
+  const out = document.getElementById('draft-result');
+  out.innerHTML = '<p class="small">Drafting via Claude... (~5-10s)</p>';
+  const r = await fetch('/prompts/draft_via_api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ concept_text: conceptText, tool, concept_id: conceptId }),
+  });
+  const data = await r.json();
+  if (r.ok) {
+    out.innerHTML = `
+      <p class="ok">Drafted. Cost $${data.cost_usd.toFixed(4)} · ${data.latency_s}s · ${data.tokens_in + data.cache_read_tokens + data.cache_creation_tokens} tokens in / ${data.tokens_out} out</p>
+      <p><strong>Draft text:</strong></p>
+      <pre style="background:#f6f6f6;padding:0.75em;white-space:pre-wrap;font-size:0.9em;">${escapeHtml(data.draft_text)}</pre>
+      <p class="small">prompt_id: <code>${data.prompt_id}</code> — ready to dispatch via the prompt list below.</p>`;
+    refreshPrompts();
+    refreshApiStatus();
+    if (conceptId) showConceptDetail(conceptId);
+  } else {
+    out.innerHTML = `<p class="err">Draft failed: ${escapeHtml(JSON.stringify(data.detail || data))}</p>`;
+    refreshApiStatus();
+  }
+}
+
+function refreshAll() {
+  refreshApiStatus();
+  refreshDisciplineDrift();
+  refreshConcepts();
+  refreshPrompts();
+  refreshAwaiting();
+  refreshUnbound();
+  refreshInbox();
+}
+
+refreshAll();
+</script>
+</body>
+</html>

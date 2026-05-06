@@ -1,0 +1,10 @@
+id: c846f34b5671d834
+discipline_version: pre_v1
+filename: click_check_v3.mp3
+filepath: projects/latent_systems/ep1/audio/click_check_v3.mp3
+canonical_hash: 406b7336974d1a88a8efb28509b20e6b59dfcb67786e76da97883e1e9f457a77
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.783224+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

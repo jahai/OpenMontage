@@ -1,0 +1,10 @@
+id: 247073b8b937845e
+discipline_version: pre_v1
+filename: music_hook.mp3
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/music_hook.mp3
+canonical_hash: 2f5b80481a20bed20e239f0578406e2b4dc04107e4dfc2338ccb2b3ca92ecd29
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:02.962948+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

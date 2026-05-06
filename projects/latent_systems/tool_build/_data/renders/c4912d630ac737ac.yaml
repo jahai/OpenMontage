@@ -1,0 +1,10 @@
+id: c4912d630ac737ac
+discipline_version: pre_v1
+filename: beat10_crowd_graded.mp4
+filepath: projects/latent_systems/ep1/_legacy/_renders/prep/beat10_crowd_graded.mp4
+canonical_hash: 2e2d7348e3ab3bc88170f37876e2de6c8c55cb97a377f03d664c57cd2f346f1c
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-04T12:20:01.399731+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
