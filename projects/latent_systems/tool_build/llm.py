@@ -16,7 +16,7 @@ don't reinvent retry logic.
 Failure-mode mapping (Phase 1 design notes Section 1):
   - 3a.1 rate limit -> RateLimitError -> Day 12 retry queue
   - 3a.2 auth error -> AuthenticationError -> no retry, surface modal
-  - 3a.4 timeout -> APITimeoutError -> Day 12 manual retry UI
+  - 3a.4 timeout -> APITimeoutError -> Day 12 single auto-retry (60s) then manual UI (v0.4)
   - 3a.5 network failure -> APIConnectionError -> Day 12 single auto-retry
   - 3a.6 malformed response -> APIStatusError -> Day 12 manual retry UI
 

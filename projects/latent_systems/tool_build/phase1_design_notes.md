@@ -1,7 +1,7 @@
 # LATENT SYSTEMS — Tool-build Phase 1 Design Notes
 
 **Date:** 2026-05-04
-**Status:** v0.3 DRAFT — incorporating AD-5 enforcement-infrastructure carve-out, install/uninstall procedures, existing-hook chaining
+**Status:** v0.4 DRAFT — incorporating §1 / 3a.4 timeout deviation amendment per Days 11-15 cross-Claude review
 **Source material:** v1 Spec Proposal v0.5 at `tool_build/v1_spec_proposal.md`
 **Purpose:** Detailed design specifications that must be settled before Phase 1 code begins.
 
@@ -40,7 +40,7 @@ Retry queue persistence: queue lives in `tool_build/_data/_retry_queue.yaml`. Su
 
 **3a.3 Hallucinated syntax.** Phase 1 does NOT pre-validate output syntax. Detection happens downstream at audit phase. v2 may add post-generation syntax validators.
 
-**3a.4 Timeout.** Anthropic 120s, OpenAI 180s, ElevenLabs 60s short / 300s long. Mark prompt failed. No auto-retry. UI offers "retry" action.
+**3a.4 Timeout.** Anthropic 120s, OpenAI 180s, ElevenLabs 60s short / 300s long. Mark prompt status `awaiting_retry` and enqueue a single auto-retry after 60s. If the retry also times out, set status to `failed` and surface the manual "retry" action in the UI. Rationale: a single timeout is most often a transient network blip; a single auto-retry preserves user attention for the genuinely stuck case. Cost ceiling: one extra failed call. (v0.4 amendment per Days 11-15 review; supersedes v0.3 "no auto-retry" rule.)
 
 **3a.5 Network failure.** Single auto-retry after 30s. If second attempt fails, stop. UI offers "retry."
 
@@ -732,3 +732,4 @@ Phase 1 design notes punt the following to be answered during build:
 - **v0.1 (2026-05-04):** initial draft. Six sections specifying Phase 1 build prerequisites: failure modes (3a/3b), state.db schema, MJ tool-grammar seed, coexistence verification, backup story, operational lifecycle. Open questions deliberately punted to build itself. Phase 1 build sequence recommended.
 - **v0.2 (2026-05-04):** cross-Claude review pass. Added 3a.7, 3b.7, 3b.8 failure modes. Added `generation_attempts` and `api_calls` tables. Added temporal dimension to `lineage_edges`. Un-punted schema migrations to Alembic. Added three MJ tool-grammar additions. Added build-time write protection (pre-commit hook). Sharpened operational lifecycle to default-backgrounded `pythonw`. Added Section 7 multi-Claude state coordination constraints. Reordered Phase 1 build sequence (coexistence first, clipboard before API). Adjusted Phase 1 estimate to 3-6 weeks.
 - **v0.3 (2026-05-04):** parallel-Claude review of pre-commit hook scope (git lives at OpenMontage parent level). Section 4 expanded with pre-commit hook installation detail (paths, scoping, existing-hook chaining via backup, full bash script starter). Section 6 expanded with `--init` hook install procedure (user confirmation prompt, existing-hook handling) and new `--uninstall` procedure (hook removal with backup restore, data preservation via move-not-delete). Phase 1 build sequence (Section 8) updates Day 1 to include hook install with chaining. v0.1/v0.2 sections 1, 3, 5, 7 condensed (full content in git history) for v0.3 readability. Pointer to v1 Spec v0.5.
+- **v0.4 (2026-05-06):** Day 16 cleanup fold-in. §1 / 3a.4 timeout amended to allow a single 60s auto-retry before marking failed — rationale: transient-network-blip case dominates; one free retry costs at most one extra failed call and preserves manual-retry path verbatim. Captured as a build-time deviation from v0.3 spec text per Days 11-15 cross-Claude review; staging draft was at `_data/_inbox_review/_design_notes_pending_v0.4.md` §"Section to amend: §1 / 3a.4 Timeout". `dispatcher.py` and `retry_queue.py` 3a.4 inline references should be updated to point at v0.4 in a future commit.
