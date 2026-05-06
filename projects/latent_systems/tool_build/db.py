@@ -78,17 +78,22 @@ def journal_mode(conn: sqlite3.Connection) -> str:
 
 # FK-respecting deletion order. Children rows that reference parents must
 # be deleted FIRST, otherwise foreign_keys=ON raises IntegrityError. Order
-# derived from migration 0001 schema:
-#   concepts <- prompts <- generation_attempts <- renders <- (verdicts,
-#                                                            hero_promotions,
-#                                                            lineage_edges)
+# derived from migrations 0001-0003 schema:
+#   concepts <- prompts <- generation_attempts <- renders <- (verdicts <- ai_consultations,
+#                                                             hero_promotions,
+#                                                             lineage_edges,
+#                                                             audit_thumbnails)
 #                       \- api_calls (FK to prompts)
+#   audit_sessions (root; verdicts FK to it via audit_session_id)
 # Tables without FKs (cross_ai_captures, tool_grammar_configs, app_meta)
 # are excluded — tests that touch them clean up directly.
 _CASCADE_DELETE_ORDER = (
+    # ai_consultations is child of verdicts (FK verdict_id) — delete first
+    ("ai_consultations", "id LIKE ? OR verdict_id LIKE ?"),
     # children of renders
     ("verdicts",         "id LIKE ?"),
     ("hero_promotions",  "id LIKE ?"),
+    ("audit_thumbnails", "render_id LIKE ?"),
     # lineage_edges has no FK but references render IDs through
     # source_id/target_id; clean both sides so test_acceptance-style
     # graph cleanups don't leave dangling edges
@@ -101,8 +106,10 @@ _CASCADE_DELETE_ORDER = (
     ("generation_attempts", "id LIKE ?"),
     # prompts FK to concepts
     ("prompts",          "id LIKE ?"),
-    # root
+    # root tables
     ("concepts",         "id LIKE ?"),
+    # audit_sessions has no parent FK; verdicts FK to it (already cleaned above)
+    ("audit_sessions",   "id LIKE ?"),
 )
 
 
