@@ -106,7 +106,7 @@ _CASCADE_DELETE_ORDER = (
 )
 
 
-def cascading_delete(prefix: str) -> dict[str, int]:
+def cascading_delete(prefix: str, *, allow_non_test_prefix: bool = False) -> dict[str, int]:
     """Delete every row whose `id` starts with `prefix` from the artifact
     tables, walking the FK graph child-first so foreign_keys=ON does not
     abort the cleanup.
@@ -125,6 +125,16 @@ def cascading_delete(prefix: str) -> dict[str, int]:
     (e.g. acceptance test seeds reference real renders). The query OR-s
     all three columns so dangling edges are caught.
 
+    Production-data guard (Day 17 cross-Claude review): the OR-three-
+    columns query against lineage_edges is correct for test cleanup but
+    structurally dangerous against real data — a non-test prefix would
+    sweep every edge whose id, source_id, OR target_id starts with that
+    string, including legitimate edges between unrelated entities that
+    share a prefix coincidentally. Default behavior requires `prefix`
+    to start with `'test_'`. Callers with a legitimate non-test use case
+    must pass `allow_non_test_prefix=True` explicitly, making the risk
+    visible at the call site.
+
     Returns a {table: rows_deleted} dict for assertion / debugging.
 
     Caller's responsibility: deleting concept-rooted rows where the
@@ -134,6 +144,13 @@ def cascading_delete(prefix: str) -> dict[str, int]:
     """
     if not prefix or "'" in prefix or "%" in prefix:
         raise ValueError(f"invalid cascade prefix: {prefix!r}")
+    if not allow_non_test_prefix and not prefix.startswith("test_"):
+        raise ValueError(
+            f"cascading_delete refuses non-test prefix {prefix!r}: "
+            "OR-three-columns lineage_edges query would sweep production "
+            "data sharing this prefix. Pass allow_non_test_prefix=True "
+            "to override (and document why at the call site)."
+        )
     pattern = f"{prefix}%"
     counts: dict[str, int] = {}
     conn = connect()

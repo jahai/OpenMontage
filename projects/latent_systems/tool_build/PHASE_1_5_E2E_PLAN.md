@@ -185,9 +185,20 @@ should NOT contain your `prompt_id` anymore (attempt is now
 Get the `render_id` from step 6's router output (or query
 `/inbox_renders`/`/renders/{render_id}` paths).
 
+**Warm up first (PowerShell only).** The first `Invoke-RestMethod` or
+`curl` call in a fresh PowerShell session takes ~2.4s due to .NET HTTP
+stack JIT lazy-load — that's first-call overhead, not server-side
+query time. F1's contract is the server-side budget. So warm up with a
+throwaway request before the timed call:
+
 ```bash
-time curl http://localhost:7890/lineage/render/<render_id>
+curl http://localhost:7890/  # warm up; ignore timing
+time curl http://localhost:7890/lineage/render/<render_id>  # measure THIS
 ```
+
+If running from bash/curl directly (not PowerShell), the warm-up is
+unnecessary — `time curl` reports server-side latency cleanly on the
+first call.
 
 **Pass conditions:**
 - Wall-clock time < 2s (target: < 100ms; budget: 2s).
@@ -195,7 +206,9 @@ time curl http://localhost:7890/lineage/render/<render_id>
 - Response includes the original concept_id.
 
 This is the discipline contract from spec F1: any render is
-recoverable to its origin prompt in under 2s.
+recoverable to its origin prompt in under 2s. (Day 17 amendment
+per Phase 1.5 e2e debrief 2026-05-05 — original plan's timing
+methodology was invalid against PowerShell first-call overhead.)
 
 ---
 

@@ -88,6 +88,14 @@ the module that called it.
 function directly. There is no longer any need for individual modules
 to defend their print statements.
 
+**Scope.** "Entry point" means any live module callable as
+`python <path>` from CLI plus any test runner. Frozen one-shot
+operational scripts under `tool_build/_data/_inbox_review/` are
+out of scope: they ran once during the Days 5-9 stray-routing
+operation, won't run again, and exist as a preserved audit-trail
+artifact rather than live code. If they're ever resurrected for a
+new operation, the resurrector adds `import db` then.
+
 **How to apply.**
 - Writing a new test or CLI script? Make sure `import db` happens at
   the top. That's enough.
@@ -169,6 +177,17 @@ the shadowed method is genuinely unavailable on the class.
 field per the spec) collides with framework internals. Easy to miss
 unless you've been bitten before.
 
+**Promotion note (Day 17 review).** This entry has only one
+documented occurrence to date — strictly under the "two separate
+bugs" gate it wouldn't qualify. Promoted preventively because the
+failure surface is broader than the single bug: every Pydantic model
+the project adds in Phase 2/3 (verdict, hero_promotion, cross_ai_capture
+schemas) faces the same name-collision risk class against the same
+domain vocabulary. The cost of catching the first re-occurrence at
+review-time after the entry exists is much lower than catching it
+post-merge after the entry doesn't. Preventive promotion is the
+exception, not the default — see "How to extend" below.
+
 **Rule.** Before adding a field to a Pydantic model, scan
 `pydantic.BaseModel`'s public attribute surface for a name collision.
 Common offenders: `register`, `validate`, `copy`, `dict`, `json`,
@@ -188,12 +207,21 @@ Common offenders: `register`, `validate`, `copy`, `dict`, `json`,
 
 ## How to extend this document
 
-- A pattern lands here once the same root cause has caused **two
-  separate bugs**. One-off mistakes go in commit messages, not here.
-- The format is: bug, why it recurs, rule, how to apply. The "why it
+- **Default gate:** a pattern lands here once the same root cause has
+  caused **two separate bugs**. One-off mistakes go in commit messages,
+  not here.
+- **Preventive-promotion exception:** a pattern may also land after a
+  *single* bug if that bug exposes a class of failure the project
+  will repeatedly encounter. Preventive entries must include an
+  explicit "Promotion note" stating why future occurrences are likely
+  (e.g., expanding API surface that will hit the same risk class).
+  Without that note, the entry should not be here. Pattern #6 is the
+  current example.
+- **Format:** bug, why it recurs, rule, how to apply. The "why it
   recurs" line is what stops this from being a list of platitudes —
   it tells future-you what to look for to recognize the failure mode
-  before it bites again.
+  before it bites again. Preventive entries also carry "Promotion
+  note" between "Why it recurs" and "Rule".
 - When a rule is *enforced by infrastructure* (e.g. `cascading_delete`,
   `setup_console_encoding`), say so explicitly. Rules enforced only
   by reviewer attention drift; rules enforced by code don't.

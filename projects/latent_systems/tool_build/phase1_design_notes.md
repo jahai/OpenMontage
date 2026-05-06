@@ -1,7 +1,7 @@
 # LATENT SYSTEMS — Tool-build Phase 1 Design Notes
 
 **Date:** 2026-05-04
-**Status:** v0.4 DRAFT — incorporating §1 / 3a.4 timeout deviation amendment per Days 11-15 cross-Claude review
+**Status:** v0.4 — §1 / 3a.4 timeout deviation amendment per Days 11-15 cross-Claude review (verified against retry_queue.compute_backoff + dispatcher exhaustion path on Day 17)
 **Source material:** v1 Spec Proposal v0.5 at `tool_build/v1_spec_proposal.md`
 **Purpose:** Detailed design specifications that must be settled before Phase 1 code begins.
 

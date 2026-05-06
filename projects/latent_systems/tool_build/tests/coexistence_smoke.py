@@ -43,6 +43,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+# Pattern #3 (AUDIT_PATTERNS.md): import db so its module-load
+# setup_console_encoding() runs before any print on cp1252 hosts.
+# This file doesn't use db functionality; the import is purely
+# for the codec side effect.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import db  # noqa: E402, F401
+
 CANONICAL_ROOTS = (
     "projects/latent_systems/shared",
     "projects/latent_systems/ep1",

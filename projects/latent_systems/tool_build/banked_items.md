@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-04 (consolidated after Days 5-9 review)
+**Updated:** 2026-05-06 (Day 17 sweep: Migration 0002 status corrected, Phase 1 acceptance + Day 16/17 cleanup landed)
 
 ---
 
@@ -18,15 +18,17 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 | UTF-8 console codec in serve.py + test entry points | Day 5-9 §5 bugs 3-4 | ✅ done |
 | Notes-string regex pattern documented in dispatcher.py | Day 5-9 §4.12 | ✅ done |
 | FK-cleanup ordering comment in test files | Day 5-9 §5 bug 7 | ✅ done |
-| Migration 0002: `started_orig` column + `hero_promotions.render_id` UNIQUE INDEX | Day 5-9 §4.7 + Day 3 F4 | pending (confirmed migrate-now; next item this session) |
+| Migration 0002: `started_orig` column + `hero_promotions.render_id` UNIQUE INDEX | Day 5-9 §4.7 + Day 3 F4 | ✅ done (state.db at schema_version 0002; verified Day 17) |
 
 ## Phase 1 Week 4 (must land before Phase 1 close)
 
-| Item | Origin | Notes |
+**Phase 1 closed Day 15 acceptance** (2026-05-05). Status of items below:
+
+| Item | Origin | Status |
 |---|---|---|
-| Feature 9 — discipline-drift query surface | spec, Phase 1 Week 4 | Non-negotiable per spec ("v1 minimum-viable for F10, not v2 polish"). If Week 3 squeezes timeline, drop polish elsewhere, not this. |
-| B2 — fresh-clone `--init` byte-equality test | Day 1-2 review B2 | Verify hook idempotency holds across line-ending paths on a clean checkout. |
-| MJ tool-grammar seed loader (Section 3) | spec Section 8 Week 3 | Loaded into state.db at `--init` time; consumed by Week 3 prompt drafting flow. |
+| Feature 9 — discipline-drift query surface | spec, Phase 1 Week 4 | ✅ done (test_discipline_drift.py passes; landed in substrate ba4e886) |
+| B2 — fresh-clone `--init` byte-equality test | Day 1-2 review B2 | ⏳ pending — requires fresh clone on separate machine; verifies hook idempotency across line-ending paths. Promote when multi-machine work begins (per AD-5 v0.5 hook portability carve-out). |
+| MJ tool-grammar seed loader (Section 3) | spec Section 8 Week 3 | ✅ done (seeds_loader.py + seeds/mj.yaml in substrate ba4e886; loaded at --init via Day 11 build) |
 
 ## Phase 2 confirmed (after Phase 1 close; not Phase 1 work)
 
