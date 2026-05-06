@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: f24_03.png
 filepath: projects/latent_systems/ep1/h4_match_cut/_work/rat_window/f24_03.png
 canonical_hash: e7ee2182daa8e522b8dc5657cccbded6b3688f58f829ca6f8d17a53a1b70cf2b
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:58.986228+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.845829+00:00:
+  was unknown_image, now frame_extract.'

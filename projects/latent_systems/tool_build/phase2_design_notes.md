@@ -1,8 +1,8 @@
 # LATENT SYSTEMS — Tool-build Phase 2 Design Notes
 
 **Date:** 2026-05-06
-**Status:** v0.2 DRAFT — incorporating Phase 2 kickoff cross-Claude review wave (2026-05-06)
-**Source material:** v1 Spec Proposal v0.5 (`tool_build/v1_spec_proposal.md` Phase 2 paragraph), Phase 1 Design Notes v0.4 (`tool_build/phase1_design_notes.md`), banked items (`tool_build/banked_items.md`), Phase 1.5 e2e debrief (banked_items §"Phase 1.5 e2e run — 2026-05-05"), Day 16 cross-Claude review (in-session), v0.2 cross-Claude review wave 2026-05-06 (8 pressure-tests + 7 issues + ranked v0.2 amendments list).
+**Status:** v0.3 DRAFT — Phase 2 Day 1 spec/reality finding folded in (router_log cross-reference ineffective; recovery mechanism revised to filename-pattern extension + frame_extract tool category)
+**Source material:** v1 Spec Proposal v0.5 (`tool_build/v1_spec_proposal.md` Phase 2 paragraph), Phase 1 Design Notes v0.4 (`tool_build/phase1_design_notes.md`), banked items (`tool_build/banked_items.md`), Phase 1.5 e2e debrief (banked_items §"Phase 1.5 e2e run — 2026-05-05"), Day 16 cross-Claude review (in-session), v0.2 cross-Claude review wave 2026-05-06 (8 pressure-tests + 7 issues + ranked v0.2 amendments list), Phase 2 Day 1 spec-audit finding 2026-05-06 (banked-flush mechanism revision).
 **Purpose:** Detailed design specifications that must be settled before Phase 2 code begins. Mirrors phase1_design_notes structure: failure modes, schema, schemas, lifecycle, build sequence, open questions.
 
 ---
@@ -514,10 +514,35 @@ Position B holds even at the upper bound — going from 84% unknown to ~30% unkn
 
 ### Proposed Phase 2 build sequence
 
-**Week 1: Banked-item flush (data-quality prerequisites for audit viewer).**
-- Day 1-2: `tools/router_log.md` cross-reference logic in walker. Re-walk pre_v1 renders; expect 60-75% resolve to specific tool attribution. Bank residual unknowns honestly.
+**v0.3 amendment per Day 1 spec-audit finding (2026-05-06):** the v0.2 plan built Week 1 around `tools/router_log.md` cross-reference. Day 1 inspection of the actual log + actual unknown_image renders showed the mechanism was wrong: router_log.md has only ONE logged run (the entire log is 27 lines), recovering ~0 of the 1434 unknown_image rows. The router itself was added late in the project; almost all pre_v1 renders predate it. Banking this as a fresh example of "spec/reality gaps surface during build" (banked_items.md Banking Principle #4 — every operational task is also a spec audit pass).
+
+The actual recovery mechanism is **filename-pattern extension + new `frame_extract` tool category**. Distribution of the 1434 unknown_image filenames discovered on Day 1:
+
+| Pattern | Count | % of unknowns | Real tool |
+|---|---|---|---|
+| `frame_NNNN.png` | 734 | 51.2% | frame extract (NEW category) |
+| Has `_mj_<hex>_` infix | 92 | 6.4% | midjourney (current MJ_RE missed these) |
+| `fNN_NN.png` | 89 | 6.2% | frame extract |
+| `phase1_*` prefix | 87 | 6.1% | mostly MJ (filepath heuristic deferred to Phase 3) |
+| `h3_` / `H3_` prefix | 55 | 3.8% | mixed; deferred to Phase 3 |
+| GPT/DALL-E markers | 29 | 2.0% | gpt_image_2 |
+| `t_X.X` / `_final_tX` | 23 | 1.6% | frame extract |
+| `shotXseedY` | 16 | 1.1% | flux |
+| `flux`/`kontext` markers | 4 | 0.3% | flux |
+| **No pattern matches** | **367** | **25.6%** | genuinely opaque (LOCKED/DEPRECATED manually-named files) |
+
+**Realistic recovery target: ~70-75%** via filename-pattern extension alone. Filepath heuristics for `phase1_`/`h3_` prefixes deferred to Phase 3 to keep Day 1-2 scope tight.
+
+**Week 1: Banked-item flush (revised mechanism).**
+- Day 1: Extend `walker.classify()` with broader patterns: MJ_INFIX_RE (matches `_mj_<hex>_<variant>.png`), GPT_INFIX_RE (broader gpt/dalle markers), FLUX_RE (flux + kontext), FRAME_RE (4 frame-extract patterns). Add `frame_extract` to tool taxonomy. Reclassify unknown_image rows in state.db + YAMLs via `walker --reclassify-unknowns` CLI.
 - Day 2: 21 `_unclassified/` GPT renders triage. Inspect each; assign section + concept. Update YAMLs.
-- Day 3 (slack/contingency): Verify data quality post-flush. Run discipline_drift + render-by-tool queries. Confirm unknown rate drops as expected. Document recovery-rate residuals for Phase 3 follow-up.
+- Day 3 (slack/contingency): Verify recovery rate post-classification. Run discipline_drift + render-by-tool queries. Confirm `unknown_image` rate drops to ~25%. Document residual unknowns for Phase 3 follow-up.
+
+**Tool taxonomy extension (v0.3):** `tool` field gains `frame_extract` and `flux` as values. Existing values (`midjourney`, `gpt_image_2`, `kling`, `video`, `audio`, `unknown_image`, `unknown`) preserved. Audit viewer can filter by tool category — `frame_extract` is intentionally excluded from default "audit-worthy generation outputs" view since frame extracts are derived, not generated.
+
+**Filepath heuristics deferred to Phase 3.** The 367 truly-opaque files plus 142 prefix-only files (`phase1_`, `h3_`) sum to ~509 (~30% of unknowns). Phase 3 can add filepath-context recovery if friction surfaces during audit viewer use ("why are 30% of my renders unattributed?"). Phase 2 banks the residual honestly.
+
+**`tools/router_log.md` cross-reference is NOT abandoned** — it stays as forward-looking infrastructure. Every NEW render routed via the router from now on has tool attribution captured at routing time. The mechanism is correct for new data; just doesn't help with existing pre_v1 backlog.
 
 ### Two-wave audit viewer shipping plan (v0.2 — added per review)
 
@@ -625,5 +650,8 @@ A second cross-Claude review wave on v0.2 is optional rather than required: most
 
 - **v0.1 (2026-05-06):** initial draft authored at Phase 2 kickoff. Eight sections specifying Phase 2 build prerequisites: F4 failure modes (4.1-4.9 incl. vision-specific failure modes 4.5-4.8), state.db Migration 0003 schema, verdict + AI consultation schema, audit rubric loading mechanics, image viewer technical approach (HTMX-based, serial + grid + mode-toggle), Phase 2 build sequence with explicit audit-viewer-first vs banked-flush-first decision (recommends Position B), open questions deferred to build. Ready for cross-Claude review wave before Phase 2 Day 1.
 - **v0.2 (2026-05-06):** cross-Claude review wave folded in. 12 default-accept items + Joseph's three calls (Q1 F5→Phase 3 default with pull-forward note; Q2 supersedes_verdict_id included in Migration 0003 per lineage_edges temporal precedent; Q3 minimal flags scope — needs_second_look bool only). Major changes: §1 adds 4.10 safety_refused / 4.11 context_window_exceeded / 4.12 batch-deferred-to-Phase-3; §2 splits ai_consultations from JSON column to first-class table, adds FK on audit_session_id via temp-table-and-copy, adds scope/mode columns to audit_sessions, adds supersedes_verdict_id to verdicts; §3 restructures verdict YAML around the schema split, adds per-provider role-mapping table (Anthropic baseline / Perplexity Week 2 conditional / ChatGPT+Gemini Phase 3 / Grok deferred); §4 adds explicit parser contract subsection; §5 adds thumbnail-serve invalidation logic; §6 commits Position B 1.5-2.5 days, two-wave shipping plan (Wave A non-AI Week 2, Wave B AI consultation Week 3-4), F5 banked to Phase 3 with pull-forward note, effort re-estimated to 4-5 weeks with 4 drivers; §7 Q4 default flips to sequential consultation (SSE deferred to Phase 3), Q5 specifies storage as audit_sessions.mode column; §8 updates prereq table for v0.2 status. Bundled with banked_items.md correction moving F5 back to Phase 3 territory.
+- **v0.3 (2026-05-06):** Phase 2 Day 1 spec-audit finding folded in. v0.2 §6 built Week 1 around `tools/router_log.md` cross-reference; Day 1 inspection found that mechanism is wrong (the log has 1 logged run; near-zero recovery on existing pre_v1 backlog). Real recovery comes from filename-pattern extension + new `frame_extract` tool category (51%+ of unknowns are video frame extracts the Phase 1 walker didn't have a category for). §6 build sequence revised: Day 1 extends `walker.classify()` with broader regexes (MJ_INFIX_RE, GPT_INFIX_RE, FLUX_RE, FRAME_RE) + adds `frame_extract` tool taxonomy value + reclassifies via `walker --reclassify-unknowns`. Recovery target revised from ~84% to ~70-75% (filepath heuristics for prefix-only files like `phase1_`/`h3_` deferred to Phase 3). Bank as fresh example of "spec/reality gaps surface during build" — Banking Principle #4 working as intended.
 
 **Spec-estimate-undercut pattern banked for Phase 3 estimating (v0.2 — added per Joseph):** Phase 1 spec said 2-4 weeks; v0.4 design notes raised to 3-6 weeks; actual was 16 days (with subsequent Day 16-17 cleanups). Phase 2 spec said 2-3 weeks; v0.2 raises to 4-5 weeks (actual TBD). Two data points isn't a settled pattern, but ~50% expansion from spec-optimistic to design-notes-realistic is recurring. When Phase 3 design notes get authored, **start estimating from the realistic baseline (1.5x to 2x spec) rather than re-deriving from spec-optimistic.** The expansion drivers are typically: schema correctness work that surfaces during build, multi-component integration overhead, real-world failure-mode coverage that the spec doesn't anticipate, Joseph-facing work (rubric authoring etc.) that's parallelizable but has its own clock.
+
+**Spec-mechanism-undercut pattern banked (v0.3 — added per Day 1 finding):** distinct from the estimate-undercut pattern: even when an estimate is realistic, the *mechanism* the design assumes can be wrong. v0.2 estimated banked-flush at 1.5-2.5 days assuming router_log cross-reference was the recovery path. The estimate was probably right; the mechanism wasn't. When Phase 3 design notes get authored against existing-data assumptions, **inspect actual data on Day 1 of the relevant phase before committing to a mechanism.** Spec-driven mechanism choices that aren't grounded in inspection of the data they operate on are a recurring failure mode worth one explicit Day-1 audit pass per phase.

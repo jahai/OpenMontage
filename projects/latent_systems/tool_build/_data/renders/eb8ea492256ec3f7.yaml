@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: frame_0248.png
 filepath: projects/latent_systems/ep1/h9_ep2_tease/_work/flicker_frames/frame_0248.png
 canonical_hash: e6eca39e40086d2968701311d79d382ab7753f633c388879598b8fc46a2ab39f
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:55.845389+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:31.108871+00:00:
+  was unknown_image, now frame_extract.'

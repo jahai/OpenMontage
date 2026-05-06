@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: gpt_phase1_cluster_1225_ChatGPT_Image_May_2_2026_12_25_17_PM.png
 filepath: projects/latent_systems/shared/visual_identity_phase1_references/_unclassified/gpt_phase1_cluster_1225_ChatGPT_Image_May_2_2026_12_25_17_PM.png
 canonical_hash: e55512e85f20a15d5c9f920e47304106f62502e249d980ad2b202db36cea732d
-tool: unknown_image
+tool: gpt_image_2
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:51.271217+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.815862+00:00:
+  was unknown_image, now gpt_image_2.'

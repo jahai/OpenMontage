@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H2_kontext_v1_seed4001_original.png
 filepath: projects/latent_systems/ep1/h2_face_glow/sources/H2_kontext_v1_seed4001_original.png
 canonical_hash: 86fc3391494d40256a2e21e9fc92c4c8563ae22a4864b1201bdd79f3603182ad
-tool: unknown_image
+tool: flux
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:59.498475+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:34.181227+00:00:
+  was unknown_image, now flux.'

@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H3_skinner_box_mj_50761f5b_3.png
 filepath: projects/latent_systems/ep1/h3_skinner/reference/rejected/H3_skinner_box_mj_50761f5b_3.png
 canonical_hash: dc18810004e2e4e0236ef6a2630e1916012514e6bc821920f2b716dd89c10de3
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 3
 hero_status: null
 created: '2026-05-04T12:19:59.453508+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:34.144163+00:00:
+  was unknown_image, now midjourney.'

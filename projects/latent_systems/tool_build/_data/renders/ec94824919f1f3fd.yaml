@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: frame_108.png
 filepath: projects/latent_systems/shared/remotion_project/out/historical_card_skinner_frames/frame_108.png
 canonical_hash: a863dd33d98c408972b327fcfa7995052e51f73325e12d33c31ca2a7282a8918
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:51.476408+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.884143+00:00:
+  was unknown_image, now frame_extract.'

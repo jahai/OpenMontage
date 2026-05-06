@@ -46,23 +46,73 @@ CANONICAL_ROOTS = ("shared", "ep1")
 RENDER_EXTENSIONS = (".png", ".mp4", ".mp3")
 HERO_STATUS_PRE_V1 = "pre_v1_hero"
 
-# Filename classifiers — light Phase 1 implementations of router_config
-# patterns. Extend in Phase 2 when GPT Image 2 / Kling specifics matter.
+# Filename classifiers.
+#
+# Phase 1 baseline: MJ_RE / GPT_RE / KLING_RE — strict patterns matching
+# the canonical filename shapes from each tool's native download.
+#
+# Phase 2 Day 1 extension (v0.3 design notes amendment): broader patterns
+# to recover tool attribution from filenames Joseph reorganized after
+# download. Day 1 inspection of 1434 unknown_image rows showed:
+#   - 51%+ are video frame extracts (frame_NNNN.png etc.) — new
+#     `frame_extract` tool category
+#   - 6%+ are MJ outputs whose nycwillow_ prefix was renamed away but
+#     retain the `_mj_<hex>_<variant>.png` infix
+#   - small populations of GPT, Flux, and Kontext outputs caught by
+#     case-insensitive markers
+# Pattern check order matters: strict patterns first (they carry the
+# most signal — variant numbers, structured hashes), broader markers
+# next, frame-extract last, then extension-only fallbacks.
 MJ_RE = re.compile(r"^nycwillow_(.+)_([a-f0-9]{8})-[a-f0-9-]+_([0-3])\.png$")
+MJ_INFIX_RE = re.compile(r"_mj_[a-f0-9]{8}_([0-3])\.png$", re.IGNORECASE)
 GPT_RE = re.compile(r"^ChatGPT Image .+\.png$")
+GPT_INFIX_RE = re.compile(r"(gpt|chatgpt|dalle)", re.IGNORECASE)
 KLING_RE = re.compile(r"^kling_\d{8}_.+\.mp4$")
+FLUX_RE = re.compile(r"(flux|kontext)", re.IGNORECASE)
+FRAME_RE = re.compile(
+    # frame_NNNN.png | fNN_NN.png | t_X.X.png | _final_tX.X.png
+    r"^(?:"
+    r"frame_\d+"           # frame_NNNN
+    r"|f\d+_\d+"           # fNN_NN
+    r"|_?final_t[\d.]+"    # _final_tX.X or final_tX.X
+    r"|t_?[\d.]+"          # t_X.X or tX.X
+    r")\.png$",
+    re.IGNORECASE,
+)
 
 
 def classify(filename: str) -> tuple[str, Optional[int]]:
     """Return (tool, variant). Tool is one of: midjourney, gpt_image_2,
-    kling, video, audio, unknown. Variant is parsed from MJ filenames."""
+    kling, flux, frame_extract, video, audio, unknown_image, unknown.
+    Variant is parsed from MJ filenames (both strict and infix); None
+    for other tools.
+
+    Order of checks (most-specific first):
+      1. MJ strict (nycwillow_<...>_<hash>-<uuid>_<variant>.png)
+      2. MJ infix (..._mj_<hex8>_<variant>.png) — Joseph-renamed MJ
+      3. GPT strict (ChatGPT Image YYYY-MM-DD HH-MM-SS.png)
+      4. Kling strict (kling_YYYYMMDD_*.mp4)
+      5. GPT infix (case-insensitive 'gpt'|'chatgpt'|'dalle' anywhere)
+      6. Flux family (case-insensitive 'flux'|'kontext' anywhere)
+      7. Frame extract (frame_NNNN.png, fNN_NN.png, t_X.X.png variants)
+      8. Extension fallback (.mp4 -> video, .mp3 -> audio, .png -> unknown_image)
+    """
     m = MJ_RE.match(filename)
     if m:
         return ("midjourney", int(m.group(3)))
+    m = MJ_INFIX_RE.search(filename)
+    if m:
+        return ("midjourney", int(m.group(1)))
     if GPT_RE.match(filename):
         return ("gpt_image_2", None)
     if KLING_RE.match(filename):
         return ("kling", None)
+    if GPT_INFIX_RE.search(filename):
+        return ("gpt_image_2", None)
+    if FLUX_RE.search(filename):
+        return ("flux", None)
+    if FRAME_RE.match(filename):
+        return ("frame_extract", None)
     lower = filename.lower()
     if lower.endswith(".mp4"):
         return ("video", None)
@@ -311,6 +361,109 @@ def walk(
         conn.close()
 
 
+def reclassify_unknowns(*, dry_run: bool = False, verbose: bool = False) -> dict:
+    """Phase 2 Day 1 migration: re-run classify() against existing rows
+    where tool='unknown_image' and update both state.db + YAML when the
+    extended classifier produces a more-specific tool.
+
+    Per phase2_design_notes.md v0.3 §6: this exists because the Phase 1
+    walker's classifier was too narrow — recovering ~70-75% of the 1434
+    pre_v1 renders currently marked unknown_image. Filename-pattern only;
+    filepath heuristics deferred to Phase 3.
+
+    YAML write before SQL update — same pattern as walk(): a failed YAML
+    write leaves state.db unchanged. Reverse order would create a row
+    pointing at a stale-tool YAML.
+
+    Returns a summary dict: walked, reclassified counts by new tool,
+    unchanged count, errors.
+    """
+    summary: dict = {
+        "walked": 0,
+        "reclassified": {},  # new_tool -> count
+        "unchanged": 0,
+        "errors": 0,
+    }
+
+    conn = db.connect()
+    try:
+        schema_check(conn)
+
+        # Snapshot the rows up front; we'll iterate without holding the
+        # cursor (we issue UPDATE statements during the loop).
+        rows = conn.execute(
+            "SELECT id, filename, filepath, variant, yaml_path "
+            "FROM renders WHERE tool = 'unknown_image'"
+        ).fetchall()
+
+        for render_id, filename, filepath, _old_variant, yaml_rel in rows:
+            summary["walked"] += 1
+            try:
+                new_tool, new_variant = classify(filename)
+                if new_tool == "unknown_image":
+                    summary["unchanged"] += 1
+                    continue
+
+                if not dry_run:
+                    # 1. Update YAML (source of truth per AD-5).
+                    yaml_abs = db.TOOL_BUILD_DIR.parent.parent.parent / yaml_rel
+                    if not yaml_abs.exists():
+                        # Try resolving via DATA_DIR layout if yaml_path
+                        # was stored as repo-relative (the walker writes
+                        # repo-relative paths).
+                        yaml_abs = db.DATA_DIR / "renders" / f"{render_id}.yaml"
+                    with yaml_abs.open("r", encoding="utf-8") as f:
+                        payload = yaml.safe_load(f) or {}
+                    payload["tool"] = new_tool
+                    payload["variant"] = new_variant
+                    # Audit-trail note: when this row was reclassified
+                    # and from what.
+                    prior_note = payload.get("notes", "") or ""
+                    reclass_note = (
+                        f"Reclassified by Phase 2 Day 1 walker pattern "
+                        f"extension on {iso_now()}: was unknown_image, "
+                        f"now {new_tool}."
+                    )
+                    payload["notes"] = (
+                        prior_note + "\n" + reclass_note if prior_note
+                        else reclass_note
+                    )
+                    with yaml_abs.open("w", encoding="utf-8") as f:
+                        yaml.safe_dump(
+                            payload, f, sort_keys=False,
+                            default_flow_style=False, allow_unicode=True,
+                        )
+
+                    # 2. Update state.db (cache).
+                    with conn:
+                        conn.execute(
+                            "UPDATE renders SET tool = ?, variant = ? WHERE id = ?",
+                            (new_tool, new_variant, render_id),
+                        )
+
+                summary["reclassified"][new_tool] = (
+                    summary["reclassified"].get(new_tool, 0) + 1
+                )
+
+                if verbose:
+                    print(
+                        f"[reclassify] {filepath}: unknown_image -> "
+                        f"{new_tool}{f' v={new_variant}' if new_variant is not None else ''}"
+                    )
+
+            except (OSError, ValueError, sqlite3.Error, yaml.YAMLError) as e:
+                summary["errors"] += 1
+                print(f"[reclassify] ERROR on {filepath}: {e}", file=sys.stderr)
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    pass
+
+        return summary
+    finally:
+        conn.close()
+
+
 if __name__ == "__main__":
     # Direct invocation requires git on PATH (used to locate the repo
     # root). Phase 1 acceptable; Phase 2 could fall back to walking
@@ -322,7 +475,28 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true",
                         help="enumerate without writing to state.db or yaml files")
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--reclassify-unknowns", action="store_true",
+        help="Phase 2 Day 1 migration: re-run classify() against rows "
+             "where tool='unknown_image' and update tool field if the "
+             "extended classifier produces a more-specific value. "
+             "Combine with --dry-run to preview without writing.",
+    )
     args = parser.parse_args()
+
+    if args.reclassify_unknowns:
+        summary = reclassify_unknowns(dry_run=args.dry_run, verbose=args.verbose)
+        total_recl = sum(summary["reclassified"].values())
+        total_walked = summary["walked"]
+        rate = (100.0 * total_recl / total_walked) if total_walked else 0.0
+        print(f"[reclassify] summary: walked={total_walked} "
+              f"reclassified={total_recl} ({rate:.1f}%) "
+              f"unchanged={summary['unchanged']} errors={summary['errors']}")
+        if summary["reclassified"]:
+            print("[reclassify] by new tool:")
+            for tool, count in sorted(summary["reclassified"].items(), key=lambda x: -x[1]):
+                print(f"  {tool:20s} {count}")
+        sys.exit(1 if summary["errors"] else 0)
 
     try:
         out = subprocess.run(

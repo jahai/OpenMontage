@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: protag_portrait_mj_e11bfa65_2.png
 filepath: projects/latent_systems/shared/protagonist_anchor/archived/protag_portrait_mj_e11bfa65_2.png
 canonical_hash: f6de137f05f87f74c670241db8c45027c188f3e205c334364e157da388d824e3
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 2
 hero_status: null
 created: '2026-05-04T12:19:52.495525+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.929211+00:00:
+  was unknown_image, now midjourney.'

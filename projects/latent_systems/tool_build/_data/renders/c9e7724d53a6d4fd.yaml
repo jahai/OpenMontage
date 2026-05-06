@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: K1_protag_figure_kontext_v2_seed1605.png
 filepath: projects/latent_systems/ep1/k1_compulsion_choice/sources/K1_protag_figure_kontext_v2_seed1605.png
 canonical_hash: b27dd18f7a5cf4cf2b3f7f226757f4ec7597c11d77f6d33f0e7d8129b9097977
-tool: unknown_image
+tool: flux
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:54.518106+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.973885+00:00:
+  was unknown_image, now flux.'

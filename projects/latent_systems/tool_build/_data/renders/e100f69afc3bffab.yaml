@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H9_corridor_mj_986ce11a_3.png
 filepath: projects/latent_systems/ep1/h9_ep2_tease/reference/rejected/H9_corridor_mj_986ce11a_3.png
 canonical_hash: 863f39ffd5745f3a3b0ead8f29c6b4f0dcfdd2a2bdfde522cfa8309da5d4a4e1
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 3
 hero_status: null
 created: '2026-05-04T12:19:57.573758+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.220579+00:00:
+  was unknown_image, now midjourney.'

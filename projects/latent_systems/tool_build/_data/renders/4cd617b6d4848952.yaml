@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H3_lab_wide_continuation_mj_76c71a62_1.png
 filepath: projects/latent_systems/ep1/h3_skinner/reference/rejected/H3_lab_wide_continuation_mj_76c71a62_1.png
 canonical_hash: 060098bf8e33f5812af7e9d76ad36b2ffb6d3561c03e222311392c01417ca841
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 1
 hero_status: null
 created: '2026-05-04T12:19:59.118158+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.907571+00:00:
+  was unknown_image, now midjourney.'

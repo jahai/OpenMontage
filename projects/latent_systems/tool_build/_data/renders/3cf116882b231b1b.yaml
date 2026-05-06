@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: cold_open_phone_face_up_pillow_mj_bc9d3768_0.png
 filepath: projects/latent_systems/ep1/cold_open/reference/rejected/cold_open_phone_face_up_pillow_mj_bc9d3768_0.png
 canonical_hash: f2976a7c4e49cdaa96f3fd2011abb8e80de56adf367caa88d9113a053bdcd83e
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 0
 hero_status: null
 created: '2026-05-04T12:19:59.775659+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:34.344421+00:00:
+  was unknown_image, now midjourney.'

@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: t_10.0.png
 filepath: projects/latent_systems/ep1/h6_streak/_work/_gate_check/t_10.0.png
 canonical_hash: b28fb0129e6ae9a76ef4d5dd3e9055bd929c95ee327584a48c621910283bd623
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:57.865953+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.333872+00:00:
+  was unknown_image, now frame_extract.'

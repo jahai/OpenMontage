@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: shotB_kontext_v2_seed3003.png
 filepath: projects/latent_systems/ep1/cold_open/sources/02_shotB_face/shotB_kontext_v2_seed3003.png
 canonical_hash: bf925b461d19be31fb10979634d6291fd357b8ae978dcfe5dd2aa358e5908b73
-tool: unknown_image
+tool: flux
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:59.675021+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:34.274752+00:00:
+  was unknown_image, now flux.'

@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H8_kontext_v1_seed8003.png
 filepath: projects/latent_systems/ep1/h8_tiktok_mirror/reference/rejected/H8_kontext_v1_seed8003.png
 canonical_hash: 83799b03b36131007f347f7f8718c8193dfb0e1284b4ac203f378b4660fe415c
-tool: unknown_image
+tool: flux
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:57.643566+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.238820+00:00:
+  was unknown_image, now flux.'

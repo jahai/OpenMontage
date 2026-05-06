@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: cold_open_bedroom_wide_mj_7459e376_0.png
 filepath: projects/latent_systems/ep1/cold_open/reference/rejected/cold_open_bedroom_wide_mj_7459e376_0.png
 canonical_hash: 078abeca9665dd083213f04d375cb04856c709500d135a54159ee725fb6766ae
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 0
 hero_status: null
 created: '2026-05-04T12:19:59.741461+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:34.319184+00:00:
+  was unknown_image, now midjourney.'

@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: frame_018.png
 filepath: projects/latent_systems/shared/remotion_project/out/stat_card_200k_hours_frames/frame_018.png
 canonical_hash: e0b2be8f7d71289177f3833e673e78773c269c202ac764dcc94d95d35bf49d65
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:51.518842+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.893397+00:00:
+  was unknown_image, now frame_extract.'

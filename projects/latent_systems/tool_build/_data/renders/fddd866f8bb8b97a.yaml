@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: f24_18.png
 filepath: projects/latent_systems/ep1/h4_match_cut/_work/protag_frames_v2_24fps/f24_18.png
 canonical_hash: a9a67491cc9d1a565fb9e770022867c4594a3dc80394232b035c1527581b836d
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:58.577916+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.580674+00:00:
+  was unknown_image, now frame_extract.'

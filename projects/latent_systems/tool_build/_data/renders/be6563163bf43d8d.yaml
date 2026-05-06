@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: H5_hand_gripping_mj_0383ac1c_1.png
 filepath: projects/latent_systems/ep1/h5_slot_machine/reference/rejected/H5_hand_gripping_mj_0383ac1c_1.png
 canonical_hash: 9a6945b7ecdcc550c099c4ff3329d95cc8ef944f24440dc25e93eaae472f6273
-tool: unknown_image
-variant: null
+tool: midjourney
+variant: 1
 hero_status: null
 created: '2026-05-04T12:19:57.988911+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:33.406254+00:00:
+  was unknown_image, now midjourney.'

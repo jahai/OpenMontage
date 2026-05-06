@@ -3,8 +3,11 @@ discipline_version: pre_v1
 filename: frame_308.png
 filepath: projects/latent_systems/shared/remotion_project/out/concept_card_system_works_frames/frame_308.png
 canonical_hash: b1ac0398cb8e4532822ed559bbe68610c4f8247ae7e8c98b36f674b64424d12c
-tool: unknown_image
+tool: frame_extract
 variant: null
 hero_status: null
 created: '2026-05-04T12:19:51.443502+00:00'
-notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+notes: 'Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).
+
+  Reclassified by Phase 2 Day 1 walker pattern extension on 2026-05-06T14:13:29.869293+00:00:
+  was unknown_image, now frame_extract.'
