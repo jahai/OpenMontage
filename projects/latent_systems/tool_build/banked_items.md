@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-06 (Day 17 sweep: Migration 0002 status corrected, Phase 1 acceptance + Day 16/17 cleanup landed)
+**Updated:** 2026-05-06 (Phase 2 v0.2 design notes: F5 hero promotion moved Phase 2→Phase 3 default per Q1 call; Position B sequencing confirmed; effort re-estimate 4-5 weeks)
 
 ---
 
@@ -59,15 +59,15 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 
 ## Phase 2 territory (in flight from 2026-05-06)
 
-Phase 2 kickoff committed `phase2_design_notes.md` v0.1 (3a4-class commit; awaiting cross-Claude review wave). Joseph picked **Position B** for sequencing: banked-flush first (router_log cross-reference + 21 _unclassified/ triage, ~1.5 days), then audit viewer.
+Phase 2 kickoff committed `phase2_design_notes.md` v0.1 → v0.2 after one cross-Claude review wave. Joseph picked **Position B** for sequencing: banked-flush first (router_log cross-reference + 21 _unclassified/ triage, 1.5-2.5 days), then audit viewer in two waves (Wave A non-AI Week 2, Wave B AI consultation Week 3-4). Effort re-estimated to 4-5 weeks (revised from spec 2-3 weeks).
 
 - **Audit viewer (Feature 4) + AI evaluation flow** — moved from "Phase 3 territory" 2026-05-06 once spec re-read confirmed F4 is Phase 2. Design notes §1-§5.
-- **Hero promotion atomic action (Feature 5)** — Phase 2 stretch goal Week 4-5 per design notes §6; slips to Phase 3 Week 1 if Phase 2 timeline runs long.
 - **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — depends on Phase 1 successful_examples accumulation. Phase 2 ships Anthropic vision config only; expansion when seed data justifies (per Q3).
 - **3a hardening** — largely landed in Phase 1 Day 12 + v0.4 amendment. Phase 2 Week 4 review confirms no remaining gaps.
 
 ## Phase 3 territory (not Phase 1 or Phase 2 — full features)
 
+- **Hero promotion atomic action (Feature 5)** — moved Phase 2→Phase 3 default 2026-05-06 per v0.2 design notes Q1 call. F5's atomic action depends on F6 (NOTES.md authorship) and Phase 3 doc-set data model; building atomic action in Phase 2 produces degraded ship that gets rebuilt in Phase 3. Manual file-move pattern (Phase 1 + router) continues to serve through Phase 2. **Pull-forward note:** if Phase 2 timeline opens at Week 4 (Wave A clean Week 2; Wave B clean Week 3), F5 partial endpoint (steps 1-2 only, with steps 3-4 explicitly Phase 3) can pull forward as Phase 2.5 — making the Phase 1 partially-landed pieces a queryable hero-promotion event without the full atomic action. Pull-forward is opportunity, not obligation.
 - **Render-group compare-and-rank view (Feature 5+ extension)** — grid
   view of generations grouped by prompt (default) or by concept; drag
   or click to rank; ranking reflected in filesystem via rank-slot
@@ -83,6 +83,10 @@ Phase 2 kickoff committed `phase2_design_notes.md` v0.1 (3a4-class commit; await
 - Cross-AI / cross-Claude capture surface (Feature 7)
 - Serialization to OpenMontage `edit_decisions` + `asset_manifest` (Feature 8)
 - Concept browser full UI (Feature 1) — concept CRUD endpoints land Week 3-4 of Phase 1; full UI is Phase 3
+- **ChatGPT, Grok, Gemini provider adapters** — deferred per phase2_design_notes §3 role-mapping table; Phase 2 ships Anthropic baseline + conditional Perplexity only.
+- **Multi-image batch consultation** — deferred per phase2_design_notes §1 4.12; Phase 2 ships single-image only.
+- **SSE for parallel consultation streaming** — deferred per phase2_design_notes §7 Q4; Phase 2 default is sequential.
+- **Per-concept-type mode defaults for audit viewer** — deferred per phase2_design_notes §7 Q5; Phase 2 default is per-session via `audit_sessions.mode` column.
 
 ## Investigations (not code; verification only)
 
