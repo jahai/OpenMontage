@@ -240,14 +240,50 @@
     </section>
 
     <section>
-      <h2>AI consultation</h2>
+      <h2>AI consultation{% if render.ai_consultations %} ({{ render.ai_consultations|length }}){% endif %}</h2>
+      {% if render.ai_consultations %}
+      <div id="existing-consultations">
+        {% for c in render.ai_consultations %}
+        <div class="consult-result-card {{ c.status }}">
+          <div class="header">
+            <span class="provider">{{ c.provider }}</span>
+            <span class="status-pill {{ c.status }}">{{ c.status.replace('_', ' ') }}</span>
+          </div>
+          {% if c.status == 'completed' and c.parsed and c.parsed.verdict_inference %}
+            <div class="inference {{ c.parsed.verdict_inference }}">{{ c.parsed.verdict_inference }}</div>
+            {% if c.parsed.criteria_match %}
+            <div class="criteria">
+              {% for name, match in c.parsed.criteria_match.items() %}
+              <div class="criterion">
+                <span>{{ name }}</span>
+                <span class="match {{ match }}">{{ match }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% if c.parsed.key_observations %}
+            <div class="observations">key observations:<ul>
+              {% for obs in c.parsed.key_observations %}<li>{{ obs }}</li>{% endfor %}
+            </ul></div>
+            {% endif %}
+          {% else %}
+            {% if c.failure_reason %}
+            <div style="color:#92400e;">{{ c.failure_reason }}</div>
+            {% endif %}
+          {% endif %}
+          <div class="cost">${{ "%.4f"|format(c.cost_usd) }} · {{ c.model or "?" }} · {{ c.consulted_at[:19] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
       <div id="consult-status" class="consult-empty">
         Press <kbd>C</kbd> or click <em>consult AI</em> to evaluate against
         the active rubric (Wave B; gated on
         <code>docs/AUDIT_RUBRICS_v1_0.md</code> existing).
       </div>
+      {% endif %}
       <button type="button" class="nav-btn" id="consult-btn" style="margin-top:0.4em;">
-        consult AI <span class="key">[C]</span>
+        {% if render.ai_consultations %}consult again{% else %}consult AI{% endif %} <span class="key">[C]</span>
       </button>
       <div id="consult-result" style="display:none; margin-top:0.6em;"></div>
     </section>

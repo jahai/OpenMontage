@@ -346,6 +346,43 @@ def get_render_detail(render_id: str) -> Optional[dict]:
             }
             for e in erows
         ]
+
+        # Existing AI consultations for the latest verdict. Surfaced so
+        # the audit viewer's consultation panel shows prior runs without
+        # re-firing the API. Phase 2.5 enhancement per phase2_design_notes
+        # v0.4 §3 ai_consultations table.
+        record["ai_consultations"] = []
+        if record["verdict"] is not None:
+            crows = conn.execute(
+                """
+                SELECT id, provider, model, consulted_at, status, cost_usd,
+                       used_downscale, raw_response, parsed_json,
+                       failure_reason
+                FROM ai_consultations
+                WHERE verdict_id = ?
+                ORDER BY consulted_at DESC
+                """,
+                (record["verdict"]["id"],),
+            ).fetchall()
+            for c in crows:
+                parsed = None
+                if c[8]:
+                    try:
+                        parsed = json.loads(c[8])
+                    except json.JSONDecodeError:
+                        parsed = None
+                record["ai_consultations"].append({
+                    "id": c[0],
+                    "provider": c[1],
+                    "model": c[2],
+                    "consulted_at": c[3],
+                    "status": c[4],
+                    "cost_usd": c[5],
+                    "used_downscale": bool(c[6]),
+                    "raw_response": c[7],
+                    "parsed": parsed,
+                    "failure_reason": c[9],
+                })
         return record
     finally:
         conn.close()

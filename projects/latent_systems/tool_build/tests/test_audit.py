@@ -217,6 +217,70 @@ def test_get_render_detail_missing():
     _assert(audit.get_render_detail("nonexistent_render_id") is None)
 
 
+def test_get_render_detail_includes_ai_consultations():
+    """Phase 2.5 extension: detail response includes ai_consultations
+    array for the latest verdict — empty list when no verdict, empty
+    list when verdict but no consultations, populated when verdicts
+    have ai_consultations rows."""
+    render_id = f"{PREFIX}render_consultations"
+    _seed_render(render_id)
+
+    # No verdict -> ai_consultations is empty
+    detail = audit.get_render_detail(render_id)
+    _assert(detail["ai_consultations"] == [],
+            "no verdict should yield empty ai_consultations array")
+
+    # Verdict but no consultations -> still empty
+    v = audit.capture_verdict(render_id=render_id, verdict="strong")
+    detail = audit.get_render_detail(render_id)
+    _assert(detail["ai_consultations"] == [])
+
+    # Insert a synthetic ai_consultations row -> appears in detail
+    import json as _json
+    conn = db.connect()
+    try:
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO ai_consultations (
+                    id, verdict_id, provider, model, consulted_at,
+                    status, cost_usd, used_downscale, raw_response,
+                    parsed_json, failure_reason, yaml_path
+                ) VALUES (?, ?, 'anthropic', 'claude-opus-4-7',
+                          '2026-05-07T10:00:00+00:00', 'completed', 0.15,
+                          1, 'fake raw',
+                          ?, NULL, NULL)
+                """,
+                (
+                    "test_consult_ai_row", v["id"],
+                    _json.dumps({"verdict_inference": "strong",
+                                 "criteria_match": {"Composition": "pass"}}),
+                ),
+            )
+    finally:
+        conn.close()
+
+    detail = audit.get_render_detail(render_id)
+    _assert(len(detail["ai_consultations"]) == 1)
+    c = detail["ai_consultations"][0]
+    _assert(c["provider"] == "anthropic")
+    _assert(c["status"] == "completed")
+    _assert(c["used_downscale"] is True)
+    _assert(c["parsed"]["verdict_inference"] == "strong")
+
+    # Cleanup the synthetic ai_consultation row (cascading_delete by
+    # test_pwa_ prefix doesn't catch it since id was set explicitly).
+    conn = db.connect()
+    try:
+        with conn:
+            conn.execute(
+                "DELETE FROM ai_consultations WHERE id = ?",
+                ("test_consult_ai_row",),
+            )
+    finally:
+        conn.close()
+
+
 def test_capture_verdict_basic():
     render_id = f"{PREFIX}render_basic"
     _seed_render(render_id)
@@ -350,6 +414,7 @@ def main():
         test_end_audit_session_idempotent()
         test_get_render_detail_with_joins()
         test_get_render_detail_missing()
+        test_get_render_detail_includes_ai_consultations()
         test_capture_verdict_basic()
         test_capture_verdict_invalid_type()
         test_capture_verdict_render_not_found()
