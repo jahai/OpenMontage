@@ -1,7 +1,7 @@
 # LATENT SYSTEMS — Tool-build Phase 2 Design Notes
 
 **Date:** 2026-05-06
-**Status:** v0.4 DRAFT — Phase 2 Day 2 spec/reality finding folded in (`_unclassified/` triage is editorial work by design, not Claude's mechanical scope; deferred to Wave A audit viewer review queue)
+**Status:** v0.5 — Wave A complete (audit viewer + serial + grid + verdict capture + flag toggle + session UI shipped); Wave B complete (rubric parser + Anthropic vision adapter + consultation orchestrator + endpoint + UI shipped, gated on `docs/AUDIT_RUBRICS_v1_0.md` for live firing); Phase 2.5 enhancement landed (existing AI consultations on detail load); PHASE_2_E2E_PLAN.md authored for live-API verification
 **Source material:** v1 Spec Proposal v0.5 (`tool_build/v1_spec_proposal.md` Phase 2 paragraph), Phase 1 Design Notes v0.4 (`tool_build/phase1_design_notes.md`), banked items (`tool_build/banked_items.md`), Phase 1.5 e2e debrief (banked_items §"Phase 1.5 e2e run — 2026-05-05"), Day 16 cross-Claude review (in-session), v0.2 cross-Claude review wave 2026-05-06 (8 pressure-tests + 7 issues + ranked v0.2 amendments list), Phase 2 Day 1 spec-audit finding 2026-05-06 (banked-flush mechanism revision).
 **Purpose:** Detailed design specifications that must be settled before Phase 2 code begins. Mirrors phase1_design_notes structure: failure modes, schema, schemas, lifecycle, build sequence, open questions.
 
@@ -642,18 +642,18 @@ Phase 2 design notes punt the following to be answered during build:
 
 ## 8. Phase 2 prerequisites (must land before Day 1)
 
-| Prereq | v0.1 status | v0.2 status |
+| Prereq | v0.1 status | v0.5 status |
 |---|---|---|
-| Position A vs B sequencing | open | ✅ Position B confirmed |
-| Cross-Claude review wave | open | ✅ wave 1 complete (8 pressure-tests + 7 issues + 15 ranked amendments folded into this v0.2) |
-| Phase 2 effort re-estimate | open | ✅ 4-5 weeks (revised from 2-3 weeks); 4 drivers banked in §6 |
-| `docs/AUDIT_RUBRICS_v1_0.md` authored | open | ⏳ Joseph's work; non-blocking for Wave A; required for Wave B Week 3 |
-| Migration 0003 schema landed | open | ⏳ ships Day 1 of Wave A (Week 2) |
-| Existing-file 84%-unknown_image flush | open | ⏳ Phase 2 Week 1 (Position B banked-flush) |
+| Position A vs B sequencing | open | ✅ Position B confirmed and executed |
+| Cross-Claude review wave | open | ✅ wave 1 complete; 12 default-accept + 3 Joseph calls folded |
+| Phase 2 effort re-estimate | open | ✅ 4-5 weeks (revised from 2-3); compressed to ~2 days actual via single-session push |
+| Migration 0003 schema landed | open | ✅ ships in commit 54f43c4; schema_version 0003; verdicts rebuild + 3 new tables |
+| Existing-file 84%-unknown_image flush | open | ✅ filename-pattern recovery shipped; 84% → 24% unknown_image |
+| Wave A audit viewer (non-AI) | open | ✅ shipped: serial + grid + verdict capture + flag toggle + session start/end UI |
+| Wave B AI consultation infrastructure | open | ✅ shipped: rubric parser + Anthropic vision adapter + orchestrator + endpoint + UI |
+| `docs/AUDIT_RUBRICS_v1_0.md` authored | open | ⏳ Joseph's editorial work — gates Wave B *firing* (UI returns 400 "no audit rubric available" until file exists); non-blocking for everything else |
 
-**Wave A (non-AI viewer Week 2)** is unblocked once v0.2 commits. **Wave B (AI consultation Week 3-4)** additionally requires Joseph's rubric authoring.
-
-A second cross-Claude review wave on v0.2 is optional rather than required: most reviewer items already folded; the doc is substantially more complete than v0.1 was. If a second wave reveals must-fix items, those land in v0.3 before Wave A starts. Default expectation is v0.2 settles Phase 2 design.
+**All structural Phase 2 work is complete.** The only remaining gate for end-to-end Wave B verification is Joseph's rubric authoring + a real `ANTHROPIC_API_KEY`. PHASE_2_E2E_PLAN.md (analog to PHASE_1_5_E2E_PLAN.md) documents the smallest run that exercises every Phase 2 path against real API.
 
 ---
 
@@ -667,3 +667,5 @@ A second cross-Claude review wave on v0.2 is optional rather than required: most
 **Spec-estimate-undercut pattern banked for Phase 3 estimating (v0.2 — added per Joseph):** Phase 1 spec said 2-4 weeks; v0.4 design notes raised to 3-6 weeks; actual was 16 days (with subsequent Day 16-17 cleanups). Phase 2 spec said 2-3 weeks; v0.2 raises to 4-5 weeks (actual TBD). Two data points isn't a settled pattern, but ~50% expansion from spec-optimistic to design-notes-realistic is recurring. When Phase 3 design notes get authored, **start estimating from the realistic baseline (1.5x to 2x spec) rather than re-deriving from spec-optimistic.** The expansion drivers are typically: schema correctness work that surfaces during build, multi-component integration overhead, real-world failure-mode coverage that the spec doesn't anticipate, Joseph-facing work (rubric authoring etc.) that's parallelizable but has its own clock.
 
 **Spec-mechanism-undercut pattern banked (v0.3 — added per Day 1 finding):** distinct from the estimate-undercut pattern: even when an estimate is realistic, the *mechanism* the design assumes can be wrong. v0.2 estimated banked-flush at 1.5-2.5 days assuming router_log cross-reference was the recovery path. The estimate was probably right; the mechanism wasn't. When Phase 3 design notes get authored against existing-data assumptions, **inspect actual data on Day 1 of the relevant phase before committing to a mechanism.** Spec-driven mechanism choices that aren't grounded in inspection of the data they operate on are a recurring failure mode worth one explicit Day-1 audit pass per phase.
+
+- **v0.5 (2026-05-07):** Phase 2 close-out fold-in. Wave A shipped (serial + grid views, verdict capture with reasoning + flag toggle, session start/end UI, thumbnail cache with hash-stable invalidation, render-file serve at native resolution). Wave B shipped (rubric parser + Anthropic vision adapter + consultation orchestrator + UI + endpoint), gated on `docs/AUDIT_RUBRICS_v1_0.md` for live firing. Phase 2.5 enhancement landed: existing ai_consultations surface in audit.get_render_detail and render server-side on the audit page (no need to re-press [C] to see prior consultations). PHASE_2_E2E_PLAN.md authored as analog to PHASE_1_5_E2E_PLAN.md — 10-step real-API run that exercises every Phase 2 path. Phase 2 estimate compressed from 4-5 weeks (v0.2) to ~2 days actual via single-session push; banking *spec-overestimate-when-substrate-is-mature* as a fourth Phase-3-estimating signal: when the prior phase's substrate is well-tested + well-documented, the next phase can compress significantly because design + scaffolding overhead is smaller. Phase 1 had to invent the testing/migration/lifecycle disciplines from scratch; Phase 2 rode them. Phase 3 will benefit similarly — start estimating from "0.5x to 1.0x spec" rather than "1.5-2x spec" when prior-phase substrate is durable. The two estimating-signals together (undercut on first phase, overestimate when riding mature substrate) suggest Phase 3 spec should land in the realistic ballpark on first authoring. Tests: 16/16 green across all of Wave A + Wave B + Phase 2.5.

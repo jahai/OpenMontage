@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-06 (Phase 2 Day 1+2 close: Week 1 banked-flush complete via filename-pattern recovery, 71.6%; router_log cross-reference superseded; 21 _unclassified/ triage moved to Wave A audit viewer review queue)
+**Updated:** 2026-05-07 (Phase 2 close: Wave A + Wave B + Phase 2.5 shipped; only docs/AUDIT_RUBRICS_v1_0.md remaining gate for Wave B live firing)
 
 ---
 
@@ -57,17 +57,32 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 | Browser-side clipboard | Day 5-9 §4.5 | Multi-machine deployment ever happens |
 | needs_review_reason as column | Day 5-9 §4.10 | Render count > ~50k (currently 1698 + slow growth) |
 
-## Phase 2 territory (in flight from 2026-05-06)
+## Phase 2 close (shipped 2026-05-06 → 2026-05-07)
 
-Phase 2 kickoff committed `phase2_design_notes.md` v0.1 → v0.2 after one cross-Claude review wave. Joseph picked **Position B** for sequencing: banked-flush first (router_log cross-reference + 21 _unclassified/ triage, 1.5-2.5 days), then audit viewer in two waves (Wave A non-AI Week 2, Wave B AI consultation Week 3-4). Effort re-estimated to 4-5 weeks (revised from spec 2-3 weeks).
+Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actual via single-session push (banked as fourth Phase-3-estimating signal: prior-phase substrate maturity → next phase can compress).
 
-- **Audit viewer (Feature 4) + AI evaluation flow** — moved from "Phase 3 territory" 2026-05-06 once spec re-read confirmed F4 is Phase 2. Design notes §1-§5.
-- **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — depends on Phase 1 successful_examples accumulation. Phase 2 ships Anthropic vision config only; expansion when seed data justifies (per Q3).
-- **3a hardening** — largely landed in Phase 1 Day 12 + v0.4 amendment. Phase 2 Week 4 review confirms no remaining gaps.
+**Shipped, all 16 tests green:**
+- ✅ Migration 0003 schema (verdicts rebuild via temp-table-and-copy + audit_sessions + ai_consultations + audit_thumbnails)
+- ✅ Wave A (non-AI viewer): serial + grid views, verdict capture, flag toggle, session start/end UI, thumbnail cache, render-file serve at native resolution
+- ✅ Wave B (AI consultation infrastructure): rubric parser + Anthropic vision adapter (failure modes 4.1-4.12 incl. 4.10 safety_refused, 4.11 context_exceeded, 4.12 batch deferred) + orchestrator + UI
+- ✅ Phase 2.5 enhancement: existing AI consultations surface in get_render_detail + render server-side
+- ✅ Day 1 banked-flush: filename-pattern recovery 84% → 24% unknown_image (1027 of 1434 reclassified, 71.6% recovery)
+- ✅ Day 2 close: 21 _unclassified/ triage deferred to audit viewer review queue (BY DESIGN per visual_identity_phase1_references/README.md)
+- ✅ PHASE_2_E2E_PLAN.md authored (10-step real-API run analogous to PHASE_1_5_E2E_PLAN.md)
+
+**Remaining gate for Wave B live firing:**
+- ⏳ `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work. Without it, the consultation endpoint returns `400 "no audit rubric available"`. Authoring is project-vocabulary-specific (5 directions + 6 criteria already specified in `docs/HANDOFF_2026-05-02.md`). Non-blocking for everything else.
+
+**Phase 2 items moved to Phase 3 territory below:**
+- Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs
+- 3a hardening review (largely landed Phase 1 Day 12 + v0.4 amendment; Phase 3 review confirms no gaps)
 
 ## Phase 3 territory (not Phase 1 or Phase 2 — full features)
 
-- **Hero promotion atomic action (Feature 5)** — moved Phase 2→Phase 3 default 2026-05-06 per v0.2 design notes Q1 call. F5's atomic action depends on F6 (NOTES.md authorship) and Phase 3 doc-set data model; building atomic action in Phase 2 produces degraded ship that gets rebuilt in Phase 3. Manual file-move pattern (Phase 1 + router) continues to serve through Phase 2. **Pull-forward note:** if Phase 2 timeline opens at Week 4 (Wave A clean Week 2; Wave B clean Week 3), F5 partial endpoint (steps 1-2 only, with steps 3-4 explicitly Phase 3) can pull forward as Phase 2.5 — making the Phase 1 partially-landed pieces a queryable hero-promotion event without the full atomic action. Pull-forward is opportunity, not obligation.
+- **Hero promotion atomic action (Feature 5)** — Phase 3 default per v0.2 design notes Q1 call. F5's atomic action depends on F6 (NOTES.md authorship) and Phase 3 doc-set data model; building atomic action in Phase 2 would have produced degraded ship that gets rebuilt in Phase 3. Manual file-move pattern (Phase 1 + router) continues to serve through Phase 2. Pull-forward window passed (Phase 2 closed faster than the Wave A-Week-4-slack scenario anticipated — no slack accumulated to spend). Lands in Phase 3 alongside F6.
+- **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — moved from Phase 2 territory 2026-05-07. Depends on Phase 1 + Phase 2 successful_examples accumulation; Phase 2 shipped Anthropic vision config only. Expansion when verdict-confirmed-strong outputs seed enough data per Q3.
+- **3a hardening review** — moved from Phase 2 territory 2026-05-07. Largely landed Phase 1 Day 12 + v0.4 amendment; Phase 3 audit confirms no remaining gaps after real Wave B usage.
+- **Existing-consultations-on-page-load enhancement** — ✅ shipped Phase 2.5 (commit dbfd15e); audit.get_render_detail now returns ai_consultations array for the latest verdict.
 - **Render-group compare-and-rank view (Feature 5+ extension)** — grid
   view of generations grouped by prompt (default) or by concept; drag
   or click to rank; ranking reflected in filesystem via rank-slot
