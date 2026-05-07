@@ -106,11 +106,18 @@ def create_audit_session(
     scope_section: Optional[str] = None,
     scope_filter: Optional[dict] = None,
     notes: Optional[str] = None,
+    _id_override: Optional[str] = None,
 ) -> dict:
     """Create a new audit session. Returns the new record.
 
     Validates mode + scope_concept_id (must exist if provided).
     `scope_filter` (dict) is JSON-serialized into scope_filter_json.
+
+    `_id_override` (FOR TESTING ONLY): when provided, used as the
+    session id verbatim instead of sha256-derivation. Lets tests
+    use test-prefixed IDs that cascading_delete can clean up by
+    prefix. Production paths never specify; the leading underscore
+    + this docstring mark it as test infrastructure.
     """
     if mode not in SESSION_MODES:
         raise ValueError(
@@ -128,7 +135,7 @@ def create_audit_session(
         conn.close()
 
     now = _iso_now()
-    session_id = _audit_session_id_from(rubric_version, mode, now)
+    session_id = _id_override or _audit_session_id_from(rubric_version, mode, now)
     yaml_path = (
         f"projects/latent_systems/tool_build/_data/audit_sessions/"
         f"{session_id}.yaml"
@@ -404,6 +411,7 @@ def capture_verdict(
     rubric_criteria_match: Optional[dict] = None,
     flags_needs_second_look: bool = False,
     supersedes_verdict_id: Optional[str] = None,
+    _id_override: Optional[str] = None,
 ) -> dict:
     """Capture a verdict against a render. Instant filesystem write per
     F8 success criterion 5 (no save button; verdict durable from moment
@@ -447,7 +455,7 @@ def capture_verdict(
         conn.close()
 
     now = _iso_now()
-    verdict_id = _verdict_id_from(render_id, now)
+    verdict_id = _id_override or _verdict_id_from(render_id, now)
     yaml_path = (
         f"projects/latent_systems/tool_build/_data/verdicts/{verdict_id}.yaml"
     )
@@ -499,10 +507,16 @@ def update_verdict_flags(
     """Toggle verdict flags. Currently supports needs_second_look only.
     Returns the updated verdict record (db row, not full YAML payload).
 
-    YAML rewrite intentionally NOT done here: flags are a runtime
-    triage signal, not a verdict commitment. State.db is sufficient.
-    If Wave A use surfaces friction (e.g., YAML drift), promote to
-    YAML-rewrite in Wave B.
+    AD-5 deviation banked (v0.6): flag toggles do NOT rewrite the
+    verdict YAML. Flags are runtime triage signals (Joseph's "revisit
+    later" marker), not durable verdict commitments. The state.db row
+    is the source of truth for flags specifically. If state.db is
+    rebuilt from filesystem, all flags_needs_second_look flags reset
+    to False — accepted cost because flags are intended to be re-set
+    during the re-audit pass that's about to happen anyway. If a
+    future Phase 3+ developer is tempted to add YAML rewrite "for
+    consistency," verify that decision against this banked tradeoff
+    rather than silently shipping it.
     """
     if needs_second_look is None:
         raise ValueError("update_verdict_flags requires at least one flag")

@@ -135,12 +135,29 @@ vision)`.
 
 **Pass conditions:**
 - POST `/audit/render/<id>/consult` returns `201` within ~30s
+  (vision can take 30-50s+ on complex images per v0.6 amendment;
+  the elapsed-time counter in the UI shows progressive feedback so
+  you can distinguish slow from hung)
 - Result card appears: provider `anthropic`, status `completed` (or
   `safety_refused` / `parse_failed` if AI didn't produce structured
   output for some reason)
 - For `completed` status: `verdict_inference` color-coded,
   `criteria_match` grid, `key_observations` bullets, cost line
   showing `$0.X · claude-opus-4-7 · <ts>`
+
+**Latency measurement methodology (v0.6 amendment per cross-Claude
+review item 8):** the "10-30s" expectation is *server-side latency*
+— time between Anthropic SDK call enter and response return. Browser
+fetch time is dominated by image upload + response render, not vision
+processing. Measure server-side via `api_calls` row:
+```
+sqlite3 projects/latent_systems/tool_build/_data/state.db \
+  "SELECT id, completed, started, cost_usd_estimate FROM api_calls \
+   WHERE purpose='audit_consultation' ORDER BY started DESC LIMIT 1"
+```
+The `(completed - started)` difference is the SDK-call latency.
+Browser-perceived latency (visible in the UI elapsed-time counter)
+will be 1-3s longer due to base64 image upload + HTTP overhead.
 
 **Verify state.db rows:**
 ```bash
@@ -208,6 +225,37 @@ with audit-rubric used, with AI consultations logged."
 
 ---
 
+## Step 10.5 — Verdict supersession (v0.6 amendment per cross-Claude review item 8)
+
+The `supersedes_verdict_id` self-FK in Migration 0003 was a
+speculative-but-cheap addition (Q2 v0.2 call). v0.5 e2e plan didn't
+exercise it. v0.6 amendment adds this step so the column is verified
+to behave as designed before the first real re-audit.
+
+```bash
+# Get the existing verdict_id from step 4
+PRIOR_VID="<prior verdict_id from step 4 verdict YAML>"
+
+# Mark the same render with a different verdict, superseding
+curl -X POST http://localhost:7890/audit/render/<render_id>/verdict \
+  -H "Content-Type: application/json" \
+  -d "{\"verdict\":\"weak\",\"verdict_reasoning\":\"on closer look the apparatus geometry is occluded\",\"supersedes_verdict_id\":\"$PRIOR_VID\"}"
+```
+
+**Pass conditions:**
+- New verdict row created; old row preserved.
+- `audit.get_render_detail` returns ONLY the new verdict in
+  `record.verdict` (the SQL `NOT IN (SELECT supersedes_verdict_id ...)`
+  exclusion fires correctly).
+- Both verdict YAMLs exist on disk (audit-trail durability).
+- Querying `_data/verdicts/` shows two YAMLs for the same `render_id`.
+
+This is the speculative-cheap-addition validation. If the supersession
+query layer doesn't exclude the old verdict, the column is dead schema
+and Phase 3 needs to either fix the query or remove the column.
+
+---
+
 ## Step 10 — Discipline-version drift check (cross-cut F10)
 
 ```
@@ -255,6 +303,27 @@ If any step above fails in a way the synthetic tests didn't catch,
 that failure mode goes into `AUDIT_PATTERNS.md` as a new rule (per
 the "every operational task is also a spec audit pass" banking
 principle from Phase 1).
+
+---
+
+## Multi-AI consultation path (deferred to Phase 2.5 plan revision)
+
+Phase 2 Wave B ships single-provider Anthropic baseline. Per phase2_design_notes
+§3 role-mapping table, Perplexity is conditional Week 2; ChatGPT/Gemini
+are Phase 3. When the second provider lands, this plan needs an
+amendment covering failure mode 4.6 (multi-AI partial completion):
+
+- Step 12 — Run consultation with multiple providers
+  (`POST /audit/render/<id>/consult` body: `providers: ["anthropic", "perplexity"]`)
+- Verify both `ai_consultations` rows persist on success
+- Verify partial-completion path: when one provider fails (mock the
+  failure to test cleanly), the other provider's consultation still
+  persists; the failure is captured as a separate
+  `ai_consultations.status='failed'` row with `failure_reason`
+- Verify `consultation_cost_usd` rollup includes both provider costs
+
+Banked here as known v0.6-deferred work; trigger to revise this plan
+is "second provider adapter ships."
 
 ---
 

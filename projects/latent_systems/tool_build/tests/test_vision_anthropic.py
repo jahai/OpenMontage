@@ -203,11 +203,16 @@ def test_parse_response_json_array_returns_none():
 
 
 def test_detect_safety_refusal_positive():
+    """v0.6: tightened verb-aware pattern. Refusals are 'I cannot
+    [verb] this/that/the image' shape — Anthropic's formulaic
+    phrasing for content-policy declines."""
     refusal_texts = [
-        "I can't evaluate this image as it depicts...",
+        "I can't provide a description of this image as it depicts...",
         "I cannot help with this request because of safety concerns.",
         "I'm not able to process this image due to content policy.",
-        "Unable to assist with this evaluation.",
+        "I won't generate analysis for this image.",
+        "I cannot describe the content of this image.",
+        "I'm not able to assist with this request.",
     ]
     for t in refusal_texts:
         _assert(vision.detect_safety_refusal(t),
@@ -215,11 +220,18 @@ def test_detect_safety_refusal_positive():
 
 
 def test_detect_safety_refusal_negative():
-    """Critical evaluations are not refusals — must distinguish."""
+    """Critical evaluations are not refusals — must distinguish.
+    v0.6: regex tightened so verb-list excludes 'evaluate',
+    'assess', 'recommend' which appear far more often in legitimate
+    critical evaluations than in actual safety refusals."""
     legit_critical = [
         "Composition is incoherent. The subject is unclear.",
         '{"verdict_inference": "fail", "criteria_match": {"Composition": "fail"}}',
         "The render fails on register coherence; mixed-period elements present.",
+        # The two cases the v0.6 amendment specifically guards against:
+        "I cannot recommend this for hero promotion because the apparatus geometry is unclear.",
+        "I cannot evaluate this against the rubric criterion 'apparatus fidelity' because the bar is occluded.",
+        "I cannot assess this render at the strong level — composition reads at-a-glance but register coherence is partial.",
     ]
     for t in legit_critical:
         _assert(not vision.detect_safety_refusal(t),
@@ -299,7 +311,7 @@ def test_call_vision_parse_failed():
 def test_call_vision_safety_refused():
     p = _make_test_png()
     fake_resp = _fake_response(
-        "I can't evaluate this image due to safety guidelines around content depicted."
+        "I can't provide a description of this image due to safety guidelines."
     )
     client = _mocked_client(return_value=fake_resp)
     with patch.object(llm, "_get_client", return_value=client):

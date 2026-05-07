@@ -50,14 +50,25 @@ VISION_MODEL = "claude-opus-4-7"
 DEFAULT_MAX_TOKENS = 4000  # structured JSON response; rarely > 1000 tokens
 
 # Safety-refusal detector (failure mode 4.10).
-# Anthropic's content-policy refusals start with formulaic phrasing in
-# the first ~200 chars. Match conservatively to avoid false positives
-# on legitimate critical evaluations ("composition is incoherent" etc).
+# v0.6 amendment per cross-Claude review Issue 4: tightened to a
+# verb-aware "I cannot [verb] this" pattern. The original regex matched
+# any "I cannot" prefix in the first 200 chars, which would have
+# produced false positives on legitimate critical evaluations the audit
+# flow specifically needs ("I cannot recommend this for hero promotion
+# because the apparatus geometry is unclear" -> legitimate critical eval,
+# NOT a safety refusal).
+#
+# Verb whitelist deliberately excludes 'evaluate', 'assess', 'recommend':
+# those appear in critical evaluations far more often than in safety
+# refusals. Anthropic's actual refusals tend to use 'provide', 'create',
+# 'generate', 'describe', 'process', 'assist with', 'help with',
+# 'comment on', 'engage with', 'continue'.
 _SAFETY_REFUSAL_RE = re.compile(
-    r"^.{0,200}?(I can't|I cannot|I won't|I will not|"
-    r"I'm not able to|I am not able to|"
-    r"safety guidelines|content policy|"
-    r"unable to (assist|help|process|evaluate))",
+    r"^.{0,100}?(I can't|I cannot|I won't|I will not|"
+    r"I'm not able to|I am not able to)\s+"
+    r"(provide|create|generate|describe|process|"
+    r"comment on|engage with|continue|assist with|help with)"
+    r".{0,50}?(this|that|the (image|content|request))",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -274,6 +285,13 @@ def call_vision(
         concept_text=concept_text, lineage_summary=lineage_summary,
     )
 
+    # Cache boundary (v0.6 amendment per cross-Claude review Issue 3):
+    # rubric system prompt is cache-stable across an audit session.
+    # Modifying docs/AUDIT_RUBRICS_v*.md mid-session invalidates the
+    # cache and reverts cost to write-pricing on the next consultation.
+    # For sessions involving many consultations, finalize rubric before
+    # starting. The user message (concept_text + lineage_summary) is
+    # per-render and intentionally NOT cached.
     if cache_system:
         system_payload: Any = [
             {"type": "text", "text": system_text,

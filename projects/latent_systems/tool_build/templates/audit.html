@@ -463,9 +463,25 @@ async function consultAI() {
   const resultEl = document.getElementById('consult-result');
 
   btn.disabled = true;
-  statusEl.innerHTML = '<div class="consult-running">consulting AI… (this can take 10-30s for vision)</div>';
+  // v0.6: elapsed-time counter (per Issue 5: vision can take 30-50s+
+  // on complex images, longer than the v0.2 reviewer's 20s ceiling
+  // estimate which was for text-only). Without a counter, "is this
+  // hung?" friction kicks in around 25s.
   resultEl.style.display = 'none';
   resultEl.innerHTML = '';
+  if (statusEl) statusEl.style.display = '';
+  const tStart = performance.now();
+  const tickEl = document.createElement('div');
+  tickEl.className = 'consult-running';
+  tickEl.textContent = 'consulting AI… 0s (can take 10-60s for vision; longer for complex images)';
+  if (statusEl) {
+    statusEl.innerHTML = '';
+    statusEl.appendChild(tickEl);
+  }
+  const tickInterval = setInterval(() => {
+    const elapsed = Math.floor((performance.now() - tStart) / 1000);
+    tickEl.textContent = `consulting AI… ${elapsed}s (can take 10-60s for vision; longer for complex images)`;
+  }, 1000);
 
   const body = {};
   if (SESSION_ID) body.audit_session_id = SESSION_ID;
@@ -476,6 +492,8 @@ async function consultAI() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body),
     });
+    clearInterval(tickInterval);
+    const totalElapsed = Math.floor((performance.now() - tStart) / 1000);
 
     if (!r.ok) {
       const e = await r.json();
@@ -487,7 +505,7 @@ async function consultAI() {
       } else {
         msg = `error ${r.status}`;
       }
-      statusEl.innerHTML = `<div style="color:#b91c1c; font-size:0.85em; padding:0.4em;">${escapeHtml(msg)}</div>`;
+      statusEl.innerHTML = `<div style="color:#b91c1c; font-size:0.85em; padding:0.4em;">${escapeHtml(msg)} (after ${totalElapsed}s)</div>`;
       btn.disabled = false;
       showToast(`consultation failed: ${msg.slice(0, 60)}`, 'error');
       return;
@@ -511,9 +529,10 @@ async function consultAI() {
     </div>`;
     resultEl.innerHTML = html;
 
-    showToast(`consultation: ${data.consultations.length} provider(s)`, 'success');
+    showToast(`consultation: ${data.consultations.length} provider(s) in ${totalElapsed}s`, 'success');
     btn.disabled = false;
   } catch (e) {
+    clearInterval(tickInterval);
     statusEl.innerHTML = `<div style="color:#b91c1c; font-size:0.85em; padding:0.4em;">${escapeHtml(e.message)}</div>`;
     btn.disabled = false;
     showToast(`consultation error: ${e.message}`, 'error');

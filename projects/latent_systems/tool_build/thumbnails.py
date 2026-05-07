@@ -46,8 +46,7 @@ def _iso_now() -> str:
 
 def _abs_from_repo_relative(repo_relative: str) -> Path:
     """Convert a stored render filepath (repo-relative) to absolute path."""
-    repo_root = db.TOOL_BUILD_DIR.parent.parent.parent
-    return repo_root / repo_relative
+    return db.REPO_ROOT / repo_relative
 
 
 def _thumbnail_abs_path(render_id: str) -> Path:

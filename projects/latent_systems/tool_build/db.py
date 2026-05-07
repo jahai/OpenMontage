@@ -31,6 +31,11 @@ from pathlib import Path
 TOOL_BUILD_DIR = Path(__file__).resolve().parent
 DATA_DIR = TOOL_BUILD_DIR / "_data"
 DB_PATH = DATA_DIR / "state.db"
+# Repo root (OpenMontage/) — centralized so call sites that need to
+# resolve repo-relative paths (renders.filepath, verdicts.yaml_path,
+# ai_consultations.yaml_path, etc.) don't reinvent the parent.parent.parent
+# chain. v0.6 amendment per cross-Claude review Issue 1.
+REPO_ROOT = TOOL_BUILD_DIR.parent.parent.parent
 
 
 def setup_console_encoding() -> None:

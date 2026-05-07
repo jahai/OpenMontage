@@ -142,7 +142,7 @@ def consult_render(
     if providers is None:
         providers = ["anthropic"]
     if repo_root is None:
-        repo_root = db.TOOL_BUILD_DIR.parent.parent.parent
+        repo_root = db.REPO_ROOT
 
     for p in providers:
         if p not in PROVIDERS:
