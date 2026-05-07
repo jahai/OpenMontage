@@ -169,6 +169,87 @@ def audit_view(
     )
 
 
+@app.get("/audit/grid", response_class=HTMLResponse)
+def audit_grid_view(
+    request: Request,
+    session_id: Optional[str] = None,
+    only_unverdicted: bool = False,
+    tool: Optional[str] = None,
+    section: Optional[str] = None,
+    flagged_only: bool = False,
+    page: int = 1,
+    per_page: int = 20,
+):
+    """Grid view (4x5 thumbnails by default). Click a thumbnail to
+    switch to serial view at that render. Filters compose with
+    audit.list_audit_queue same as serial view; pagination via
+    page (1-indexed) + per_page.
+    """
+    if page < 1:
+        page = 1
+    if per_page < 1 or per_page > 200:
+        per_page = 20
+    offset = (page - 1) * per_page
+    queue = audit.list_audit_queue(
+        only_unverdicted=only_unverdicted, tool_filter=tool,
+        section_filter=section, flagged_only=flagged_only,
+        limit=per_page, offset=offset,
+    )
+
+    # Per-thumbnail verdict (latest non-superseded) for the badge overlay.
+    # Single query batched over all rendered IDs for efficiency.
+    items = queue["items"]
+    verdicts_by_render: dict[str, dict] = {}
+    if items:
+        render_ids = [it["render_id"] for it in items]
+        placeholders = ",".join("?" for _ in render_ids)
+        with db.connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT v.render_id, v.verdict, v.flags_needs_second_look
+                FROM verdicts v
+                WHERE v.render_id IN ({placeholders})
+                  AND v.id NOT IN (
+                    SELECT supersedes_verdict_id FROM verdicts
+                    WHERE supersedes_verdict_id IS NOT NULL
+                  )
+                ORDER BY v.created DESC
+                """,
+                render_ids,
+            ).fetchall()
+        # Earliest in result set wins (we ORDER BY created DESC; first
+        # row per render_id is the most recent non-superseded verdict).
+        for r in rows:
+            if r[0] not in verdicts_by_render:
+                verdicts_by_render[r[0]] = {
+                    "verdict": r[1],
+                    "flags_needs_second_look": bool(r[2]),
+                }
+
+    session = audit.get_audit_session(session_id) if session_id else None
+    total = queue["total"]
+    last_page = max(1, (total + per_page - 1) // per_page)
+
+    return TEMPLATES.TemplateResponse(
+        "audit_grid.html",
+        {
+            "request": request,
+            "items": items,
+            "verdicts_by_render": verdicts_by_render,
+            "session_id": session_id,
+            "session": session,
+            "queue_total": total,
+            "page": page,
+            "per_page": per_page,
+            "last_page": last_page,
+            "filters": {
+                "only_unverdicted": only_unverdicted, "tool": tool,
+                "section": section, "flagged_only": flagged_only,
+            },
+        },
+    )
+
+
 @app.get("/prompts")
 def list_prompts_endpoint(limit: int = 50) -> dict[str, Any]:
     """List recent prompts ordered by creation desc."""

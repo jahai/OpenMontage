@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tool_build v1 — audit grid</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         margin: 0; padding: 0; color: #222; background: #f3f4f6; min-height: 100vh; }
+  header { background: #1f2937; color: #f3f4f6; padding: 0.6em 1em;
+           display: flex; align-items: center; gap: 1em; flex-wrap: wrap; }
+  header h1 { font-size: 1.05em; margin: 0; }
+  header .meta { font-size: 0.85em; color: #9ca3af; }
+  header a { color: #93c5fd; text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  .pill { display: inline-block; padding: 0.1em 0.5em; border-radius: 0.25em;
+          font-size: 0.8em; background: #374151; color: #f3f4f6; }
+  .pill.session { background: #065f46; }
+  .pill.position { background: #1e40af; }
+  .filters-bar { background: #fff; border-bottom: 1px solid #d1d5db;
+                 padding: 0.6em 1em; font-size: 0.85em; color: #4b5563; }
+  .filters-bar a { color: #2563eb; text-decoration: none; }
+  .filters-bar a:hover { text-decoration: underline; }
+  .filters-bar form { display: inline-block; margin-left: 0.5em; }
+  .filters-bar select, .filters-bar input { padding: 0.2em 0.4em; font-size: 0.85em;
+                                             margin-left: 0.2em; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6em;
+          padding: 1em; max-width: 1600px; margin: 0 auto; }
+  @media (min-width: 1400px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+  .tile { position: relative; background: #1f2937; border-radius: 0.4em;
+          overflow: hidden; aspect-ratio: 1.5 / 1; cursor: pointer;
+          transition: transform 0.1s, box-shadow 0.1s; }
+  .tile:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile-meta { position: absolute; bottom: 0; left: 0; right: 0;
+               background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0));
+               padding: 1em 0.6em 0.4em 0.6em; color: #fff; font-size: 0.75em; }
+  .tile-meta .filename { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+                         font-size: 0.75em; white-space: nowrap; overflow: hidden;
+                         text-overflow: ellipsis; }
+  .tile-meta .tool { color: #d1d5db; font-size: 0.7em; margin-top: 0.15em; }
+  .verdict-badge { position: absolute; top: 0.4em; right: 0.4em;
+                   padding: 0.15em 0.5em; border-radius: 0.25em; font-size: 0.7em;
+                   font-weight: 600; color: #fff; text-transform: uppercase;
+                   letter-spacing: 0.03em; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .verdict-badge.hero_zone { background: #059669; }
+  .verdict-badge.strong { background: #2563eb; }
+  .verdict-badge.weak { background: #d97706; }
+  .verdict-badge.reject { background: #b91c1c; }
+  .flag-badge { position: absolute; top: 0.4em; left: 0.4em;
+                padding: 0.15em 0.4em; border-radius: 0.25em; font-size: 0.7em;
+                background: #fef3c7; color: #92400e; font-weight: 600; }
+  .empty { text-align: center; padding: 4em 2em; color: #6b7280; }
+  .empty h2 { color: #1f2937; }
+  .pagination { display: flex; justify-content: center; align-items: center;
+                gap: 0.6em; padding: 1.5em 1em; font-size: 0.9em; }
+  .pagination a, .pagination .disabled, .pagination .current {
+    padding: 0.4em 0.8em; border-radius: 0.3em; border: 1px solid #d1d5db;
+    background: #fff; color: #1f2937; text-decoration: none;
+  }
+  .pagination .current { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .pagination .disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination a:hover { background: #f3f4f6; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>audit viewer — grid</h1>
+  {% if session %}
+    <span class="pill session">session {{ session.id[:8] }}…</span>
+    <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+  {% else %}
+    <span class="meta">no session</span>
+  {% endif %}
+  <span class="pill position">{{ queue_total }} total</span>
+  <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
+    <a href="/audit{% if session_id %}?session_id={{ session_id }}{% endif %}">serial view</a>
+    <a href="/">← prompt drafting</a>
+  </span>
+</header>
+
+<div class="filters-bar">
+  <strong>Filters:</strong>
+  {% if filters.only_unverdicted %}<span class="pill">unverdicted only</span>{% endif %}
+  {% if filters.flagged_only %}<span class="pill">flagged only</span>{% endif %}
+  {% if filters.tool %}<span class="pill">tool: {{ filters.tool }}</span>{% endif %}
+  {% if filters.section %}<span class="pill">section: {{ filters.section }}</span>{% endif %}
+  {% if not (filters.only_unverdicted or filters.flagged_only or filters.tool or filters.section) %}
+    <span class="meta">none — showing all renders</span>
+  {% endif %}
+  &nbsp;&nbsp;
+  <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">clear</a>
+  &nbsp;|&nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}only_unverdicted=1">only unverdicted</a>
+  &nbsp;|&nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}flagged_only=1">only flagged</a>
+  &nbsp;|&nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=midjourney">tool=mj</a>
+  &nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=frame_extract">tool=frame</a>
+  &nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=gpt_image_2">tool=gpt</a>
+  &nbsp;
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=flux">tool=flux</a>
+</div>
+
+{% if not items %}
+<div class="empty">
+  <h2>No renders match the current filters.</h2>
+  <p><a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">clear filters</a></p>
+</div>
+
+{% else %}
+
+<div class="grid">
+  {% for item in items %}
+    {% set v = verdicts_by_render.get(item.render_id) %}
+    <a class="tile" href="/audit?render_id={{ item.render_id }}{% if session_id %}&session_id={{ session_id }}{% endif %}{% if filters.only_unverdicted %}&only_unverdicted=1{% endif %}{% if filters.flagged_only %}&flagged_only=1{% endif %}{% if filters.tool %}&tool={{ filters.tool }}{% endif %}{% if filters.section %}&section={{ filters.section }}{% endif %}">
+      <img loading="lazy" src="/audit/thumbnail/{{ item.render_id }}" alt="{{ item.filename }}">
+      {% if v %}
+        <span class="verdict-badge {{ v.verdict }}">{{ v.verdict.replace('_', ' ') }}</span>
+      {% endif %}
+      {% if v and v.flags_needs_second_look %}
+        <span class="flag-badge">2nd look</span>
+      {% endif %}
+      <div class="tile-meta">
+        <div class="filename">{{ item.filename }}</div>
+        <div class="tool">{{ item.tool }}{% if item.variant is not none %} v{{ item.variant }}{% endif %}</div>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}{% if filters.only_unverdicted %}only_unverdicted=1&{% endif %}{% if filters.flagged_only %}flagged_only=1&{% endif %}{% if filters.tool %}tool={{ filters.tool }}&{% endif %}{% if filters.section %}section={{ filters.section }}&{% endif %}page={{ page - 1 }}&per_page={{ per_page }}">← prev</a>
+  {% else %}
+    <span class="disabled">← prev</span>
+  {% endif %}
+
+  <span class="current">page {{ page }} of {{ last_page }}</span>
+
+  {% if page < last_page %}
+    <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}{% if filters.only_unverdicted %}only_unverdicted=1&{% endif %}{% if filters.flagged_only %}flagged_only=1&{% endif %}{% if filters.tool %}tool={{ filters.tool }}&{% endif %}{% if filters.section %}section={{ filters.section }}&{% endif %}page={{ page + 1 }}&per_page={{ per_page }}">next →</a>
+  {% else %}
+    <span class="disabled">next →</span>
+  {% endif %}
+</div>
+
+{% endif %}
+
+</body>
+</html>

@@ -91,7 +91,8 @@
   {% if queue_position %}
     <span class="pill position">{{ queue_position }} / {{ queue_total }}</span>
   {% endif %}
-  <span style="margin-left:auto">
+  <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
+    <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">grid view</a>
     <a href="/">← prompt drafting</a>
   </span>
 </header>
