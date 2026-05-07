@@ -74,6 +74,50 @@
   .verdict-existing { background: #ecfccb; border: 1px solid #84cc16; padding: 0.5em;
                       border-radius: 0.4em; font-size: 0.85em; margin-top: 0.5em; }
   .verdict-existing .lbl { font-weight: 600; }
+  .consult-empty { font-size: 0.8em; color: #6b7280; line-height: 1.4; }
+  .consult-empty code { background: #f3f4f6; padding: 0.1em 0.3em; border-radius: 0.2em;
+                        font-size: 0.85em; }
+  .consult-empty kbd { background: #1f2937; color: #fff; padding: 0.05em 0.4em;
+                       border-radius: 0.2em; font-size: 0.75em;
+                       font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .consult-running { font-size: 0.85em; color: #2563eb; padding: 0.5em; }
+  .consult-result-card { background: #f9fafb; border: 1px solid #d1d5db; border-radius: 0.4em;
+                         padding: 0.6em; font-size: 0.85em; margin-bottom: 0.4em; }
+  .consult-result-card.completed { border-color: #059669; }
+  .consult-result-card.parse_failed,
+  .consult-result-card.safety_refused,
+  .consult-result-card.context_exceeded { border-color: #d97706; background: #fffbeb; }
+  .consult-result-card .header { display: flex; justify-content: space-between;
+                                  align-items: baseline; margin-bottom: 0.4em; }
+  .consult-result-card .provider { font-weight: 600; color: #111827; }
+  .consult-result-card .status-pill { padding: 0.1em 0.4em; border-radius: 0.25em;
+                                       font-size: 0.7em; text-transform: uppercase;
+                                       letter-spacing: 0.05em; }
+  .status-pill.completed { background: #d1fae5; color: #065f46; }
+  .status-pill.parse_failed,
+  .status-pill.safety_refused,
+  .status-pill.context_exceeded { background: #fef3c7; color: #92400e; }
+  .consult-result-card .inference { font-weight: 600; padding: 0.3em 0; }
+  .consult-result-card .inference.hero_zone { color: #059669; }
+  .consult-result-card .inference.strong { color: #2563eb; }
+  .consult-result-card .inference.weak { color: #d97706; }
+  .consult-result-card .inference.reject { color: #b91c1c; }
+  .consult-result-card .criteria { margin-top: 0.3em; }
+  .consult-result-card .criterion { display: flex; justify-content: space-between;
+                                     padding: 0.1em 0; font-size: 0.8em; }
+  .consult-result-card .criterion .match { font-weight: 600; }
+  .match.pass { color: #059669; }
+  .match.partial { color: #d97706; }
+  .match.fail { color: #b91c1c; }
+  .match.not_evaluated { color: #6b7280; }
+  .consult-result-card .observations { margin-top: 0.4em; font-size: 0.8em; color: #4b5563; }
+  .consult-result-card .observations li { margin-left: 1em; }
+  .consult-result-card .raw-toggle { color: #2563eb; cursor: pointer; font-size: 0.75em;
+                                      margin-top: 0.4em; }
+  .consult-result-card pre.raw { background: #1f2937; color: #e5e7eb; padding: 0.5em;
+                                  border-radius: 0.3em; font-size: 0.7em; overflow: auto;
+                                  max-height: 12em; white-space: pre-wrap; word-break: break-word; }
+  .consult-result-card .cost { font-size: 0.75em; color: #6b7280; margin-top: 0.4em; }
   .filters { font-size: 0.85em; color: #9ca3af; }
   .filters a { color: #93c5fd; }
 </style>
@@ -196,6 +240,19 @@
     </section>
 
     <section>
+      <h2>AI consultation</h2>
+      <div id="consult-status" class="consult-empty">
+        Press <kbd>C</kbd> or click <em>consult AI</em> to evaluate against
+        the active rubric (Wave B; gated on
+        <code>docs/AUDIT_RUBRICS_v1_0.md</code> existing).
+      </div>
+      <button type="button" class="nav-btn" id="consult-btn" style="margin-top:0.4em;">
+        consult AI <span class="key">[C]</span>
+      </button>
+      <div id="consult-result" style="display:none; margin-top:0.6em;"></div>
+    </section>
+
+    <section>
       <div class="nav-row">
         <button class="nav-btn" id="prev-btn" {% if not prev_render_id %}disabled{% endif %}>
           ← prev <span class="key">[←]</span>
@@ -306,6 +363,126 @@ document.getElementById('flag-2nd').addEventListener('change', async (ev) => {
 document.getElementById('prev-btn').addEventListener('click', () => navTo(PREV_ID));
 document.getElementById('next-btn').addEventListener('click', () => navTo(NEXT_ID));
 
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+                  .replace(/'/g, '&#39;');
+}
+
+function renderConsultationCard(c) {
+  const status = c.status;
+  const parsed = c.parsed;
+  const inference = parsed && parsed.verdict_inference;
+  const criteria = (parsed && parsed.criteria_match) || {};
+  const observations = (parsed && parsed.key_observations) || [];
+
+  let inner = `<div class="header">
+    <span class="provider">${escapeHtml(c.provider)}</span>
+    <span class="status-pill ${status}">${status.replace('_', ' ')}</span>
+  </div>`;
+
+  if (status === 'completed' && inference) {
+    inner += `<div class="inference ${inference}">${escapeHtml(inference)}</div>`;
+    if (Object.keys(criteria).length) {
+      inner += '<div class="criteria">';
+      for (const [name, match] of Object.entries(criteria)) {
+        inner += `<div class="criterion">
+          <span>${escapeHtml(name)}</span>
+          <span class="match ${match}">${escapeHtml(match)}</span>
+        </div>`;
+      }
+      inner += '</div>';
+    }
+    if (observations.length) {
+      inner += '<div class="observations">key observations:<ul>';
+      for (const obs of observations) {
+        inner += `<li>${escapeHtml(obs)}</li>`;
+      }
+      inner += '</ul></div>';
+    }
+  } else {
+    if (c.failure_reason) {
+      inner += `<div style="color:#92400e;">${escapeHtml(c.failure_reason)}</div>`;
+    }
+  }
+
+  if (c.raw_response) {
+    const cardId = 'raw_' + Math.random().toString(36).slice(2, 8);
+    inner += `<div class="raw-toggle" onclick="document.getElementById('${cardId}').style.display = (document.getElementById('${cardId}').style.display === 'block' ? 'none' : 'block')">show raw response ▾</div>
+              <pre class="raw" id="${cardId}" style="display:none;">${escapeHtml(c.raw_response)}</pre>`;
+  }
+
+  inner += `<div class="cost">$${c.cost_usd.toFixed(4)} · ${escapeHtml(c.model || '?')} · ${escapeHtml(c.consulted_at).slice(0, 19)}</div>`;
+
+  return `<div class="consult-result-card ${status}">${inner}</div>`;
+}
+
+async function consultAI() {
+  const btn = document.getElementById('consult-btn');
+  const statusEl = document.getElementById('consult-status');
+  const resultEl = document.getElementById('consult-result');
+
+  btn.disabled = true;
+  statusEl.innerHTML = '<div class="consult-running">consulting AI… (this can take 10-30s for vision)</div>';
+  resultEl.style.display = 'none';
+  resultEl.innerHTML = '';
+
+  const body = {};
+  if (SESSION_ID) body.audit_session_id = SESSION_ID;
+
+  try {
+    const r = await fetch(`/audit/render/${RENDER_ID}/consult`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+
+    if (!r.ok) {
+      const e = await r.json();
+      let msg;
+      if (typeof e.detail === 'string') {
+        msg = e.detail;
+      } else if (e.detail && e.detail.error) {
+        msg = `${e.detail.error} (api_call_id: ${e.detail.api_call_id || 'n/a'}; retryable: ${e.detail.retryable})`;
+      } else {
+        msg = `error ${r.status}`;
+      }
+      statusEl.innerHTML = `<div style="color:#b91c1c; font-size:0.85em; padding:0.4em;">${escapeHtml(msg)}</div>`;
+      btn.disabled = false;
+      showToast(`consultation failed: ${msg.slice(0, 60)}`, 'error');
+      return;
+    }
+
+    const data = await r.json();
+    statusEl.style.display = 'none';
+    resultEl.style.display = 'block';
+
+    let html = '';
+    if (data.auto_created_verdict) {
+      html += `<div style="font-size:0.8em; color:#065f46; margin-bottom:0.5em;">
+        ✓ verdict auto-created from consultation. Reload to see in existing-verdict surface, or supersede with a manual verdict if you disagree.
+      </div>`;
+    }
+    for (const c of data.consultations) {
+      html += renderConsultationCard(c);
+    }
+    html += `<div style="font-size:0.75em; color:#6b7280; margin-top:0.5em;">
+      total cost this run: $${data.total_cost_usd.toFixed(4)}
+    </div>`;
+    resultEl.innerHTML = html;
+
+    showToast(`consultation: ${data.consultations.length} provider(s)`, 'success');
+    btn.disabled = false;
+  } catch (e) {
+    statusEl.innerHTML = `<div style="color:#b91c1c; font-size:0.85em; padding:0.4em;">${escapeHtml(e.message)}</div>`;
+    btn.disabled = false;
+    showToast(`consultation error: ${e.message}`, 'error');
+  }
+}
+
+document.getElementById('consult-btn').addEventListener('click', consultAI);
+
 document.addEventListener('keydown', (ev) => {
   // Ignore when typing in textarea/input
   if (ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'INPUT') return;
@@ -315,6 +492,7 @@ document.addEventListener('keydown', (ev) => {
     case '3': captureVerdict('weak'); break;
     case '4': captureVerdict('reject'); break;
     case 'f': case 'F': toggleFlag(); break;
+    case 'c': case 'C': consultAI(); break;
     case 'ArrowLeft': navTo(PREV_ID); break;
     case 'ArrowRight': navTo(NEXT_ID); break;
   }
