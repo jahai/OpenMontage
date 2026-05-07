@@ -21,8 +21,10 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 import audit
+import audit_consult
 import db
 import dispatcher
+import llm
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -720,3 +722,49 @@ def audit_render_file_endpoint(render_id: str):
             status_code=404, detail=f"render {render_id} not found or file missing",
         )
     return FileResponse(str(abs_path))
+
+
+# --- Phase 2 Wave B — Feature 4 sub-feature: AI consultation ---
+
+
+class ConsultRequest(BaseModel):
+    audit_session_id: Optional[str] = None
+    providers: list[str] = ["anthropic"]
+
+
+@app.post("/audit/render/{render_id}/consult", status_code=201)
+def consult_render_endpoint(
+    render_id: str, body: ConsultRequest,
+) -> dict[str, Any]:
+    """Run AI consultation against a render against the active rubric.
+    Persists ai_consultations rows + YAMLs; auto-creates verdict if
+    none exists. Wave B.
+
+    Errors:
+      400 — no rubric authored / image unprocessable / unknown provider.
+      404 — render not found.
+      500 / 502 — SDK failure (502 retryable, 500 permanent), payload
+                  includes api_call_id for retry-queue correlation.
+    """
+    try:
+        return audit_consult.consult_render(
+            render_id, audit_session_id=body.audit_session_id,
+            providers=body.providers,
+        )
+    except audit_consult.ConsultationError as e:
+        msg = str(e)
+        if "not found" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+    except llm.LLMError as e:
+        # Same handling shape as draft_via_api: 502 for retryable
+        # (rate limit, timeout, network); 500 for permanent (auth,
+        # bad request) so the UI can route to retry queue or modal.
+        status = 502 if e.retryable else 500
+        raise HTTPException(
+            status_code=status,
+            detail={
+                "error": str(e), "retryable": e.retryable,
+                "api_call_id": e.api_call_id,
+            },
+        )
