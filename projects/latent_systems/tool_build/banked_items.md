@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-07 (Phase 2 close: Wave A + Wave B + Phase 2.5 shipped; only docs/AUDIT_RUBRICS_v1_0.md remaining gate for Wave B live firing)
+**Updated:** 2026-05-07 (Phase 2 close + v0.6 cross-Claude review fold-in + rubric seed scaffold landed; rubric authoring + one real Wave B firing remain as Phase 2 acceptance bridge before Phase 3)
 
 ---
 
@@ -70,8 +70,9 @@ Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actua
 - ✅ Day 2 close: 21 _unclassified/ triage deferred to audit viewer review queue (BY DESIGN per visual_identity_phase1_references/README.md)
 - ✅ PHASE_2_E2E_PLAN.md authored (10-step real-API run analogous to PHASE_1_5_E2E_PLAN.md)
 
-**Remaining gate for Wave B live firing:**
-- ⏳ `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work. Without it, the consultation endpoint returns `400 "no audit rubric available"`. Authoring is project-vocabulary-specific (5 directions + 6 criteria already specified in `docs/HANDOFF_2026-05-02.md`). Non-blocking for everything else.
+**Remaining gate for Wave B live firing (Phase 2 acceptance bridge):**
+- ⏳ `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work. Without it, the consultation endpoint returns `400 "no audit rubric available"`. **Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md`** carrying the 6 evaluation criteria from `docs/HANDOFF_2026-05-02.md` structured per the parser contract; Joseph copies to `docs/` and fills in `pass:` / `partial:` / `fail:` bullets per criterion. Estimated authoring time: ~5-15 min instead of ~30 from blank.
+- ⏳ One real Wave B firing per `PHASE_2_E2E_PLAN.md` — bridge from "Phase 2 code-shipped" to "Phase 2 acceptance-validated" per cross-Claude reviewer's recommendation. Cost ~$0.30 + ~30 min Joseph time. Validates SDK shape assumptions (image base64 format, response.usage attribute names, vision token billing math, real safety filter behavior, real rate-limit behavior) that synthetic tests can't catch.
 
 **Phase 2 items moved to Phase 3 territory below:**
 - Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs

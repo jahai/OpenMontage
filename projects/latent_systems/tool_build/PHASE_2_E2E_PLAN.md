@@ -31,11 +31,27 @@ vision consultation against `claude-opus-4-7` per design notes §1
 | Schema is at head | `python tool_build/serve.py --migrate-schema` | `migrate verified`, no migration applied |
 | API key present | `python -c "import os, dotenv; dotenv.load_dotenv('.env'); print('OK' if os.environ.get('ANTHROPIC_API_KEY') else 'MISSING')"` | prints `OK` |
 | Rubric authored | `ls projects/latent_systems/docs/AUDIT_RUBRICS_v*.md` | at least one match |
+| Rubric parses | `python -c "from rubric import load_active_rubric; import db; r = load_active_rubric(db.REPO_ROOT); print('OK' if r and r['criteria'] else 'EMPTY')"` | prints `OK` |
 | Browser ready | Open `http://localhost:7890/audit/grid` in Chrome | grid page renders |
 
 If the rubric is missing, Wave A path runs but Wave B (steps 6-8)
 fails with `400 "no audit rubric available"`. Author at least one
 rubric file before continuing the full plan.
+
+**Rubric authoring shortcut (v0.6 amendment):** a SEED scaffold lives
+at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md`. It carries the 6
+evaluation criteria from `docs/HANDOFF_2026-05-02.md` already
+structured per the parser contract; you fill in `pass:` / `partial:` /
+`fail:` bullets per criterion. To use:
+
+```bash
+cp projects/latent_systems/tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md \
+   projects/latent_systems/docs/AUDIT_RUBRICS_v1_0.md
+# then edit docs/AUDIT_RUBRICS_v1_0.md to fill in TODO placeholders
+```
+
+Estimated authoring time: ~5-15 min depending on criteria-language
+specificity.
 
 ---
 
