@@ -93,6 +93,82 @@ def index(request: Request):
     return TEMPLATES.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/audit", response_class=HTMLResponse)
+def audit_view(
+    request: Request,
+    session_id: Optional[str] = None,
+    render_id: Optional[str] = None,
+    only_unverdicted: bool = False,
+    tool: Optional[str] = None,
+    section: Optional[str] = None,
+    flagged_only: bool = False,
+):
+    """Audit viewer page (Wave A). Serial view of one render at a time;
+    keyboard 1-4 captures verdict, F toggles flag, ←/→ navigates queue.
+
+    Query params drive the queue filter; session_id is optional (if
+    omitted, verdict capture writes without session attribution).
+    render_id selects which render to display; defaults to first in
+    filtered queue.
+    """
+    # Pull queue (cap at reasonable limit for nav-by-index)
+    queue = audit.list_audit_queue(
+        only_unverdicted=only_unverdicted, tool_filter=tool,
+        section_filter=section, flagged_only=flagged_only,
+        limit=500,  # large enough to not need pagination for audit run
+    )
+    items = queue["items"]
+    if not items:
+        return TEMPLATES.TemplateResponse(
+            "audit.html",
+            {"request": request, "render": None, "queue_total": 0,
+             "session_id": session_id, "session": None,
+             "filters": {"only_unverdicted": only_unverdicted, "tool": tool,
+                         "section": section, "flagged_only": flagged_only}},
+        )
+
+    # Locate current render in queue (default to first)
+    if render_id is None:
+        render_id = items[0]["render_id"]
+    try:
+        idx = next(
+            i for i, it in enumerate(items) if it["render_id"] == render_id
+        )
+    except StopIteration:
+        # render_id not in filtered queue — render it but no nav
+        idx = -1
+
+    detail = audit.get_render_detail(render_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail=f"render {render_id} not found")
+
+    prev_render_id = items[idx - 1]["render_id"] if idx > 0 else None
+    next_render_id = (
+        items[idx + 1]["render_id"]
+        if 0 <= idx < len(items) - 1 else None
+    )
+
+    session = audit.get_audit_session(session_id) if session_id else None
+
+    return TEMPLATES.TemplateResponse(
+        "audit.html",
+        {
+            "request": request,
+            "render": detail,
+            "session_id": session_id,
+            "session": session,
+            "queue_total": queue["total"],
+            "queue_position": (idx + 1) if idx >= 0 else None,
+            "prev_render_id": prev_render_id,
+            "next_render_id": next_render_id,
+            "filters": {
+                "only_unverdicted": only_unverdicted, "tool": tool,
+                "section": section, "flagged_only": flagged_only,
+            },
+        },
+    )
+
+
 @app.get("/prompts")
 def list_prompts_endpoint(limit: int = 50) -> dict[str, Any]:
     """List recent prompts ordered by creation desc."""

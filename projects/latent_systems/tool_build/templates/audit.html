@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tool_build v1 — audit viewer</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         margin: 0; padding: 0; color: #222; background: #f3f4f6; height: 100vh;
+         display: flex; flex-direction: column; }
+  header { background: #1f2937; color: #f3f4f6; padding: 0.6em 1em;
+           display: flex; align-items: center; gap: 1em; flex-shrink: 0; }
+  header h1 { font-size: 1.05em; margin: 0; }
+  header .meta { font-size: 0.85em; color: #9ca3af; }
+  header a { color: #93c5fd; text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  .pill { display: inline-block; padding: 0.1em 0.5em; border-radius: 0.25em;
+          font-size: 0.8em; background: #374151; color: #f3f4f6; }
+  .pill.session { background: #065f46; }
+  .pill.position { background: #1e40af; }
+  main { flex: 1; display: flex; min-height: 0; }
+  .image-pane { flex: 1; display: flex; align-items: center; justify-content: center;
+                background: #1f2937; padding: 1em; overflow: auto; }
+  .image-pane img { max-width: 100%; max-height: 100%; object-fit: contain;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+  aside { width: 380px; background: #fff; border-left: 1px solid #d1d5db;
+          padding: 1em; overflow-y: auto; flex-shrink: 0; }
+  aside h2 { font-size: 0.95em; margin: 0 0 0.4em 0; color: #374151;
+             text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  aside .field { margin: 0.4em 0; font-size: 0.9em; }
+  aside .field label { font-weight: 600; color: #4b5563; display: inline; }
+  aside .field .value { color: #111827; }
+  aside section { margin-bottom: 1.2em; }
+  .render-meta { background: #f9fafb; padding: 0.6em 0.8em; border-radius: 0.4em;
+                 font-size: 0.85em; }
+  .render-meta .filename { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+                           font-size: 0.85em; word-break: break-all; color: #6b7280; }
+  .verdict-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4em; margin: 0.5em 0; }
+  .verdict-btn { padding: 0.6em; border: 2px solid #d1d5db; background: #fff;
+                 cursor: pointer; font-size: 0.9em; border-radius: 0.4em;
+                 font-weight: 600; transition: background 0.15s; }
+  .verdict-btn:hover { background: #f3f4f6; }
+  .verdict-btn.active { background: #1f2937; color: #fff; border-color: #1f2937; }
+  .verdict-btn.hero_zone { border-color: #059669; }
+  .verdict-btn.hero_zone.active { background: #059669; border-color: #059669; }
+  .verdict-btn.strong { border-color: #2563eb; }
+  .verdict-btn.strong.active { background: #2563eb; border-color: #2563eb; }
+  .verdict-btn.weak { border-color: #d97706; }
+  .verdict-btn.weak.active { background: #d97706; border-color: #d97706; }
+  .verdict-btn.reject { border-color: #b91c1c; }
+  .verdict-btn.reject.active { background: #b91c1c; border-color: #b91c1c; }
+  .verdict-btn .key { font-size: 0.7em; opacity: 0.6; margin-left: 0.4em; font-weight: 400; }
+  .reasoning textarea { width: 100%; min-height: 5em; padding: 0.5em; font-size: 0.85em;
+                        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+                        border: 1px solid #d1d5db; border-radius: 0.4em; resize: vertical; }
+  .flag-row { display: flex; align-items: center; gap: 0.5em; margin: 0.5em 0; font-size: 0.9em; }
+  .flag-row .key { font-size: 0.75em; color: #6b7280; margin-left: auto; }
+  .nav-row { display: flex; gap: 0.4em; margin-top: 1em; }
+  .nav-btn { flex: 1; padding: 0.5em; border: 1px solid #d1d5db; background: #fff;
+             cursor: pointer; font-size: 0.85em; border-radius: 0.4em; }
+  .nav-btn:hover:not(:disabled) { background: #f3f4f6; }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .lineage { font-size: 0.8em; }
+  .lineage-edge { color: #6b7280; padding: 0.15em 0; font-family: ui-monospace,
+                  "SF Mono", Menlo, monospace; }
+  .empty { text-align: center; padding: 4em 2em; color: #6b7280; }
+  .empty h2 { color: #1f2937; }
+  .toast { position: fixed; bottom: 1em; left: 50%; transform: translateX(-50%);
+           background: #1f2937; color: #fff; padding: 0.6em 1em; border-radius: 0.4em;
+           opacity: 0; transition: opacity 0.2s; pointer-events: none; font-size: 0.9em; }
+  .toast.show { opacity: 1; }
+  .toast.error { background: #b91c1c; }
+  .toast.success { background: #059669; }
+  .verdict-existing { background: #ecfccb; border: 1px solid #84cc16; padding: 0.5em;
+                      border-radius: 0.4em; font-size: 0.85em; margin-top: 0.5em; }
+  .verdict-existing .lbl { font-weight: 600; }
+  .filters { font-size: 0.85em; color: #9ca3af; }
+  .filters a { color: #93c5fd; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>audit viewer</h1>
+  {% if session %}
+    <span class="pill session">session {{ session.id[:8] }}…</span>
+    <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+  {% else %}
+    <span class="meta">no session — verdicts captured without session attribution</span>
+  {% endif %}
+  {% if queue_position %}
+    <span class="pill position">{{ queue_position }} / {{ queue_total }}</span>
+  {% endif %}
+  <span style="margin-left:auto">
+    <a href="/">← prompt drafting</a>
+  </span>
+</header>
+
+{% if not render %}
+<div class="empty">
+  <h2>No renders match the current filters.</h2>
+  <p class="filters">
+    Filters: only_unverdicted={{ filters.only_unverdicted }},
+    tool={{ filters.tool or "any" }},
+    section={{ filters.section or "any" }},
+    flagged_only={{ filters.flagged_only }}.
+  </p>
+  <p><a href="/audit">clear filters</a></p>
+</div>
+
+{% else %}
+<main>
+  <div class="image-pane">
+    <img src="/audit/render/{{ render.id }}/file" alt="{{ render.filename }}"
+         data-render-id="{{ render.id }}">
+  </div>
+  <aside>
+
+    <section class="render-meta">
+      <div class="filename">{{ render.filename }}</div>
+      <div style="margin-top:0.3em;">
+        <strong>tool:</strong> {{ render.tool }}
+        {% if render.variant is not none %}<span class="meta">v{{ render.variant }}</span>{% endif %}
+        {% if render.hero_status %}<span class="pill" style="background:#fef3c7; color:#92400e;">{{ render.hero_status }}</span>{% endif %}
+      </div>
+      <div class="meta" style="margin-top:0.3em; font-size:0.75em; color:#9ca3af;">
+        {{ render.discipline_version }} · {{ render.created[:19] }}
+      </div>
+    </section>
+
+    {% if render.concept %}
+    <section>
+      <h2>Concept</h2>
+      <div class="field"><label>name:</label> <span class="value">{{ render.concept.name }}</span></div>
+      <div class="field"><label>section:</label> <span class="value">{{ render.concept.section or "—" }}</span></div>
+      <div class="field"><label>register:</label> <span class="value">{{ render.concept.register or "—" }}</span></div>
+      {% if render.concept.subject %}
+      <div class="field"><label>subject:</label> <span class="value">{{ render.concept.subject }}</span></div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if render.lineage_edges %}
+    <section>
+      <h2>Lineage ({{ render.lineage_edges|length }})</h2>
+      <div class="lineage">
+        {% for edge in render.lineage_edges[:8] %}
+        <div class="lineage-edge">L{{ edge.layer }}: {{ edge.source_type }}:{{ edge.source_id[:8] }} → {{ edge.target_type }}:{{ edge.target_id[:8] }}</div>
+        {% endfor %}
+        {% if render.lineage_edges|length > 8 %}
+        <div class="lineage-edge">… ({{ render.lineage_edges|length - 8 }} more)</div>
+        {% endif %}
+      </div>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Verdict</h2>
+      <form id="verdict-form" data-render-id="{{ render.id }}">
+        <div class="verdict-buttons">
+          <button type="button" class="verdict-btn hero_zone {% if render.verdict and render.verdict.verdict == 'hero_zone' %}active{% endif %}" data-verdict="hero_zone">
+            hero_zone <span class="key">[1]</span>
+          </button>
+          <button type="button" class="verdict-btn strong {% if render.verdict and render.verdict.verdict == 'strong' %}active{% endif %}" data-verdict="strong">
+            strong <span class="key">[2]</span>
+          </button>
+          <button type="button" class="verdict-btn weak {% if render.verdict and render.verdict.verdict == 'weak' %}active{% endif %}" data-verdict="weak">
+            weak <span class="key">[3]</span>
+          </button>
+          <button type="button" class="verdict-btn reject {% if render.verdict and render.verdict.verdict == 'reject' %}active{% endif %}" data-verdict="reject">
+            reject <span class="key">[4]</span>
+          </button>
+        </div>
+
+        <div class="reasoning">
+          <textarea id="reasoning" name="verdict_reasoning" placeholder="Reasoning (optional). [RUBRIC] prefix flags rubric questions for later review."></textarea>
+        </div>
+
+        <div class="flag-row">
+          <input type="checkbox" id="flag-2nd" {% if render.verdict and render.verdict.flags_needs_second_look %}checked{% endif %}>
+          <label for="flag-2nd">needs second look</label>
+          <span class="key">[F]</span>
+        </div>
+      </form>
+
+      {% if render.verdict %}
+      <div class="verdict-existing">
+        <span class="lbl">existing:</span> {{ render.verdict.verdict }}
+        {% if render.verdict.flags_needs_second_look %}<span class="pill">flagged</span>{% endif %}
+        <span class="meta" style="font-size:0.8em; color:#6b7280;">
+          by {{ render.verdict.audited_by }} at {{ render.verdict.created[:19] }}
+        </span>
+      </div>
+      {% endif %}
+    </section>
+
+    <section>
+      <div class="nav-row">
+        <button class="nav-btn" id="prev-btn" {% if not prev_render_id %}disabled{% endif %}>
+          ← prev <span class="key">[←]</span>
+        </button>
+        <button class="nav-btn" id="next-btn" {% if not next_render_id %}disabled{% endif %}>
+          next → <span class="key">[→]</span>
+        </button>
+      </div>
+    </section>
+
+  </aside>
+</main>
+{% endif %}
+
+<div id="toast" class="toast"></div>
+
+<script>
+{% if render %}
+const RENDER_ID = "{{ render.id }}";
+const SESSION_ID = {% if session_id %}"{{ session_id }}"{% else %}null{% endif %};
+const PREV_ID = {% if prev_render_id %}"{{ prev_render_id }}"{% else %}null{% endif %};
+const NEXT_ID = {% if next_render_id %}"{{ next_render_id }}"{% else %}null{% endif %};
+const EXISTING_VERDICT_ID = {% if render.verdict %}"{{ render.verdict.id }}"{% else %}null{% endif %};
+
+function showToast(msg, kind) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind || '');
+  setTimeout(() => { t.className = 'toast'; }, 1800);
+}
+
+function navTo(renderId) {
+  if (!renderId) return;
+  const url = new URL(window.location);
+  url.searchParams.set('render_id', renderId);
+  window.location = url.toString();
+}
+
+async function captureVerdict(verdict) {
+  const reasoning = document.getElementById('reasoning').value;
+  const flagged = document.getElementById('flag-2nd').checked;
+  const body = {
+    verdict: verdict,
+    verdict_reasoning: reasoning || null,
+    flags_needs_second_look: flagged,
+  };
+  if (SESSION_ID) body.audit_session_id = SESSION_ID;
+
+  try {
+    const r = await fetch(`/audit/render/${RENDER_ID}/verdict`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) {
+      const e = await r.json();
+      showToast(`error: ${e.detail || r.status}`, 'error');
+      return;
+    }
+    // Update active button state
+    document.querySelectorAll('.verdict-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.verdict-btn.${verdict}`).classList.add('active');
+    showToast(`verdict: ${verdict}`, 'success');
+  } catch (e) {
+    showToast(`error: ${e.message}`, 'error');
+  }
+}
+
+async function toggleFlag() {
+  if (!EXISTING_VERDICT_ID) {
+    // No verdict yet — flag is captured with next verdict click
+    showToast('flag will be captured with next verdict', 'success');
+    return;
+  }
+  const cb = document.getElementById('flag-2nd');
+  cb.checked = !cb.checked;
+  try {
+    const r = await fetch(`/audit/verdicts/${EXISTING_VERDICT_ID}/flags`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({needs_second_look: cb.checked}),
+    });
+    if (!r.ok) {
+      cb.checked = !cb.checked;  // revert
+      const e = await r.json();
+      showToast(`error: ${e.detail || r.status}`, 'error');
+      return;
+    }
+    showToast(`flag ${cb.checked ? 'set' : 'cleared'}`, 'success');
+  } catch (e) {
+    cb.checked = !cb.checked;
+    showToast(`error: ${e.message}`, 'error');
+  }
+}
+
+document.querySelectorAll('.verdict-btn').forEach(btn => {
+  btn.addEventListener('click', () => captureVerdict(btn.dataset.verdict));
+});
+
+document.getElementById('flag-2nd').addEventListener('change', async (ev) => {
+  if (!EXISTING_VERDICT_ID) return;  // captured at next verdict
+  ev.preventDefault();
+  // Reset and route through toggleFlag for consistent error handling
+  ev.target.checked = !ev.target.checked;
+  await toggleFlag();
+});
+
+document.getElementById('prev-btn').addEventListener('click', () => navTo(PREV_ID));
+document.getElementById('next-btn').addEventListener('click', () => navTo(NEXT_ID));
+
+document.addEventListener('keydown', (ev) => {
+  // Ignore when typing in textarea/input
+  if (ev.target.tagName === 'TEXTAREA' || ev.target.tagName === 'INPUT') return;
+  switch (ev.key) {
+    case '1': captureVerdict('hero_zone'); break;
+    case '2': captureVerdict('strong'); break;
+    case '3': captureVerdict('weak'); break;
+    case '4': captureVerdict('reject'); break;
+    case 'f': case 'F': toggleFlag(); break;
+    case 'ArrowLeft': navTo(PREV_ID); break;
+    case 'ArrowRight': navTo(NEXT_ID); break;
+  }
+});
+{% endif %}
+</script>
+
+</body>
+</html>
