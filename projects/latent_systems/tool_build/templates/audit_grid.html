@@ -70,8 +70,11 @@
   {% if session %}
     <span class="pill session">session {{ session.id[:8] }}…</span>
     <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;">■ end</a>
   {% else %}
     <span class="meta">no session</span>
+    <a href="#" id="start-session-quick" class="meta">▶ start (quick)</a>
+    <a href="#" id="start-session-deep" class="meta">▶ start (deep)</a>
   {% endif %}
   <span class="pill position">{{ queue_total }} total</span>
   <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
@@ -149,6 +152,55 @@
 </div>
 
 {% endif %}
+
+<script>
+const SESSION_ID = {% if session_id %}"{{ session_id }}"{% else %}null{% endif %};
+
+async function startSession(mode) {
+  try {
+    const r = await fetch('/audit/sessions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode: mode}),
+    });
+    if (!r.ok) {
+      const e = await r.json();
+      alert(`start session failed: ${e.detail || r.status}`);
+      return;
+    }
+    const data = await r.json();
+    const url = new URL(window.location);
+    url.searchParams.set('session_id', data.id);
+    window.location = url.toString();
+  } catch (e) {
+    alert(`start session error: ${e.message}`);
+  }
+}
+
+async function endCurrentSession() {
+  if (!SESSION_ID) return;
+  try {
+    const r = await fetch(`/audit/sessions/${SESSION_ID}/end`, {method: 'POST'});
+    if (!r.ok) {
+      const e = await r.json();
+      alert(`end session failed: ${e.detail || r.status}`);
+      return;
+    }
+    const url = new URL(window.location);
+    url.searchParams.delete('session_id');
+    window.location = url.toString();
+  } catch (e) {
+    alert(`end session error: ${e.message}`);
+  }
+}
+
+const startQuick = document.getElementById('start-session-quick');
+const startDeep = document.getElementById('start-session-deep');
+const endLink = document.getElementById('end-session-link');
+if (startQuick) startQuick.addEventListener('click', (ev) => { ev.preventDefault(); startSession('quick_pass'); });
+if (startDeep) startDeep.addEventListener('click', (ev) => { ev.preventDefault(); startSession('deep_eval'); });
+if (endLink) endLink.addEventListener('click', (ev) => { ev.preventDefault(); endCurrentSession(); });
+</script>
 
 </body>
 </html>

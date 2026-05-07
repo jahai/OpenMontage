@@ -129,8 +129,11 @@
   {% if session %}
     <span class="pill session">session {{ session.id[:8] }}…</span>
     <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;">■ end</a>
   {% else %}
-    <span class="meta">no session — verdicts captured without session attribution</span>
+    <span class="meta">no session</span>
+    <a href="#" id="start-session-quick" class="meta">▶ start (quick)</a>
+    <a href="#" id="start-session-deep" class="meta">▶ start (deep)</a>
   {% endif %}
   {% if queue_position %}
     <span class="pill position">{{ queue_position }} / {{ queue_total }}</span>
@@ -518,6 +521,51 @@ async function consultAI() {
 }
 
 document.getElementById('consult-btn').addEventListener('click', consultAI);
+
+async function startSession(mode) {
+  try {
+    const r = await fetch('/audit/sessions', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode: mode}),
+    });
+    if (!r.ok) {
+      const e = await r.json();
+      showToast(`start session failed: ${e.detail || r.status}`, 'error');
+      return;
+    }
+    const data = await r.json();
+    const url = new URL(window.location);
+    url.searchParams.set('session_id', data.id);
+    window.location = url.toString();
+  } catch (e) {
+    showToast(`start session error: ${e.message}`, 'error');
+  }
+}
+
+async function endCurrentSession() {
+  if (!SESSION_ID) return;
+  try {
+    const r = await fetch(`/audit/sessions/${SESSION_ID}/end`, {method: 'POST'});
+    if (!r.ok) {
+      const e = await r.json();
+      showToast(`end session failed: ${e.detail || r.status}`, 'error');
+      return;
+    }
+    const url = new URL(window.location);
+    url.searchParams.delete('session_id');
+    window.location = url.toString();
+  } catch (e) {
+    showToast(`end session error: ${e.message}`, 'error');
+  }
+}
+
+const startQuick = document.getElementById('start-session-quick');
+const startDeep = document.getElementById('start-session-deep');
+const endLink = document.getElementById('end-session-link');
+if (startQuick) startQuick.addEventListener('click', (ev) => { ev.preventDefault(); startSession('quick_pass'); });
+if (startDeep) startDeep.addEventListener('click', (ev) => { ev.preventDefault(); startSession('deep_eval'); });
+if (endLink) endLink.addEventListener('click', (ev) => { ev.preventDefault(); endCurrentSession(); });
 
 document.addEventListener('keydown', (ev) => {
   // Ignore when typing in textarea/input
