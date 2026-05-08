@@ -28,7 +28,7 @@ This is a SEED scaffold. To use:
      ```bash
      cd projects/latent_systems/tool_build && python -c "
      from rubric import load_active_rubric
-     r = load_active_rubric('/c/Users/josep/Desktop/desktop1/OpenMontage')
+     r = load_active_rubric('../../..')   # ../../../ = OpenMontage repo root
      assert r is not None, 'no rubric found in docs/'
      print('criteria:', list(r['criteria'].keys()))
      print('all bullets filled:', all(c['pass'] and c['partial'] and c['fail'] for c in r['criteria'].values()))
