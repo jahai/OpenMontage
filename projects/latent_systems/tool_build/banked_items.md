@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-07 (Phase 2 close + v0.6 cross-Claude review fold-in + rubric seed scaffold landed; rubric authoring + one real Wave B firing remain as Phase 2 acceptance bridge before Phase 3)
+**Updated:** 2026-05-08 (Phase 2 acceptance bridge Step 1+2 in progress: consult_render opt-in landed 8a1fea4; rubric seed pollution fix landed dbc0d51; rubric authoring at docs/AUDIT_RUBRICS_v1_0.md in flight; Wave B firing pending)
 
 ---
 
@@ -34,7 +34,7 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 
 | Item | Origin |
 |---|---|
-| Native-API generation path alongside clipboard handoff (mixed-path) — see detail below | Phase 1.5 e2e debrief 2026-05-05 |
+| ~~Native-API generation path alongside clipboard handoff (mixed-path) — see detail below~~ | Phase 1.5 e2e debrief 2026-05-05 — **moved to Phase 3 territory 2026-05-08**: doesn't ship in Phase 2; Phase 3 or later when API-generation friction surfaces |
 | ~~`tools/router_log.md` cross-reference for tool attribution recovery on existing 1698 pre_v1 renders~~ | Day 3 §4.1 + Day 5-9 §6.2 — **superseded 2026-05-06**: Day 1 inspection showed router_log has only 1 logged run (recovery rate ~0%). Replaced by filename-pattern extension in walker.classify() (Day 1 commit 76069fd: 71.6% recovery via `_mj_<hex>_` infix + frame_extract category + flux/kontext markers + broader gpt). Forward-looking value: router_log captures attribution for new renders going forward — that mechanism is correct, just doesn't help with existing pre_v1 backlog. |
 | ~~21 `_unclassified/` GPT renders triage to specific Phase 1 directions~~ | Day 5-9 §6.1 — **moved to Wave A 2026-05-06**: per visual_identity_phase1_references/README.md, `_unclassified/` is BY DESIGN a hold queue for user's Phase 2 visual-identity evaluation work (5 directions + 6 criteria already specified). Editorial decision-work, not mechanical. Deferred to Wave A audit viewer review queue (filter on `WHERE filepath LIKE '%_unclassified%'`). All 21 already correctly tagged `gpt_image_2` from Day 1's pattern recovery. |
 | `needs_review_reason` promote from render YAML to state.db column (revisit at scale) | Day 5-9 §4.10 |
@@ -59,7 +59,7 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 
 ## Phase 2 close (shipped 2026-05-06 → 2026-05-07)
 
-Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actual via single-session push (banked as fourth Phase-3-estimating signal: prior-phase substrate maturity → next phase can compress).
+Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actual via single-session push (banked as fourth Phase-3-estimating signal: prior-phase substrate maturity → next phase can compress).
 
 **Shipped, all 16 tests green:**
 - ✅ Migration 0003 schema (verdicts rebuild via temp-table-and-copy + audit_sessions + ai_consultations + audit_thumbnails)
@@ -70,8 +70,15 @@ Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actua
 - ✅ Day 2 close: 21 _unclassified/ triage deferred to audit viewer review queue (BY DESIGN per visual_identity_phase1_references/README.md)
 - ✅ PHASE_2_E2E_PLAN.md authored (10-step real-API run analogous to PHASE_1_5_E2E_PLAN.md)
 
+**v0.6 cross-Claude review must-fix amendments status:**
+- ✅ #1 — `consult_render` opt-in `create_verdict_if_missing` default (commit 8a1fea4, 2026-05-08): prevents permanent audit-trail pollution from exploratory consult clicks
+- ✅ #2 — `_SAFETY_REFUSAL_RE` verb-aware tightening (landed in Phase 2 Wave B substrate; visible in audit_providers/anthropic.py with v0.6 amendment comment): prevents legitimate critical evaluations from being miscategorized as safety refusals
+- ⏳ #3 — Wave B real firing per PHASE_2_E2E_PLAN.md (acceptance bridge — pending rubric authoring)
+- ⏳ #4 — PHASE_2_E2E_PLAN.md latency methodology + supersession step amendments (banked for Wave B post-firing iteration)
+- ✅ #5 — fifth Phase-3-estimating signal banked (user-blocking work that designs treat as non-blocking actually does block end-to-end verification — see signal 5 in phase3_design_notes v0.1 SCAFFOLD)
+
 **Remaining gate for Wave B live firing (Phase 2 acceptance bridge):**
-- ⏳ `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work. Without it, the consultation endpoint returns `400 "no audit rubric available"`. **Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md`** carrying the 6 evaluation criteria from `docs/HANDOFF_2026-05-02.md` structured per the parser contract; Joseph copies to `docs/` and fills in `pass:` / `partial:` / `fail:` bullets per criterion. Estimated authoring time: ~5-15 min instead of ~30 from blank.
+- 🔄 `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work, IN PROGRESS 2026-05-08. **Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md`** carrying the 6 evaluation criteria from `docs/HANDOFF_2026-05-02.md` structured per the parser contract. **Pollution fix landed 2026-05-08 (commit dbc0d51)** — content-after-last-H3 footer would have polluted Sonic-being preservation criterion definition by ~2,200 chars on every consultation. **18 bullets drafted via cross-Claude walkthrough, integrated to docs/ via per-criterion AD-5 protocol 2026-05-08**; awaiting Joseph's review-pass + commit.
 - ⏳ One real Wave B firing per `PHASE_2_E2E_PLAN.md` — bridge from "Phase 2 code-shipped" to "Phase 2 acceptance-validated" per cross-Claude reviewer's recommendation. Cost ~$0.30 + ~30 min Joseph time. Validates SDK shape assumptions (image base64 format, response.usage attribute names, vision token billing math, real safety filter behavior, real rate-limit behavior) that synthetic tests can't catch.
 
 **Phase 2 items moved to Phase 3 territory below:**
@@ -84,6 +91,7 @@ Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actua
 - **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — moved from Phase 2 territory 2026-05-07. Depends on Phase 1 + Phase 2 successful_examples accumulation; Phase 2 shipped Anthropic vision config only. Expansion when verdict-confirmed-strong outputs seed enough data per Q3.
 - **3a hardening review** — moved from Phase 2 territory 2026-05-07. Largely landed Phase 1 Day 12 + v0.4 amendment; Phase 3 audit confirms no remaining gaps after real Wave B usage.
 - **Existing-consultations-on-page-load enhancement** — ✅ shipped Phase 2.5 (commit dbfd15e); audit.get_render_detail now returns ai_consultations array for the latest verdict.
+- **Native-API generation path (mixed-path)** — moved from Phase 2 territory 2026-05-08. Direct API providers (FLUX, Imagen, DALL-E) parallel branch to clipboard handoff. Implementation pointers preserved in detail section below.
 - **Render-group compare-and-rank view (Feature 5+ extension)** — grid
   view of generations grouped by prompt (default) or by concept; drag
   or click to rank; ranking reflected in filesystem via rank-slot
@@ -95,6 +103,7 @@ Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actua
   ride on `hero_promotions` with status field? (c) is the grid view a
   modal in the existing UI or a dedicated `/groups/<prompt_id>` page?
   Surfaced 2026-05-05 by Joseph after Phase 1.5 e2e run.
+- **Rubric parser multi-line bullet support** — Pattern #8 reinforcement #2 (banked 2026-05-08): current parser captures only same-line bullet content via `(.*)$`; multi-line bullets get truncated AND continuation lines pollute the criterion's definition body. Fix is either (a) reformat bullets single-line at author time (current discipline; works but constrains markdown idiom), or (b) extend `parse_rubric_text` to support continuation lines (~10 lines added, needs test for "indented continuation appends to current_eval[level]"). Recommend (b) when Phase 2.5 parser work happens — multi-line bullets are standard markdown and the current limitation will keep biting future rubric authoring.
 - NOTES.md authorship via Claude API (Feature 6)
 - Cross-AI / cross-Claude capture surface (Feature 7)
 - Serialization to OpenMontage `edit_decisions` + `asset_manifest` (Feature 8)
@@ -106,14 +115,23 @@ Phase 2 design notes at v0.5. Compressed from 4-5 week estimate to ~2 days actua
 
 ## Investigations (not code; verification only)
 
-| Item | Origin | Why |
-|---|---|---|
-| B4 — empirical `git log -1 --format='%an <%ae>'` after a real Claude Code commit | Day 1-2 B4 | Determine what identity Claude Code commits actually carry. Hook reads `git config user.name` (full scope fallthrough). Currently shows `calesthio` somewhere; need to know if hook will catch real CC commits or silently allow them. |
+(none currently open)
 
 ## Investigations COMPLETED in earlier sessions
 
 - B1 — Windows graceful shutdown (psutil + control-file mechanism). LANDED Day 4.
 - B3 — full `--init` → `--uninstall` cycle verified. LANDED Day 4.
+- B4 — empirical Claude Code commit identity. RESOLVED Day 16/17 (2026-05-06): `.git/config` had a typo (`user.emailcd` instead of `user.email`); commits from this machine via Claude Code fail outright with `fatal: unable to auto-detect email address` rather than silently misattributing as `calesthio`. Recent `calesthio <celesthioailabs@gmail.com>` commits in log come from elsewhere (GitHub Codex / web UI). Fixed under explicit user authorization: `user.email = joseph.brightly@gmail.com`, matching AD-5 hook's hardcoded `JOSEPH_EMAIL`. Future Claude-Code commits to canonical paths now pass the hook scope check.
+
+## Pattern #8 reinforcements (rubric parser-discipline-mismatch class)
+
+Both bugs share the parent insight: the rubric parser's design assumes a discipline (no multi-line bullets, no post-last-H3 content) that isn't enforced by the format. Either tighten the format spec (current path) or extend the parser (Phase 2.5 work).
+
+1. **Footer pollution (caught pre-authoring 2026-05-08, fix landed dbc0d51).** Parser folds post-last-H3 content into the previous criterion's definition. Caught when seed file's footer (Per-direction notes table + Authoring tips + After-authoring instructions) appended ~2,200 chars to Sonic-being preservation's definition body — would have shipped to AI on every consultation as if it were criterion-grading guidance. Fix: moved footer above first H3 as preamble (parser ignores everything before first H3); added footer-pollution sentinel to verification command (any criterion definition >1000 chars triggers warning).
+
+2. **Multi-line-bullet pollution (caught post-authoring 2026-05-08).** Parser regex `^\s*[-*]\s*(pass|partial|fail)\s*:\s*(.*)$` captures only same-line content; multi-line bullets get truncated AND continuation lines pollute the criterion's definition body. Fix at author time: bullets single-line. Phase 2.5 parser work: extend `parse_rubric_text` to support continuation lines (~10 lines added, needs test for "indented continuation appends to current_eval[level]").
+
+Pattern: when format spec relies on undocumented discipline (no multi-line, no post-anchor content), failure mode surfaces silently (parses successfully, content is wrong). Pattern #8 third-bucket fixtures need to test the parser-discipline-boundary cases, not just generic happy-path content matching.
 
 ---
 
@@ -194,7 +212,7 @@ them.
 
 ---
 
-## Phase 2 design — native-API generation path (mixed-path)
+## Phase 2 design — native-API generation path (mixed-path) — moved to Phase 3 territory 2026-05-08
 
 **Problem.** Phase 1 hard-coded the clipboard+browser handoff flow
 because Midjourney has no public API. But OpenMontage's parent
@@ -233,7 +251,7 @@ for bulk iteration where MJ's manual round-trip is the bottleneck.
 - Concept + prompt drafting (Claude API) stays unchanged — it's
   tool-agnostic; only dispatch changes.
 
-**Open questions for Phase 2 design notes.**
+**Open questions for Phase 3 design notes.**
 - Where do API-generated bytes live before canonical placement —
   staging dir + walker, or direct write?
 - Does an API render need `attempt_id` at all? (No clipboard
@@ -253,3 +271,5 @@ for bulk iteration where MJ's manual round-trip is the bottleneck.
 3. **Decisions-beyond-spec are flagged with reasoning, not just stated.** Every §4 entry across review waves names the alternatives considered, the chosen path, and the failure mode that would force revisiting. This is the cross-Claude review F11a pattern working as intended.
 
 4. **Spec/reality gaps surface during build, not before.** §2 (gitignore makes hook dormant) wasn't in the spec, both Day 1-2 build and review missed it; Day 5-9 routing operation surfaced it. Bank as: "every operational task is also a spec audit pass."
+
+5. **Format-discipline-mismatch silent failures.** When parser/spec relies on undocumented discipline (no multi-line bullets in rubric, no post-last-H3 content, etc.), failure mode parses successfully but produces wrong content. Pattern #8 third-bucket fixtures need to test parser-discipline-boundary cases. *— from Pattern #8 reinforcements (rubric authoring 2026-05-08)*
