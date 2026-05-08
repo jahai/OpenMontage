@@ -290,13 +290,17 @@ def _refs_test_data(conn, data: dict) -> bool:
 
 
 def test_consult_happy_path_auto_creates_verdict():
+    # v0.6 amendment 1: explicit opt-in required to auto-create a verdict
+    # when none exists. Test exercises the opted-in legacy path.
     rid = f"{PREFIX}happy"
     png = _make_test_png(rid)
     _seed_render(rid, png)
     rubric_dir = _make_rubric_dir()
     try:
         with patch.object(vision, "call_vision", return_value=_fake_completed_response()):
-            result = audit_consult.consult_render(rid, repo_root=rubric_dir)
+            result = audit_consult.consult_render(
+                rid, repo_root=rubric_dir, create_verdict_if_missing=True,
+            )
 
         _assert(result["render_id"] == rid)
         _assert(result["auto_created_verdict"] is True)
@@ -400,13 +404,17 @@ def test_consult_render_missing():
 
 
 def test_consult_persists_safety_refused_status():
+    # v0.6 amendment 1: opted-in path so the 'weak' placeholder branch
+    # (no completed inference) still has coverage.
     rid = f"{PREFIX}safety"
     png = _make_test_png(rid)
     _seed_render(rid, png)
     rubric_dir = _make_rubric_dir()
     try:
         with patch.object(vision, "call_vision", return_value=_fake_safety_refused_response()):
-            result = audit_consult.consult_render(rid, repo_root=rubric_dir)
+            result = audit_consult.consult_render(
+                rid, repo_root=rubric_dir, create_verdict_if_missing=True,
+            )
 
         _assert(len(result["consultations"]) == 1)
         _assert(result["consultations"][0]["status"] == "safety_refused")
@@ -436,6 +444,39 @@ def test_consult_unknown_provider():
         shutil.rmtree(rubric_dir, ignore_errors=True)
 
 
+def test_consult_no_verdict_no_flag_raises():
+    """v0.6 amendment 1 — when no verdict exists and the caller has not
+    opted in via create_verdict_if_missing, consult_render must refuse
+    rather than silently auto-create a placeholder verdict on the audit
+    trail. Mocks call_vision because the gate sits in step 6 (after
+    provider calls); test asserts the error shape regardless."""
+    rid = f"{PREFIX}no_flag"
+    png = _make_test_png(rid)
+    _seed_render(rid, png)
+    rubric_dir = _make_rubric_dir()
+    try:
+        try:
+            with patch.object(
+                vision, "call_vision", return_value=_fake_completed_response(),
+            ):
+                audit_consult.consult_render(rid, repo_root=rubric_dir)
+        except audit_consult.ConsultationError as e:
+            msg = str(e).lower()
+            _assert("verdict" in msg,
+                    "error should mention the missing-verdict condition")
+            _assert("create_verdict_if_missing" in msg,
+                    "error should name the opt-in parameter so caller knows the fix")
+            # Verdict must NOT have been created as a side effect.
+            detail = audit.get_render_detail(rid)
+            _assert(detail is not None, "render row should still exist")
+            _assert(detail.get("verdict") is None,
+                    "no verdict should be auto-created when flag is unset")
+            return
+        _assert(False, "expected ConsultationError when no verdict + no flag")
+    finally:
+        shutil.rmtree(rubric_dir, ignore_errors=True)
+
+
 def test_consult_session_totals_incremented():
     rid = f"{PREFIX}session"
     png = _make_test_png(rid)
@@ -446,7 +487,10 @@ def test_consult_session_totals_incremented():
     rubric_dir = _make_rubric_dir()
     try:
         with patch.object(vision, "call_vision", return_value=_fake_completed_response()):
-            audit_consult.consult_render(rid, audit_session_id=sid, repo_root=rubric_dir)
+            audit_consult.consult_render(
+                rid, audit_session_id=sid, repo_root=rubric_dir,
+                create_verdict_if_missing=True,
+            )
 
         cost = audit.get_session_cost(sid)
         _assert(cost["total_consultations"] == 1)
@@ -466,12 +510,14 @@ def main():
         test_consult_render_missing()
         test_consult_persists_safety_refused_status()
         test_consult_unknown_provider()
+        test_consult_no_verdict_no_flag_raises()
         test_consult_session_totals_incremented()
     finally:
         cleanup()
-    print("PASS: audit_consult orchestrator — auto-create verdict, attach "
-          "to existing, rubric-missing / render-missing / unknown-provider "
-          "errors, safety-refused persistence, session-cost rollup")
+    print("PASS: audit_consult orchestrator — opt-in auto-create verdict, "
+          "attach to existing, rubric-missing / render-missing / unknown-"
+          "provider / no-verdict-no-flag errors, safety-refused persistence, "
+          "session-cost rollup")
     return 0
 
 

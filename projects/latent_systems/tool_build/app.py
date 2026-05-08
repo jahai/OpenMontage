@@ -887,6 +887,7 @@ def audit_render_file_endpoint(render_id: str):
 class ConsultRequest(BaseModel):
     audit_session_id: Optional[str] = None
     providers: list[str] = ["anthropic"]
+    create_verdict_if_missing: bool = False
 
 
 @app.post("/audit/render/{render_id}/consult", status_code=201)
@@ -894,11 +895,16 @@ def consult_render_endpoint(
     render_id: str, body: ConsultRequest,
 ) -> dict[str, Any]:
     """Run AI consultation against a render against the active rubric.
-    Persists ai_consultations rows + YAMLs; auto-creates verdict if
-    none exists. Wave B.
+    Persists ai_consultations rows + YAMLs. Wave B.
+
+    create_verdict_if_missing (v0.6 amendment 1): default False refuses
+    to auto-create a placeholder verdict when none exists — caller must
+    mark a verdict first (preserving F8 verdict-as-commitment) or
+    explicitly opt in. Set True to restore the legacy auto-create path.
 
     Errors:
-      400 — no rubric authored / image unprocessable / unknown provider.
+      400 — no rubric authored / image unprocessable / unknown provider /
+            no verdict exists and create_verdict_if_missing is False.
       404 — render not found.
       500 / 502 — SDK failure (502 retryable, 500 permanent), payload
                   includes api_call_id for retry-queue correlation.
@@ -907,6 +913,7 @@ def consult_render_endpoint(
         return audit_consult.consult_render(
             render_id, audit_session_id=body.audit_session_id,
             providers=body.providers,
+            create_verdict_if_missing=body.create_verdict_if_missing,
         )
     except audit_consult.ConsultationError as e:
         msg = str(e)

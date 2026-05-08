@@ -13,10 +13,14 @@ Flow:
   3. Get downscaled image; 400 if file missing / unprocessable.
   4. Compose concept_text + lineage_summary from detail.
   5. For each requested provider: call_vision → VisionConsultationResponse.
-  6. Find or auto-create verdict to attach consultations to:
+  6. Find or (opt-in) auto-create verdict to attach consultations to:
        - if latest non-superseded verdict exists, attach to it
-       - else: create a placeholder verdict using first completed
-         response's verdict_inference; audited_by='multi_ai_assisted'
+       - elif create_verdict_if_missing: create a placeholder verdict
+         using first completed response's verdict_inference (or 'weak'
+         if none completed); audited_by='multi_ai_assisted'
+       - else: raise ConsultationError. v0.6 amendment 1 — prevents
+         exploratory "consult AI" clicks from leaving auto-verdicts
+         on the audit trail Joseph never intended to commit.
   7. Persist each consultation (state.db row + YAML at
      `_data/ai_consultations/<id>.yaml`).
   8. Update verdict.consultation_cost_usd via SUM over its
@@ -130,12 +134,20 @@ def consult_render(
     audit_session_id: Optional[str] = None,
     providers: Optional[list[str]] = None,
     repo_root: Optional[Path] = None,
+    create_verdict_if_missing: bool = False,
 ) -> dict:
     """Run AI consultation against a render. See module docstring for flow.
 
+    create_verdict_if_missing (v0.6 amendment 1): when no verdict exists
+    for the render, default behavior raises ConsultationError. Set True
+    to opt into the legacy auto-create path (placeholder verdict from
+    first completed inference, or 'weak' if none completed). Default-False
+    keeps F8 verdict-as-commitment discipline intact for exploratory
+    consultations.
+
     Raises:
       ConsultationError on setup-level issues (missing render, rubric,
-        image, unknown provider).
+        image, unknown provider, or no-verdict-and-no-opt-in).
       VisionError (LLMError subclass) on SDK-level failures (rate limit,
         auth, timeout, etc.).
     """
@@ -189,12 +201,12 @@ def consult_render(
         )
         raw_responses.append((p_name, resp))
 
-    # 6. Find-or-create verdict
+    # 6. Find-or-create verdict (v0.6: auto-create gated behind opt-in flag)
     verdict_id: Optional[str] = None
     if detail.get("verdict"):
         verdict_id = detail["verdict"]["id"]
         auto_created_verdict = False
-    else:
+    elif create_verdict_if_missing:
         first_completed = next(
             (r for _, r in raw_responses if r.status == "completed" and r.parsed),
             None,
@@ -232,6 +244,12 @@ def consult_render(
             )
             verdict_id = placeholder["id"]
             auto_created_verdict = True
+    else:
+        raise ConsultationError(
+            "no verdict exists for this render; mark a verdict first, "
+            "or pass create_verdict_if_missing=True to auto-create from "
+            "AI inference (not recommended for first-pass consultation)"
+        )
 
     # 7. Persist each consultation as state.db row + YAML
     persisted: list[dict] = []
