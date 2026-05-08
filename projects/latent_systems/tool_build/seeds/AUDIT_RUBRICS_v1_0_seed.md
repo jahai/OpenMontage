@@ -21,12 +21,23 @@ This is a SEED scaffold. To use:
      `docs/HANDOFF_2026-05-02.md` Phase 2 evaluation criteria + the
      5-direction descriptions in `shared/visual_identity_phase1_references/README.md`;
      the *grading scale language* is yours to author.
-  3. Verify the file parses cleanly:
-     ```python
-     from rubric import parse_rubric_file
-     parse_rubric_file('projects/latent_systems/docs/AUDIT_RUBRICS_v1_0.md')
+  3. Verify the file parses cleanly, every criterion has all three
+     bullets filled, AND no trailing content got folded into a
+     criterion definition (the "footer pollution" failure mode — see
+     "Authoring safety notes" below):
+     ```bash
+     cd projects/latent_systems/tool_build && python -c "
+     from rubric import load_active_rubric
+     r = load_active_rubric('/c/Users/josep/Desktop/desktop1/OpenMontage')
+     assert r is not None, 'no rubric found in docs/'
+     print('criteria:', list(r['criteria'].keys()))
+     print('all bullets filled:', all(c['pass'] and c['partial'] and c['fail'] for c in r['criteria'].values()))
+     print('footer-pollution check (any definition > 1000 chars):',
+           any(len(c['definition']) > 1000 for c in r['criteria'].values()))
+     "
      ```
-     Should return the parsed dict without raising RubricParseError.
+     Expected: 6 criteria listed, `all bullets filled: True`,
+     `footer-pollution check: False`.
   4. Once parsing passes, `POST /audit/render/{id}/consult` will fire
      against the rubric. Phase 2 acceptance bridge per PHASE_2_E2E_PLAN.md
      unblocks.
@@ -37,6 +48,71 @@ concept types listed in front-matter (per `phase2_design_notes.md` §4
 scope to a single concept type later, add `concept_types_filter: [...]`
 to that criterion's body — handled by Phase 2.5+ rubric parser
 extension.
+
+# Authoring safety notes (preamble — invisible to AI consultation)
+
+These sections sit ABOVE the first H3 (`### Documentary integrity`)
+deliberately. The parser ignores everything before the first H3
+anchor; everything from the first H3 to EOF is folded into the
+nearest H3's definition body.
+
+**Critical authoring rule:** do NOT add any content (notes, tables,
+horizontal rules, additional H1/H2 headings) AFTER the last H3
+(`### Sonic-being preservation`). It will get appended to the last
+criterion's definition and shipped to the AI verbatim. The footer-
+pollution check in the verification command above catches this.
+
+## Per-direction notes
+
+The 5 concept types in `applies_to_concept_types` correspond to the
+5 visual-identity directions documented in
+`shared/visual_identity_phase1_references/README.md`:
+
+| Concept type | Description |
+|---|---|
+| `latent_space` | typography within latent-space depth, blue-black gradients, particles |
+| `architectural_inhabitant` | physical interior architecture, institutional palette, geometric composition |
+| `composite_subject` | figures/faces assembled from multiple sources, monochromatic palette |
+| `schematic_apparatus` | technical/schematic visualizations, scientific-document register |
+| `surreal_subject` | animal subjects with anomalous human features (rat-with-human-face territory) |
+
+For Phase 2.5+ when per-direction criteria become valuable: add
+`### Per direction: <type>` H3 sections within the criteria block
+below. The criterion list is order-independent for the AI, so insert
+them anywhere in the H3 sequence — never after the last H3.
+
+## Authoring tips
+
+- Use existing canonical examples to anchor pass/partial/fail
+  language. "K1 typography" pass. "H#3 Skinner box hero shot" pass.
+  Recent _DEPRECATED renders (per `_work/<context>/_DEPRECATED_<reason>/`)
+  are partial or fail examples. Note: the AI doesn't have the named
+  references — your trailing observable adjectives are the actual
+  signal ("sepia/warm-cast monochrome, single-source incandescent
+  lighting" parses; "H#3 register" alone doesn't).
+- Keep `pass:` / `partial:` / `fail:` bullets to 1-2 sentences each.
+  Anthropic vision API gets the full text per criterion; longer than
+  ~3 sentences risks dilution.
+- Make `partial:` describe a specific recoverable mid-state, not just
+  "between pass and fail." Each level should be diagnostic — what
+  exactly distinguishes this level from the next.
+- The parser is permissive on bullet casing (PASS:, Pass:, pass: all
+  match) and bullet markers (- or *), but strict on H3 anchors (`### `
+  with at least one space). H4+ subheadings get folded into the
+  criterion's definition body.
+- Test parse after each criterion is filled in (verification command
+  in "How to use" section above).
+
+## After authoring
+
+1. Run the verification command from "How to use" above. `pytest
+   tests/test_rubric.py` is NOT a useful check on the authored
+   content — it tests the parser against inline fixtures, not your
+   rubric file.
+2. Optionally point the e2e plan at this rubric: PHASE_2_E2E_PLAN.md
+   step 6 fires consultation against whatever rubric the loader finds.
+3. Bank result in `banked_items.md` per "Phase 2 e2e run YYYY-MM-DD"
+   heading once one consultation completes.
 
 ## Common criteria (apply across all 5 concept types)
 
@@ -96,47 +172,3 @@ shape. Render is silent-by-default-friendly.
 - pass: TODO
 - partial: TODO
 - fail: TODO
-
----
-
-# Per-direction notes (NOT part of parsed criteria)
-
-The 5 concept types in `applies_to_concept_types` correspond to the
-5 visual-identity directions documented in
-`shared/visual_identity_phase1_references/README.md`:
-
-| Concept type | Description |
-|---|---|
-| `latent_space` | typography within latent-space depth, blue-black gradients, particles |
-| `architectural_inhabitant` | physical interior architecture, institutional palette, geometric composition |
-| `composite_subject` | figures/faces assembled from multiple sources, monochromatic palette |
-| `schematic_apparatus` | technical/schematic visualizations, scientific-document register |
-| `surreal_subject` | animal subjects with anomalous human features (rat-with-human-face territory) |
-
-For Phase 2.5+ when per-direction criteria become valuable: add
-`### Per direction: <type>` H3 sections below this comment line; the
-parser ignores text outside front-matter + H3 headings, so the table
-above is invisible to AI consultation. Once added, drop the "(NOT
-part of parsed criteria)" caveat above this section.
-
-# Authoring tips
-
-- Use the existing canonical examples to anchor pass/partial/fail
-  language. "K1 typography" pass. "H#3 Skinner box hero shot" pass.
-  Recent _DEPRECATED renders (per `_work/<context>/_DEPRECATED_<reason>/`)
-  are partial or fail examples.
-- Keep `pass:` / `partial:` / `fail:` bullets to 1-2 sentences each.
-  Anthropic vision API gets the full text per criterion; longer than
-  ~3 sentences risks dilution.
-- The parser is permissive on bullet casing (PASS:, Pass:, pass:
-  all match) but strict on H3 anchors (`### Criterion name`).
-  H4+ subheadings get folded into the criterion's definition body.
-- Test parse early. Run `python -c "from rubric import parse_rubric_file; print(parse_rubric_file('docs/AUDIT_RUBRICS_v1_0.md'))"` after each criterion authoring pass.
-
-# After authoring
-
-1. Run `python tool_build/tests/test_rubric.py` to confirm structure.
-2. Optionally point the e2e plan at this rubric: PHASE_2_E2E_PLAN.md
-   step 6 fires consultation against whatever rubric the loader finds.
-3. Bank result in `banked_items.md` per "Phase 2 e2e run YYYY-MM-DD"
-   heading once one consultation completes.
