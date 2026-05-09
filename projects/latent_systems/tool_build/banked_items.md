@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-08 (Phase 2 acceptance bridge COMPLETE: rubric committed c55f36e; Wave B fired successfully against real render; e2e debrief banked below; Phase 3 Wave 1 unblocks pending v0.4 amendments)
+**Updated:** 2026-05-09 (Phase 2 acceptance bridge COMPLETE: rubric committed c55f36e; Wave B fired successfully against real render; e2e debrief banked below. Daily-usability sprint COMPLETE 2026-05-08 commit a1ab996: web-UI ingestion + 3 JS bugs + hover tooltips. Phase 3 v0.4 amendments IN PROGRESS this session: F5_MODAL_UX_DRAFT.md authored 52ac48d + atomic-transaction failure semantics 1e474a5; F6 cost revision be4d3c0; PHASE_3_E2E_PLAN.md latency methodology acfba49. Phase 3 Wave 1 unblocked pending Joseph review of [OPEN] items in F5_MODAL_UX_DRAFT.md.)
 
 ---
 
@@ -283,6 +283,41 @@ from "Phase 2 code-shipped" to "Phase 2 acceptance-validated."
 - Plan amendment for Step 8 verification per finding 4
 
 **Phase 2 acceptance bridge officially closes with this run.** Wave B validated against real conditions: SDK shape, response.usage attributes (input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens), vision token billing math, prompt caching (12× cost reduction confirmed), safety regex behavior (no false positives on this content), parse-tolerant JSON extraction (clean parse), persistence across session-end + tab-close + 30s gap. The e2e plan + Phase 2 close test suites + this real run combine to form acceptance evidence Phase 3 design can build on.
+
+---
+
+## Daily-usability sprint — 2026-05-08 (later session)
+
+After Phase 2 acceptance bridge closed, immediate post-bridge investment in closing the workflow gaps the e2e run surfaced. Goal: make the app usable for real daily creative work without per-render tooling intervention. Single commit closing four workstreams.
+
+**Commit identifier.** `a1ab996` — `latent_systems/tool_build: daily-usability sprint — inbox + JS interaction fixes + hover tooltips`. 5 files changed, +663/-32. New: `inbox.py`, `templates/audit_inbox.html`. Modified: `app.py`, `templates/audit.html`, `templates/audit_grid.html`.
+
+**Cost / time.** ~3 hours focused work; $0 (no API calls in implementation; verification only via existing /audit endpoints).
+
+**Workstreams closed:**
+
+1. **Web-UI ingestion gap (highest-priority blocker per Phase 2 e2e finding).** New `/audit/inbox` page surfaces files from `~/Downloads/` that the watcher has hashed but never been routed into state.db. MJ/Kling web-UI generations land in Downloads, watcher hashes them into pending_downloads.json, but no path creates `renders` rows without an in-flight prompt attempt to bind to. Pre-fix: cp + walker per-render, ~2 min mechanical overhead each. Post-fix: pick destination per file in UI (heuristic-suggested + override-able), click ingest, render appears in audit grid + verdict-ready immediately. AD-5 guard: refuses anywhere outside `projects/latent_systems/`. End-to-end proven against `rat_anchor_1930s_v1.png` ingestion → render row `c02c1f972f5de3a2`. Hash-filter hides already-ingested files from the inbox list (actionable items only). New `inbox.py` module + 4 routes + `audit_inbox.html` template. Inbox link added to grid view header for navigation.
+
+2. **JS interaction bugs in audit viewer (3 fixes, all banked from Phase 2 e2e session).** Fixed in `templates/audit.html`:
+   - `EXISTING_VERDICT_ID` was `const` and only set from server-side render at page load. After captureVerdict() created a new verdict via keyboard shortcut, JS state was stale, so subsequent flag toggles short-circuited with misleading "flag will be captured with next verdict" toast. Changed to `let`; captureVerdict() reads API response and updates EXISTING_VERDICT_ID after success. Verified end-to-end (verdict + flag without page refresh).
+   - consultAI() didn't guard against double-fire from keyboard shortcut. Button-disabled blocks click events but not programmatic calls; C-key bypassed the disable. Real-world impact: $0.05 charge instead of $0.025 on Phase 2 e2e session per finding 1. Added 2-line early-return if button.disabled.
+   - captureVerdict() didn't include rubric_version in the verdict payload on keyboard shortcut path (audit-trail data quality issue per Phase 2 e2e session). Exposed `RUBRIC_VERSION` const from server-side template (pulled from active session); captureVerdict() includes it in body. Verified: verdict `afc0d0d9fe81c501` has `rubric_version="1.0"` populated.
+
+3. **Hover tooltips across audit surfaces (Joseph's "dummy-proof" ask).** CSS-only `data-tooltip` pattern across audit.html, audit_grid.html, audit_inbox.html. Snappy hover (no native `title=` browser delay), dark background, max-width 200px, channel-relevant plain-English text. Per-position anchoring to keep tooltips inside aside's `overflow-y: auto` clipping boundary: verdict buttons in 2-column grid use column-anchor pattern (left col → anchor left, right col → anchor right); header items use `data-tooltip-pos="below"` to avoid going off-screen at viewport top. Coverage: all interactive controls in three audit surfaces — verdict buttons (4 with channel-relevant explanations like "best of the best — channel-defining quality"), flag, consult, prev/next, header session controls, grid filter quick-links, inbox ingest button.
+
+4. **Consult button full-width fix (surfaced during tooltip work).** Consult button was inline-block (default for `<button>` element), so right-anchored tooltip extended way out of aside (only ~100px wide button means tooltip's anchor point was near aside's left, extending leftward into image-pane area where overflow:auto clipped it). Set `display: block; width: 100%` so the button fills aside's inner width and right-anchored tooltip stays inside. Two-line CSS addition. Joseph confirmed: "all set works now."
+
+**Findings (banked here per plan; promotion to AUDIT_PATTERNS.md requires second occurrence).**
+
+1. **Aside `overflow-y: auto` clips absolute-positioned tooltips at horizontal boundary.** CSS spec: when overflow:auto/hidden/scroll on a block element, ABS-positioned descendants whose containing block is inside the box are clipped at the box's content edge. Tooltip's containing block was the verdict button (position:relative), inside aside. Tooltip extending beyond aside's left/right border got clipped. Two fixes possible: (a) restructure aside with overflow-visible + nested scroll container (complex; same problem just one level deeper); (b) per-element anchor positioning so tooltip never extends beyond aside bounds (chosen tonight). Pattern: when adding tooltips/popovers inside scroll containers, default centered positioning + max-width often won't fit; explicit per-position anchors needed.
+
+2. **`<button>` inline-block default is invisible until tooltip overflow surfaces it.** Consult button looked full-width visually because of its position in a wide section, but was actually narrow + left-aligned. Tooltip-positioning bug surfaced the layout fact. Pattern: any tooltip/popover anchored to a button needs the button's actual rendered width verified (not assumed from visual context).
+
+3. **`!` prefix in Claude prompt + line-wrapping = silent paste failure.** Joseph attempted `! cp ~/Downloads/X /c/Users/.../destination/` via the `!` prompt prefix; terminal/REPL inserted a newline mid-path (`OpenM\nontage`), making the `!` prefix only see part of the command. Result: nothing executed. Pattern: when telling Joseph to paste long commands via `!` prefix, prefer single-line short commands; for long paths, suggest typing or Windows Explorer drag-and-drop instead of paste.
+
+**Findings 1-3 above NOT promoted to AUDIT_PATTERNS.md** — each is a one-off observation per the audit-patterns threshold (two separate occurrences required for promotion).
+
+**Implications for Phase 3 v0.4 amendments (this session continues there).** Multiple Phase 2 e2e findings closed by this sprint (web-UI ingestion gap, three JS bugs). Phase 2 e2e finding 2 (PHASE_2_E2E_PLAN.md cost estimate is 12× too high) folds into Phase 3 v0.4 amendment 2 (F6 cost revision). Phase 2 e2e finding 5 (discipline_drift query surface gap) folds into Phase 3 v0.4 amendment 5 (this section's parent commit). Pattern: post-bridge usability investment paid down e2e-finding backlog same-session.
 
 ---
 
