@@ -139,8 +139,33 @@ For section h3_skinner (or whatever you used in Step 2-3):
 1. Click "Update NOTES.md".
 2. Form opens with current NOTES.md content + AI draft button.
 3. Click "Generate AI draft".
-4. Wait for Claude API response (~5-15s text-only).
+4. Wait for Claude API response (~5-15s text-only server-side; browser-perceived can be 1-3s longer due to DOM render of draft content).
 5. Review draft; edit as needed; click Save.
+
+**Latency measurement methodology (v0.4 amendment per Phase 3 SCAFFOLD
+review item 4):** the "5-15s" expectation is *server-side latency* —
+time between Claude API SDK call enter and response return. Browser
+fetch time is dominated by DOM rendering of draft content (multi-line
+NOTES.md text), not Claude API processing. Mirror PHASE_2's Step 6
+methodology: measure server-side via api_calls row, not the UI tick
+counter.
+
+Two query paths (use whichever's available when running):
+
+```bash
+# Path A — sqlite3 direct (always available; matches PHASE_2 precedent)
+sqlite3 projects/latent_systems/tool_build/_data/state.db \
+  "SELECT id, started, completed, tokens_in, tokens_out, cost_usd_estimate \
+   FROM api_calls WHERE purpose='notes_md_authorship' \
+   ORDER BY started DESC LIMIT 1"
+
+# Path B — HTTP endpoint (if /api_calls?since=<iso> ships during Wave 1+)
+curl -s "http://localhost:7890/api_calls?since=<draft_start_iso>" | python -m json.tool
+```
+
+The `(completed - started)` difference is the SDK-call latency.
+Browser-perceived latency (visible in any UI elapsed-time counter)
+will be 1-3s longer due to draft DOM render + scroll-into-view.
 
 **Pass conditions:**
 - Draft text generated using `(concept, hero_renders, prior_notes_md,
@@ -435,6 +460,12 @@ in `banked_items.md` under "Phase 3 e2e run YYYY-MM-DD" heading:
 
 ## Document maintenance
 
+- **v1.1 (2026-05-09; v0.4 amendment 4):** Step 4 latency measurement
+  methodology added (mirrors PHASE_2 Step 6 v0.6 amendment shape).
+  Server-side via api_calls table, not browser fetch time. Two query
+  paths documented: sqlite3 direct (always available) + HTTP
+  /api_calls endpoint (if ships during Wave 1+). Surgical edit; rest
+  of plan unchanged.
 - **v1.0 (2026-05-07):** initial Phase 3 e2e plan. 10-step real-API
   run analog to Phase 1.5 + Phase 2 plans. Pre-flight specifies
   Phase 2 acceptance-bridge gate + rubric + ≥1 NOTES.md template
