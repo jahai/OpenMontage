@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-09 (Phase 2 acceptance bridge COMPLETE: rubric committed a0bc668; Wave B fired successfully against real render; e2e debrief banked below. Daily-usability sprint COMPLETE 2026-05-08 commit a32572f: web-UI ingestion + 3 JS bugs + hover tooltips. Phase 3 v0.4 amendments IN PROGRESS this session: F5_MODAL_UX_DRAFT.md authored f7e0604 + atomic-transaction failure semantics ae48115; F6 cost revision 1065d75; PHASE_3_E2E_PLAN.md latency methodology 2411811. Phase 3 Wave 1 unblocked pending Joseph review of [OPEN] items in F5_MODAL_UX_DRAFT.md.)
+**Updated:** 2026-05-09 (Phase 2 acceptance bridge COMPLETE: rubric committed a0bc668; Wave B fired successfully against real render; e2e debrief banked below. Daily-usability sprint COMPLETE 2026-05-08 commit a32572f: web-UI ingestion + 3 JS bugs + hover tooltips. Phase 3 v0.4 amendments IN PROGRESS this session: F5_MODAL_UX_DRAFT.md authored f7e0604 + atomic-transaction failure semantics ae48115; F6 cost revision 1065d75; PHASE_3_E2E_PLAN.md latency methodology 2411811. Phase 3 Wave 1 unblocked pending Joseph review of [OPEN] items in F5_MODAL_UX_DRAFT.md. **Test runner quirk banked 2026-05-09** — pytest pollutes state.db; SESSION_STARTER state-check switched to script-loop; 16/16 verified PASS standalone. **Cleanup-leak class banked 2026-05-09** — Pattern #8 reinforcement #3 (test_audit_consult audit_sessions + test_vision_anthropic api_calls leaks); Banking principle #7 added; Phase 2.5 conftest+tmp_path fix promoted from deferred to MUST-DO before Wave 1 code; api_calls cleanup commit a52ec90 deleted 21 test-residue rows across 3 bursts.)
 
 ---
 
@@ -91,6 +91,7 @@ All 4 steps landed in single session 2026-05-08:
 
 ## Phase 3 territory (not Phase 1 or Phase 2 — full features)
 
+- **Phase 2.5 MUST-DO before Wave 1 code starts** — conftest.py + tmp_path-isolated test DB. Two confirmed cleanup-leak instances (audit_sessions + api_calls); same root cause class. Without this fix, every new test added in Wave 1+ extends the leak surface. Estimate ~2-4 hours: write conftest fixture, migrate 16 existing test suites, verify clean teardown via state.db row count assertions before/after. Banking entry references: Pattern #8 reinforcement #3 + Banking principle #7.
 - **Hero promotion atomic action (Feature 5)** — Phase 3 default per v0.2 design notes Q1 call. F5's atomic action depends on F6 (NOTES.md authorship) and Phase 3 doc-set data model; building atomic action in Phase 2 would have produced degraded ship that gets rebuilt in Phase 3. Manual file-move pattern (Phase 1 + router) continues to serve through Phase 2. Pull-forward window passed (Phase 2 closed faster than the Wave A-Week-4-slack scenario anticipated — no slack accumulated to spend). Lands in Phase 3 alongside F6.
 - **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — moved from Phase 2 territory 2026-05-07. Depends on Phase 1 + Phase 2 successful_examples accumulation; Phase 2 shipped Anthropic vision config only. Expansion when verdict-confirmed-strong outputs seed enough data per Q3.
 - **3a hardening review** — moved from Phase 2 territory 2026-05-07. Largely landed Phase 1 Day 12 + v0.4 amendment; Phase 3 audit confirms no remaining gaps after real Wave B usage.
@@ -130,6 +131,16 @@ All 4 steps landed in single session 2026-05-08:
 - B3 — full `--init` → `--uninstall` cycle verified. LANDED Day 4.
 - B4 — empirical Claude Code commit identity. RESOLVED Day 16/17 (2026-05-06): `.git/config` had a typo (`user.emailcd` instead of `user.email`); commits from this machine via Claude Code fail outright with `fatal: unable to auto-detect email address` rather than silently misattributing as `calesthio`. Recent `calesthio <celesthioailabs@gmail.com>` commits in log come from elsewhere (GitHub Codex / web UI). Fixed under explicit user authorization: `user.email = joseph.brightly@gmail.com`, matching AD-5 hook's hardcoded `JOSEPH_EMAIL`. Future Claude-Code commits to canonical paths now pass the hook scope check.
 
+## Test runner quirk — scripts, NOT pytest (banked 2026-05-09)
+
+`tool_build/tests/test_*.py` files are **standalone executable scripts**, not pytest suites. Each file has `def main(): cleanup(); try: <run tests>; finally: cleanup()` + `if __name__ == "__main__": sys.exit(main())`. They write to the real `_data/state.db` and rely on `db.cascading_delete(prefix)` (Pattern #2) at main() bookends to keep production clean. No `conftest.py`, no `pytest.ini`, no fixtures.
+
+**Trap.** Running `pytest tool_build/tests/` auto-collects `def test_*` functions but skips `main()` — so cleanup never runs. Each pytest session leaves orphan `test_<prefix>_*` rows in production state.db, causing `sqlite3.IntegrityError: UNIQUE constraint failed: renders.id` on the next run. Functions like `test_ingest_roundtrip(repo_root: Path)` also fail discovery because pytest treats the arg as a fixture; in standalone mode `main()` passes it explicitly.
+
+**Use the script-loop in SESSION_STARTER §"State-check"** (`for f in tests/test_*.py; do python "$f"; done`). Empirically verified 2026-05-09: 16/16 scripts PASS standalone; running each script's main() also clears any orphan rows from prior pytest pollution.
+
+**Phase 2.5 MUST-DO (promoted 2026-05-09):** make tests pytest-compatible via `conftest.py` + `tmp_path`-isolated DB + autouse cleanup fixtures. Promoted from deferred-candidate after second cleanup-leak instance discovered same-day (api_calls residue, see Pattern #8 reinforcement #3 below + new entry in "Phase 3 territory" section). Without this fix, every new test added in Wave 1+ extends the leak surface.
+
 ## Pattern #8 reinforcements (rubric parser-discipline-mismatch class)
 
 Both bugs share the parent insight: the rubric parser's design assumes a discipline (no multi-line bullets, no post-last-H3 content) that isn't enforced by the format. Either tighten the format spec (current path) or extend the parser (Phase 2.5 work).
@@ -139,6 +150,14 @@ Both bugs share the parent insight: the rubric parser's design assumes a discipl
 2. **Multi-line-bullet pollution (caught post-authoring 2026-05-08).** Parser regex `^\s*[-*]\s*(pass|partial|fail)\s*:\s*(.*)$` captures only same-line content; multi-line bullets get truncated AND continuation lines pollute the criterion's definition body. Fix at author time: bullets single-line. Phase 2.5 parser work: extend `parse_rubric_text` to support continuation lines (~10 lines added, needs test for "indented continuation appends to current_eval[level]").
 
 Pattern: when format spec relies on undocumented discipline (no multi-line, no post-anchor content), failure mode surfaces silently (parses successfully, content is wrong). Pattern #8 third-bucket fixtures need to test the parser-discipline-boundary cases, not just generic happy-path content matching.
+
+3. **Test cleanup leak class — production tables polluted by test runs** (banked 2026-05-09 from MJ download diagnostic side-thread). Two confirmed instances:
+   (a) test_audit_sessions cleanup deletes by TRACKED_SESSION_IDS but production code generates own session IDs when started_orig column is NULL (root cause: cleanup tracks only what test directly inserts; misses derivative inserts production code creates from those rows)
+   (b) test_vision_anthropic cleanup deletes api_calls by TRACKED_API_CALL_IDS; production wrapper in audit_providers/anthropic.py generates call_<sha> IDs when recording to api_calls; wrapper-generated IDs not tracked → never deleted → permanent pollution of api_calls table; surfaced when /healthz banner started false-alarming on test-residue auth_failed rows
+
+   Pattern: when test scope assumes "I know all the IDs I created" discipline that the production code doesn't enforce, cleanup silently leaves rows behind. Failure mode is invisible until production queries (cost rollups, /healthz banners, audit-trail counts) start surfacing the pollution.
+
+   Phase 2.5 fix **promoted from deferred to MUST-DO before Wave 1 code starts**: conftest.py with tmp_path-isolated test database per-test-function. Eliminates the entire class of cleanup leak by ensuring test writes never touch production state.db. Estimate ~2-4 hours for the conftest fixture + migration of all 16 existing test suites to use it. Banner false-alarm logic gets fixed automatically when conftest fix lands; deferring banner-logic patch as separate work.
 
 ---
 
@@ -416,3 +435,5 @@ for bulk iteration where MJ's manual round-trip is the bottleneck.
 5. **Format-discipline-mismatch silent failures.** When parser/spec relies on undocumented discipline (no multi-line bullets in rubric, no post-last-H3 content, etc.), failure mode parses successfully but produces wrong content. Pattern #8 third-bucket fixtures need to test parser-discipline-boundary cases. *— from Pattern #8 reinforcements (rubric authoring 2026-05-08)*
 
 6. **Cost estimates from placeholder values undercount real-world cached behavior.** Phase 2 e2e firing showed actual cost ~12× under plan estimate when prompt caching engages as designed. Future cost estimates should differentiate "cache-miss first call" vs "cache-hit subsequent calls" and bias toward the cache-hit estimate for cumulative budgeting once design includes cache-stable system prompts. *— from Phase 2 e2e run 2026-05-08 finding 2*
+
+7. **Test isolation should be enforced at fixture level, not at cleanup discipline.** When tests share production database with production code, any cleanup that relies on "tests track all the IDs they create" assumption fails silently when production code creates derivative rows from test-injected data. Pattern surfaces only when production queries (cost rollups, health checks) become polluted enough to notice. *— from Phase 2.5 cleanup-leak class banking 2026-05-09*
