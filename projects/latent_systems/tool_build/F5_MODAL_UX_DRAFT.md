@@ -223,13 +223,169 @@ If Step 3 fails (F6 endpoint down, etc.), the failure is logged + queued for ret
 
 ## Error states (handoff to atomic-transaction failure semantics)
 
-Detailed error handling is in this file's §"Atomic-transaction failure semantics" section (added per v0.4 amendments item 3 — separate commit). Brief overview here:
+Detailed error handling is in §"Atomic-transaction failure semantics" below. Brief overview here:
 
 - **Step 1 fails (file move)**: file source missing OR destination not writable. Modal stays open; surface error inline ("File move failed: <reason>"); Promote button re-enabled. No db write happened.
 - **Step 1 succeeds, Step 2 fails (db row)**: rollback Step 1 (delete file from `winners/`); surface error inline ("Failed to commit promotion record; file move rolled back"); Promote button re-enabled.
 - **Step 3 fails (F6 prompt fire)**: Steps 1+2 already committed (transaction succeeded); Step 3 fires async post-commit and is best-effort. Modal already closed at this point; failure surfaces in retry queue + non-blocking notification.
 
 See §"Atomic-transaction failure semantics" for the explicit Python try/except shape.
+
+---
+
+## Atomic-transaction failure semantics
+
+**Transaction boundary:** Steps 1 (file move) + 2 (hero_promotions row insert) are inside a single try/except block with mutual rollback. Step 3 (F6 prompt fire) is OUTSIDE the transaction — fires post-commit, best-effort, queued for retry on failure. Step 4 (doc-update coordination summary) is read-only display in the modal; no failure mode (nothing to fail).
+
+This shape mirrors `audit_consult.consult_render`'s pattern (verdict find-or-create is sync; F6 prompt-fire equivalent is the async post-commit callback). Reusing the established pattern keeps audit-trail discipline consistent across F5 + F6 + Wave 1's other atomic actions.
+
+### Per-step rollback table
+
+| Step | Operation | Failure mode | Rollback path | UI surface |
+|---|---|---|---|---|
+| 1 | shutil.copy2 (or .move) source → winners/ | source missing, dest not writable, disk full | None needed (no prior step to undo) | Modal stays open; inline error; Promote button re-enabled |
+| 2 | INSERT INTO hero_promotions | UNIQUE constraint, FK fail, db locked | Delete file at winners/ destination (Step 1 undo) | Modal stays open; inline error noting "file move rolled back"; Promote button re-enabled |
+| 3 | F6 NOTES.md prompt fire (Claude API call queued or fired) | F6 not yet shipped, API down, rate-limit, timeout | None — Steps 1+2 stay committed; Step 3 enters retry queue per failure mode 5.4 | Modal already closed; non-blocking notification on next page render: "1 NOTES.md update queued for retry — see /retry_queue" |
+| 4 | n/a (read-only display) | n/a | n/a | n/a |
+
+### Explicit Python shape (Wave 1 Day 4-5 implementation transcribes)
+
+```python
+# dispatcher.py — F5 hero_promote() atomic transaction
+
+def hero_promote(*, render_id: str, audit_session_id: Optional[str] = None) -> dict:
+    """F5 forward flow per F5_MODAL_UX_DRAFT.md.
+
+    Atomic boundary: Steps 1+2 (file move + db insert) commit together
+    or roll back together. Step 3 (F6 prompt fire) fires post-commit,
+    best-effort; failure queued for retry, doesn't roll back Steps 1+2.
+    """
+    # Pre-validation (raises HeroPromotionError before any state change)
+    detail = audit.get_render_detail(render_id)
+    if detail is None:
+        raise HeroPromotionError(f"render {render_id!r} not found")
+    verdict = detail.get("verdict")
+    if verdict is None:
+        raise HeroPromotionError(
+            f"render {render_id!r} has no current verdict; mark a verdict first"
+        )
+    if verdict["verdict"] not in ("hero_zone", "strong"):
+        raise HeroPromotionError(
+            f"verdict {verdict['verdict']!r} ineligible for promotion; "
+            "requires hero_zone or strong"
+        )
+
+    src_path = repo_root() / detail["filepath"]
+    section = _resolve_section_from_render(detail)  # via concept lookup
+    winners_dir = repo_root() / "projects/latent_systems/ep1" / section / "winners"
+    winners_dir.mkdir(parents=True, exist_ok=True)  # 5.2: auto-create OK
+    dest_path = winners_dir / src_path.name
+
+    # === ATOMIC BOUNDARY (Steps 1 + 2) ===
+    file_moved = False
+    try:
+        # Step 1: file move
+        shutil.copy2(src_path, dest_path)
+        file_moved = True
+
+        # Step 2: hero_promotions row insert
+        promotion_id = _hashed_id(verdict["id"], dest_path.as_posix())
+        conn = db.connect()
+        try:
+            with conn:
+                conn.execute(
+                    """INSERT INTO hero_promotions
+                       (id, render_id, verdict_id, hero_filepath,
+                        promoted_at, promoted_by, audit_session_id, yaml_path)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (promotion_id, render_id, verdict["id"],
+                     str(dest_path.relative_to(repo_root()).as_posix()),
+                     _iso_now(), _resolve_promoted_by(audit_session_id),
+                     audit_session_id, _yaml_path_for(promotion_id)),
+                )
+        finally:
+            conn.close()
+        # YAML write after db commit (mirrors verdict-capture YAML-after-row pattern)
+        _write_promotion_yaml(promotion_id, ...)
+
+    except Exception as e:
+        # Rollback Step 1 if it landed
+        if file_moved and dest_path.exists():
+            try:
+                dest_path.unlink()
+            except OSError as rollback_err:
+                # Rare: file moved but rollback failed (permissions changed
+                # mid-transaction). Surface both errors so Joseph can manually
+                # reconcile via filesystem inspection.
+                raise HeroPromotionError(
+                    f"transaction failed AND rollback failed; manual cleanup "
+                    f"needed at {dest_path}. original error: {e}; "
+                    f"rollback error: {rollback_err}"
+                )
+        raise HeroPromotionError(f"hero promotion failed: {e}")
+    # === END ATOMIC BOUNDARY ===
+
+    # Step 3: F6 NOTES.md prompt fire (POST-COMMIT, best-effort)
+    f6_status = "deferred"
+    try:
+        if _f6_endpoint_available():
+            # Async fire — don't block the response on F6 latency
+            f6_status = _enqueue_f6_notes_md_update(
+                section=section,
+                trigger="hero_promotion",
+                render_id=render_id,
+                hero_promotion_id=promotion_id,
+            )
+        else:
+            # F6 not yet shipped (current state)
+            f6_status = "deferred_f6_not_shipped"
+    except Exception as e:
+        # F6 fire failed — Steps 1+2 stay committed; queue for retry per 5.4
+        retry_queue.enqueue(
+            kind="f6_notes_md_update",
+            payload={"section": section, "trigger": "hero_promotion",
+                     "render_id": render_id, "hero_promotion_id": promotion_id},
+            error=str(e),
+        )
+        f6_status = "failed_queued_for_retry"
+
+    return {
+        "ok": True,
+        "hero_promotion_id": promotion_id,
+        "hero_filepath": str(dest_path.relative_to(repo_root()).as_posix()),
+        "f6_prompt_status": f6_status,  # 'fired' | 'queued' | 'deferred*' | 'failed_queued_for_retry'
+    }
+```
+
+### Reverse flow analog
+
+`hero_un_promote()` follows the same atomic shape but with destinations swapped:
+
+- Step 1: file move from `winners/<filename>` → `_work/<context>/_DEPRECATED_<sanitized_reason>/<filename>`
+- Step 2: UPDATE hero_promotions SET reversed_at = ?, reversed_reason = ? WHERE id = ?
+- Step 3: F6 prompt fire (NOTES.md update for un-promotion event; same async/best-effort shape)
+
+Rollback for un-promote: if Step 2 fails after Step 1 lands, move the file BACK from `_DEPRECATED_*/` to `winners/`. Same try/except pattern, swap the rollback move direction.
+
+### Failure-mode coverage map
+
+Maps the failure-mode taxonomy in `phase3_design_notes.md` v0.2 §F5 to specific exception/branch in the shape above:
+
+| Failure mode | Code location | Caller-facing surface |
+|---|---|---|
+| 5.1 Render file missing at promotion time | Step 1 try → FileNotFoundError | inline modal error; HeroPromotionError raised |
+| 5.2 Hero `winners/` directory doesn't exist | `winners_dir.mkdir(parents=True, exist_ok=True)` (auto-create) | Modal preview shows directory-creation notice; no error |
+| 5.3 NOTES.md update prompt fires but F6 isn't ready | `_f6_endpoint_available()` False branch → `f6_status = "deferred_f6_not_shipped"` | Modal already closed; non-blocking notification "F6 prompt deferred" |
+| 5.4 Doc-update coordination fails mid-loop | F9 calibration's responsibility (this layer just queues); same retry-queue pattern as F6 above | Non-blocking notification on next page render |
+| 5.5 Un-hero (reverse promotion) reason missing | Modal-level guard (textarea ≥5 chars) + endpoint-level revalidation | Submit button disabled; endpoint returns 400 |
+
+### Why post-commit async for Step 3
+
+Three reasons:
+
+1. **F6 latency.** F6 NOTES.md authorship is a Claude API text call; per F6_DRAFT_PROMPT_DRAFT.md cost section v1.1, expect 5-15s server-side. Blocking the modal close on a 10s+ async call would feel hung.
+2. **F6 not always shipped.** During Wave 1 (when F5 lands but F6 hasn't), Step 3 has nothing to call into; graceful degradation per failure mode 5.3 needs a non-blocking codepath. Wrapping Step 3 in the atomic boundary would force F5 to wait for F6 — wrong dependency direction.
+3. **Hero promotion is editorial commitment; F6 prompt is downstream artifact.** The promotion itself is the user's decision; the F6 prompt is the system suggesting "now go author the NOTES.md update." Joseph might want to defer that to a later session. Best-effort fire matches user mental model.
 
 ---
 
@@ -322,4 +478,11 @@ Modal template lives at `templates/hero_promotion_modal.html` — included into 
 
 ## Document maintenance
 
+- **v1.1 DRAFT (2026-05-09; v0.4 amendment 3):** Atomic-transaction
+  failure semantics section added. Per-step rollback table; explicit
+  Python try/except shape for hero_promote() + reverse-flow analog;
+  failure-mode coverage map linking phase3_design_notes.md v0.2 §F5
+  taxonomy to specific code locations; rationale for post-commit async
+  on Step 3. Body of doc unchanged; section inserted between Error
+  states (handoff) and Open questions.
 - **v1.0 DRAFT (2026-05-09):** Phase 3 Wave 1 Day 4-5 preparatory spec for the F5 hero-promotion confirmation modal. Forward + reverse flow modals specified. Sub-components 1-4 (file move, hero_promotions row, NOTES.md prompt, doc-update coordination) each have presentation + content rules. Modal sizing/dismiss/focus management specified. Confirmation interaction = single button + cancel; typed confirmation rejected as over-engineered for reversible action. Async behavior: Steps 1+2 sync atomic, Step 3 async post-commit, Step 4 read-only display. Error-state overview hands off to §"Atomic-transaction failure semantics" (added per v0.4 amendments item 3 — separate commit). 8 [OPEN: need Joseph decision] items consolidated. Implementation hooks for `hero_promote()` + `hero_un_promote()` + endpoint pair sketched. Test fixtures specified including channel-staple-#12 reason-required + path-traversal sanitization. Lives at `tool_build/F5_MODAL_UX_DRAFT.md` (sibling to F6_DRAFT_PROMPT_DRAFT.md + Migration 0004 + filepath heuristics drafts + e2e plans). Implementation transcribes from this when Wave 1 Day 4-5 unblocks.
