@@ -120,6 +120,65 @@
   .consult-result-card .cost { font-size: 0.75em; color: #6b7280; margin-top: 0.4em; }
   .filters { font-size: 0.85em; color: #9ca3af; }
   .filters a { color: #93c5fd; }
+
+  /* Hover tooltips — dummy-proof affordance per Joseph's ask 2026-05-08.
+     Default position: above the element. For elements near the top of
+     the page (header items), use data-tooltip-pos="below" to flip.
+     Sidebar-aside has overflow-y: auto which clips absolute-positioned
+     descendants — so tooltips inside aside use per-position anchors
+     (.verdict-btn rules below) to stay within aside bounds. */
+  [data-tooltip] { position: relative; }
+  [data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937; color: #f3f4f6;
+    padding: 0.45em 0.7em; border-radius: 0.3em;
+    font-size: 0.72em; font-weight: normal; line-height: 1.4;
+    max-width: 200px; width: max-content;
+    white-space: normal; text-align: center;
+    z-index: 1000; pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  [data-tooltip-pos="below"]:hover::after {
+    bottom: auto;
+    top: calc(100% + 6px);
+  }
+  /* Verdict-button tooltips: anchor by column to keep within aside bounds.
+     Left-column buttons (hero_zone, weak) extend tooltip rightward;
+     right-column (strong, reject) extend leftward. */
+  .verdict-btn.hero_zone[data-tooltip]:hover::after,
+  .verdict-btn.weak[data-tooltip]:hover::after {
+    left: 0;
+    transform: none;
+  }
+  .verdict-btn.strong[data-tooltip]:hover::after,
+  .verdict-btn.reject[data-tooltip]:hover::after {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+  /* Consult button is inline-block by default (narrow, fits text only).
+     Make it full-width so the right-anchored tooltip extends leftward
+     within aside's overflow boundary, not into image-pane. */
+  #consult-btn { display: block; width: 100%; }
+  #consult-btn[data-tooltip]:hover::after {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+  /* Nav buttons (prev/next) — same column-anchor pattern as verdict buttons. */
+  #prev-btn[data-tooltip]:hover::after {
+    left: 0;
+    transform: none;
+  }
+  #next-btn[data-tooltip]:hover::after {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
 </style>
 </head>
 <body>
@@ -127,20 +186,24 @@
 <header>
   <h1>audit viewer</h1>
   {% if session %}
-    <span class="pill session">session {{ session.id[:8] }}…</span>
-    <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
-    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;">■ end</a>
+    <span class="pill session" data-tooltip-pos="below" data-tooltip="Active audit session — verdicts and consultations created now are attributed to this session for cost rollups.">session {{ session.id[:8] }}…</span>
+    <span class="meta" data-tooltip-pos="below" data-tooltip="Session mode controls evaluation discipline. Rubric version pins which criteria definitions the AI grades against.">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;"
+       data-tooltip-pos="below" data-tooltip="Closes the active session. Verdicts and consultations stay attached to it for historical rollups.">■ end</a>
   {% else %}
     <span class="meta">no session</span>
-    <a href="#" id="start-session-quick" class="meta">▶ start (quick)</a>
-    <a href="#" id="start-session-deep" class="meta">▶ start (deep)</a>
+    <a href="#" id="start-session-quick" class="meta"
+       data-tooltip-pos="below" data-tooltip="Starts a quick-pass audit session. Best for fast triage runs across many renders.">▶ start (quick)</a>
+    <a href="#" id="start-session-deep" class="meta"
+       data-tooltip-pos="below" data-tooltip="Starts a deep-evaluation session. Slower per-render pace; expect rubric notes and AI consultation per render.">▶ start (deep)</a>
   {% endif %}
   {% if queue_position %}
-    <span class="pill position">{{ queue_position }} / {{ queue_total }}</span>
+    <span class="pill position" data-tooltip-pos="below" data-tooltip="Your position in the filtered audit queue.">{{ queue_position }} / {{ queue_total }}</span>
   {% endif %}
   <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
-    <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">grid view</a>
-    <a href="/">← prompt drafting</a>
+    <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}"
+       data-tooltip-pos="below" data-tooltip="Grid view — thumbnails of all renders in the queue, with verdict badges visible.">grid view</a>
+    <a href="/" data-tooltip-pos="below" data-tooltip="Back to prompt drafting (concept → prompt → dispatch).">← prompt drafting</a>
   </span>
 </header>
 
@@ -206,16 +269,20 @@
       <h2>Verdict</h2>
       <form id="verdict-form" data-render-id="{{ render.id }}">
         <div class="verdict-buttons">
-          <button type="button" class="verdict-btn hero_zone {% if render.verdict and render.verdict.verdict == 'hero_zone' %}active{% endif %}" data-verdict="hero_zone">
+          <button type="button" class="verdict-btn hero_zone {% if render.verdict and render.verdict.verdict == 'hero_zone' %}active{% endif %}" data-verdict="hero_zone"
+                  data-tooltip="Best of the best — channel-defining quality. Would pin to the channel as a hero exemplar.">
             hero_zone <span class="key">[1]</span>
           </button>
-          <button type="button" class="verdict-btn strong {% if render.verdict and render.verdict.verdict == 'strong' %}active{% endif %}" data-verdict="strong">
+          <button type="button" class="verdict-btn strong {% if render.verdict and render.verdict.verdict == 'strong' %}active{% endif %}" data-verdict="strong"
+                  data-tooltip="Good — usable for production. No major issues; lands the register.">
             strong <span class="key">[2]</span>
           </button>
-          <button type="button" class="verdict-btn weak {% if render.verdict and render.verdict.verdict == 'weak' %}active{% endif %}" data-verdict="weak">
+          <button type="button" class="verdict-btn weak {% if render.verdict and render.verdict.verdict == 'weak' %}active{% endif %}" data-verdict="weak"
+                  data-tooltip="Iteration needed — close but not landing. Usually one element drifts; recoverable in a re-prompt.">
             weak <span class="key">[3]</span>
           </button>
-          <button type="button" class="verdict-btn reject {% if render.verdict and render.verdict.verdict == 'reject' %}active{% endif %}" data-verdict="reject">
+          <button type="button" class="verdict-btn reject {% if render.verdict and render.verdict.verdict == 'reject' %}active{% endif %}" data-verdict="reject"
+                  data-tooltip="Don't use — register breaks or unrecoverable. Re-prompt or abandon.">
             reject <span class="key">[4]</span>
           </button>
         </div>
@@ -224,7 +291,7 @@
           <textarea id="reasoning" name="verdict_reasoning" placeholder="Reasoning (optional). [RUBRIC] prefix flags rubric questions for later review."></textarea>
         </div>
 
-        <div class="flag-row">
+        <div class="flag-row" data-tooltip="Marks this render for second-look review later. Survives session end. Filterable via 'flagged_only' on the grid view.">
           <input type="checkbox" id="flag-2nd" {% if render.verdict and render.verdict.flags_needs_second_look %}checked{% endif %}>
           <label for="flag-2nd">needs second look</label>
           <span class="key">[F]</span>
@@ -285,7 +352,8 @@
         <code>docs/AUDIT_RUBRICS_v1_0.md</code> existing).
       </div>
       {% endif %}
-      <button type="button" class="nav-btn" id="consult-btn" style="margin-top:0.4em;">
+      <button type="button" class="nav-btn" id="consult-btn" style="margin-top:0.4em;"
+              data-tooltip="Fires AI vision consultation against the active rubric. ~$0.025 cost, ~10s latency (cached prompt). Returns verdict_inference + per-criterion grades + key observations.">
         {% if render.ai_consultations %}consult again{% else %}consult AI{% endif %} <span class="key">[C]</span>
       </button>
       <div id="consult-result" style="display:none; margin-top:0.6em;"></div>
@@ -293,10 +361,12 @@
 
     <section>
       <div class="nav-row">
-        <button class="nav-btn" id="prev-btn" {% if not prev_render_id %}disabled{% endif %}>
+        <button class="nav-btn" id="prev-btn" {% if not prev_render_id %}disabled{% endif %}
+                data-tooltip="Previous render in the filtered audit queue.">
           ← prev <span class="key">[←]</span>
         </button>
-        <button class="nav-btn" id="next-btn" {% if not next_render_id %}disabled{% endif %}>
+        <button class="nav-btn" id="next-btn" {% if not next_render_id %}disabled{% endif %}
+                data-tooltip="Next render in the filtered audit queue.">
           next → <span class="key">[→]</span>
         </button>
       </div>
@@ -314,7 +384,11 @@ const RENDER_ID = "{{ render.id }}";
 const SESSION_ID = {% if session_id %}"{{ session_id }}"{% else %}null{% endif %};
 const PREV_ID = {% if prev_render_id %}"{{ prev_render_id }}"{% else %}null{% endif %};
 const NEXT_ID = {% if next_render_id %}"{{ next_render_id }}"{% else %}null{% endif %};
-const EXISTING_VERDICT_ID = {% if render.verdict %}"{{ render.verdict.id }}"{% else %}null{% endif %};
+// EXISTING_VERDICT_ID is `let` (not `const`) because captureVerdict()
+// reassigns it after creating a new verdict, so subsequent flag-toggles
+// don't require a page refresh to find the verdict.
+let EXISTING_VERDICT_ID = {% if render.verdict %}"{{ render.verdict.id }}"{% else %}null{% endif %};
+const RUBRIC_VERSION = {% if session and session.rubric_version %}"{{ session.rubric_version }}"{% else %}null{% endif %};
 
 function showToast(msg, kind) {
   const t = document.getElementById('toast');
@@ -339,6 +413,7 @@ async function captureVerdict(verdict) {
     flags_needs_second_look: flagged,
   };
   if (SESSION_ID) body.audit_session_id = SESSION_ID;
+  if (RUBRIC_VERSION) body.rubric_version = RUBRIC_VERSION;
 
   try {
     const r = await fetch(`/audit/render/${RENDER_ID}/verdict`, {
@@ -351,6 +426,11 @@ async function captureVerdict(verdict) {
       showToast(`error: ${e.detail || r.status}`, 'error');
       return;
     }
+    const data = await r.json();
+    // Track the new verdict id so subsequent flag-toggles target it
+    // without requiring a page refresh (closes the EXISTING_VERDICT_ID
+    // staleness bug surfaced 2026-05-08).
+    if (data.id) EXISTING_VERDICT_ID = data.id;
     // Update active button state
     document.querySelectorAll('.verdict-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.verdict-btn.${verdict}`).classList.add('active');
@@ -459,6 +539,13 @@ function renderConsultationCard(c) {
 
 async function consultAI() {
   const btn = document.getElementById('consult-btn');
+  // Guard against double-fire: the keyboard shortcut path bypasses
+  // button.disabled (HTML disabled-attr blocks click events but not
+  // programmatic calls). Without this guard, pressing C twice while a
+  // call is in flight fires two consultations and double-charges the
+  // user (~$0.05 instead of $0.025). Banked 2026-05-08 from real
+  // double-fire incident.
+  if (btn.disabled) return;
   const statusEl = document.getElementById('consult-status');
   const resultEl = document.getElementById('consult-result');
 

@@ -61,6 +61,28 @@
   .pagination .current { background: #1f2937; color: #fff; border-color: #1f2937; }
   .pagination .disabled { opacity: 0.4; cursor: not-allowed; }
   .pagination a:hover { background: #f3f4f6; }
+
+  /* Hover tooltips — dummy-proof affordance per Joseph's ask 2026-05-08.
+     Default position: above. Header items use data-tooltip-pos="below". */
+  [data-tooltip] { position: relative; }
+  [data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937; color: #f3f4f6;
+    padding: 0.45em 0.7em; border-radius: 0.3em;
+    font-size: 0.72em; font-weight: normal; line-height: 1.4;
+    max-width: 260px; width: max-content;
+    white-space: normal; text-align: center;
+    z-index: 1000; pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  [data-tooltip-pos="below"]:hover::after {
+    bottom: auto;
+    top: calc(100% + 6px);
+  }
 </style>
 </head>
 <body>
@@ -68,18 +90,24 @@
 <header>
   <h1>audit viewer — grid</h1>
   {% if session %}
-    <span class="pill session">session {{ session.id[:8] }}…</span>
-    <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
-    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;">■ end</a>
+    <span class="pill session" data-tooltip-pos="below" data-tooltip="Active audit session — verdicts and consultations created now are attributed to this session for cost rollups.">session {{ session.id[:8] }}…</span>
+    <span class="meta" data-tooltip-pos="below" data-tooltip="Session mode controls evaluation discipline. Rubric version pins which criteria definitions the AI grades against.">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+    <a href="#" id="end-session-link" class="meta" style="color:#fca5a5;"
+       data-tooltip-pos="below" data-tooltip="Closes the active session. Verdicts and consultations stay attached to it for historical rollups.">■ end</a>
   {% else %}
     <span class="meta">no session</span>
-    <a href="#" id="start-session-quick" class="meta">▶ start (quick)</a>
-    <a href="#" id="start-session-deep" class="meta">▶ start (deep)</a>
+    <a href="#" id="start-session-quick" class="meta"
+       data-tooltip-pos="below" data-tooltip="Starts a quick-pass audit session. Best for fast triage runs across many renders.">▶ start (quick)</a>
+    <a href="#" id="start-session-deep" class="meta"
+       data-tooltip-pos="below" data-tooltip="Starts a deep-evaluation session. Slower per-render pace; expect rubric notes and AI consultation per render.">▶ start (deep)</a>
   {% endif %}
-  <span class="pill position">{{ queue_total }} total</span>
+  <span class="pill position" data-tooltip-pos="below" data-tooltip="Total renders matching the current filters.">{{ queue_total }} total</span>
   <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
-    <a href="/audit{% if session_id %}?session_id={{ session_id }}{% endif %}">serial view</a>
-    <a href="/">← prompt drafting</a>
+    <a href="/audit/inbox{% if session_id %}?session_id={{ session_id }}{% endif %}"
+       data-tooltip-pos="below" data-tooltip="Pending downloads from your watcher — pick a destination per file and ingest into the audit pipeline.">inbox</a>
+    <a href="/audit{% if session_id %}?session_id={{ session_id }}{% endif %}"
+       data-tooltip-pos="below" data-tooltip="Serial view — one render at a time, with verdict + consult + flag controls.">serial view</a>
+    <a href="/" data-tooltip-pos="below" data-tooltip="Back to prompt drafting (concept → prompt → dispatch).">← prompt drafting</a>
   </span>
 </header>
 
@@ -93,19 +121,26 @@
     <span class="meta">none — showing all renders</span>
   {% endif %}
   &nbsp;&nbsp;
-  <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">clear</a>
+  <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}"
+     data-tooltip-pos="below" data-tooltip="Clear all filters and show every render in the audit queue.">clear</a>
   &nbsp;|&nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}only_unverdicted=1">only unverdicted</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}only_unverdicted=1"
+     data-tooltip-pos="below" data-tooltip="Show only renders that haven't been audited yet (no verdict marked).">only unverdicted</a>
   &nbsp;|&nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}flagged_only=1">only flagged</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}flagged_only=1"
+     data-tooltip-pos="below" data-tooltip="Show only renders flagged for second-look review.">only flagged</a>
   &nbsp;|&nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=midjourney">tool=mj</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=midjourney"
+     data-tooltip-pos="below" data-tooltip="Filter to Midjourney renders only.">tool=mj</a>
   &nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=frame_extract">tool=frame</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=frame_extract"
+     data-tooltip-pos="below" data-tooltip="Filter to frame-extracted renders (stills pulled from video).">tool=frame</a>
   &nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=gpt_image_2">tool=gpt</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=gpt_image_2"
+     data-tooltip-pos="below" data-tooltip="Filter to GPT Image 2 renders only.">tool=gpt</a>
   &nbsp;
-  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=flux">tool=flux</a>
+  <a href="?{% if session_id %}session_id={{ session_id }}&{% endif %}tool=flux"
+     data-tooltip-pos="below" data-tooltip="Filter to FLUX renders only.">tool=flux</a>
 </div>
 
 {% if not items %}

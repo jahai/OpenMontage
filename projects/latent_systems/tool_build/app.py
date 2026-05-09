@@ -932,3 +932,85 @@ def consult_render_endpoint(
                 "api_call_id": e.api_call_id,
             },
         )
+
+
+# --- Phase 2.5 — pending-downloads inbox (web-UI ingestion gap fix) ---
+
+
+class IngestRequest(BaseModel):
+    source_path: str
+    destination_dir: str
+
+
+@app.get("/audit/inbox", response_class=HTMLResponse)
+def audit_inbox_page(request: Request, session_id: Optional[str] = None):
+    """Inbox page surfacing pending Downloads as ingestable cards.
+
+    Closes the workflow gap where MJ/Kling web-UI generations land in
+    Downloads, get hashed by the watcher, but never become `renders`
+    rows because they have no in-flight prompt attempt to bind to.
+    Joseph picks a destination per-file; ingest copies + walks.
+    """
+    import inbox
+    items = inbox.list_pending()
+    session = audit.get_audit_session(session_id) if session_id else None
+    return TEMPLATES.TemplateResponse(
+        "audit_inbox.html",
+        {
+            "request": request,
+            "items": items,
+            "session_id": session_id,
+            "session": session,
+        },
+    )
+
+
+@app.get("/audit/inbox/api/list")
+def audit_inbox_list_endpoint() -> dict[str, Any]:
+    """JSON list of pending downloads with filename heuristics-based
+    destination suggestions. Used by the inbox page (server-side render)
+    and any future polling/refresh affordance."""
+    import inbox
+    return {"items": inbox.list_pending()}
+
+
+@app.post("/audit/inbox/api/ingest", status_code=201)
+def audit_inbox_ingest_endpoint(body: IngestRequest) -> dict[str, Any]:
+    """Copy a pending Downloads file to a canonical path + run walker so
+    the new file becomes an audit-grid-visible `renders` row.
+
+    Errors:
+      400 — destination outside latent_systems/ (AD-5 guard) or not a directory
+      404 — source file or destination directory not found
+      409 — file with same name already exists at destination
+    """
+    import inbox
+    result = inbox.ingest_file(
+        source_path=body.source_path,
+        destination_dir=body.destination_dir,
+    )
+    if not result.get("ok"):
+        err = result.get("error", "")
+        if err in ("source_not_found", "dest_not_found"):
+            raise HTTPException(status_code=404, detail=result["message"])
+        if err == "dest_exists":
+            raise HTTPException(status_code=409, detail=result["message"])
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+
+@app.get("/audit/inbox/thumbnail")
+def audit_inbox_thumbnail_endpoint(path: str):
+    """Serve a pending Downloads image for thumbnail rendering in the
+    inbox page. Security: only serves paths the watcher currently tracks
+    (prevents arbitrary filesystem read via this endpoint)."""
+    import inbox
+    from pathlib import Path
+    p = Path(path)
+    pending_paths = {item["path"] for item in inbox.list_pending()}
+    if str(p) not in pending_paths:
+        raise HTTPException(status_code=403,
+                            detail="path not in pending_downloads")
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="file not found")
+    return FileResponse(str(p))

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tool_build v1 — inbox (pending downloads)</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+         margin: 0; padding: 0; color: #222; background: #f3f4f6; min-height: 100vh; }
+  header { background: #1f2937; color: #f3f4f6; padding: 0.6em 1em;
+           display: flex; align-items: center; gap: 1em; flex-wrap: wrap; }
+  header h1 { font-size: 1.05em; margin: 0; }
+  header .meta { font-size: 0.85em; color: #9ca3af; }
+  header a { color: #93c5fd; text-decoration: none; }
+  header a:hover { text-decoration: underline; }
+  .pill { display: inline-block; padding: 0.1em 0.5em; border-radius: 0.25em;
+          font-size: 0.8em; background: #374151; color: #f3f4f6; }
+  .pill.session { background: #065f46; }
+  .pill.count { background: #1e40af; }
+  .help-bar { background: #fef9c3; border-bottom: 1px solid #facc15;
+              padding: 0.6em 1em; font-size: 0.85em; color: #713f12; }
+  .help-bar strong { color: #422006; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8em;
+          padding: 1em; max-width: 1600px; margin: 0 auto; }
+  @media (min-width: 1200px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 1800px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .card { background: #fff; border: 1px solid #d1d5db; border-radius: 0.5em;
+          overflow: hidden; display: flex; flex-direction: column;
+          transition: border-color 0.15s, box-shadow 0.15s; }
+  .card.ingesting { opacity: 0.6; pointer-events: none; }
+  .card.ingested { border-color: #059669; background: #ecfdf5; }
+  .card .thumb { background: #1f2937; aspect-ratio: 1.5 / 1;
+                 display: flex; align-items: center; justify-content: center;
+                 overflow: hidden; }
+  .card .thumb img { max-width: 100%; max-height: 100%; object-fit: contain;
+                     display: block; }
+  .card .body { padding: 0.7em 0.8em; display: flex; flex-direction: column; gap: 0.5em; }
+  .card .filename { font-family: ui-monospace, "SF Mono", Menlo, monospace;
+                    font-size: 0.8em; word-break: break-all; color: #1f2937;
+                    line-height: 1.3; }
+  .card .meta { font-size: 0.75em; color: #6b7280; }
+  .card .ingest-form { display: flex; flex-direction: column; gap: 0.4em; margin-top: 0.3em; }
+  .card .ingest-form label { font-size: 0.75em; color: #4b5563; font-weight: 600;
+                              text-transform: uppercase; letter-spacing: 0.03em; }
+  .card .ingest-form input[type="text"] {
+    width: 100%; padding: 0.45em 0.6em; font-size: 0.8em;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    border: 1px solid #d1d5db; border-radius: 0.3em; background: #f9fafb;
+  }
+  .card .ingest-form input[type="text"]:focus { outline: none; border-color: #2563eb; background: #fff; }
+  .card .actions { display: flex; gap: 0.4em; }
+  .card .ingest-btn { flex: 1; padding: 0.55em; border: none; background: #2563eb;
+                      color: #fff; font-size: 0.85em; font-weight: 600;
+                      border-radius: 0.3em; cursor: pointer; transition: background 0.15s; }
+  .card .ingest-btn:hover { background: #1d4ed8; }
+  .card .ingest-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+  .card .status-msg { font-size: 0.75em; padding: 0.4em 0.5em; border-radius: 0.3em;
+                       background: #fef3c7; color: #92400e; }
+  .card .status-msg.success { background: #d1fae5; color: #065f46; }
+  .card .status-msg.error { background: #fee2e2; color: #991b1b; }
+  .card .status-msg a { color: inherit; text-decoration: underline; font-weight: 600; }
+  .empty { text-align: center; padding: 4em 2em; color: #6b7280; }
+  .empty h2 { color: #1f2937; }
+  .toast { position: fixed; bottom: 1em; right: 1em; background: #1f2937; color: #fff;
+           padding: 0.7em 1em; border-radius: 0.4em; font-size: 0.85em;
+           opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 1000; }
+  .toast.show { opacity: 1; }
+  .toast.error { background: #b91c1c; }
+
+  /* Hover tooltips — dummy-proof affordance per Joseph's ask 2026-05-08. */
+  [data-tooltip] { position: relative; }
+  [data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937; color: #f3f4f6;
+    padding: 0.45em 0.7em; border-radius: 0.3em;
+    font-size: 0.72em; font-weight: normal; line-height: 1.4;
+    max-width: 260px; width: max-content;
+    white-space: normal; text-align: center;
+    z-index: 1000; pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  [data-tooltip-pos="below"]:hover::after {
+    bottom: auto;
+    top: calc(100% + 6px);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>inbox — pending downloads</h1>
+  {% if session %}
+    <span class="pill session">session {{ session.id[:8] }}…</span>
+    <span class="meta">mode: {{ session.mode }} | rubric v{{ session.rubric_version }}</span>
+  {% else %}
+    <span class="meta">no session</span>
+  {% endif %}
+  <span class="pill count">{{ items|length }} pending</span>
+  <span style="margin-left:auto; display: flex; gap: 1em; align-items: center;">
+    <a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">grid view</a>
+    <a href="/audit{% if session_id %}?session_id={{ session_id }}{% endif %}">serial view</a>
+    <a href="/">← prompt drafting</a>
+  </span>
+</header>
+
+<div class="help-bar">
+  <strong>What's this?</strong> Files in your <code>~/Downloads</code> folder that the watcher has detected
+  but haven't been routed into the audit pipeline yet. Pick a destination per file and click <strong>ingest</strong>
+  to copy it to a canonical path + register it as an audit-grid-visible render. Suggested destinations are
+  filename-pattern guesses — override freely.
+</div>
+
+{% if not items %}
+<div class="empty">
+  <h2>Inbox is empty.</h2>
+  <p>No pending image downloads. Either the watcher isn't running, or every detected file is already ingested.</p>
+  <p style="margin-top:1.5em;"><a href="/audit/grid{% if session_id %}?session_id={{ session_id }}{% endif %}">← back to audit grid</a></p>
+</div>
+
+{% else %}
+
+<div class="grid">
+  {% for item in items %}
+    <div class="card" data-path="{{ item.path }}" data-hash="{{ item.hash }}" id="card-{{ loop.index }}">
+      <div class="thumb">
+        <img loading="lazy" src="/audit/inbox/thumbnail?path={{ item.path|urlencode }}"
+             alt="{{ item.filename }}">
+      </div>
+      <div class="body">
+        <div class="filename">{{ item.filename }}</div>
+        <div class="meta">
+          {{ (item.size_bytes / 1024 / 1024)|round(2) }} MB ·
+          first seen {{ item.first_seen[:10] }}
+        </div>
+        <form class="ingest-form" onsubmit="return false;">
+          <label for="dest-{{ loop.index }}">Destination (relative to repo root)</label>
+          <input type="text" id="dest-{{ loop.index }}"
+                 value="{{ item.suggested_destination }}"
+                 spellcheck="false" autocomplete="off">
+          <div class="actions">
+            <button type="button" class="ingest-btn"
+                    onclick="ingestCard({{ loop.index }})"
+                    data-tooltip="Copy this file from Downloads to the destination above + register as a renders row. Becomes audit-grid-visible immediately.">
+              ingest →
+            </button>
+          </div>
+        </form>
+        <div class="status-msg" id="status-{{ loop.index }}" style="display:none;"></div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{% endif %}
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SESSION_ID = {% if session_id %}"{{ session_id }}"{% else %}null{% endif %};
+
+function showToast(text, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+async function ingestCard(idx) {
+  const card = document.getElementById('card-' + idx);
+  const destInput = document.getElementById('dest-' + idx);
+  const statusEl = document.getElementById('status-' + idx);
+  const sourcePath = card.dataset.path;
+  const destDir = destInput.value.trim();
+
+  if (!destDir) {
+    statusEl.style.display = 'block';
+    statusEl.className = 'status-msg error';
+    statusEl.textContent = 'destination required';
+    return;
+  }
+
+  card.classList.add('ingesting');
+  statusEl.style.display = 'block';
+  statusEl.className = 'status-msg';
+  statusEl.textContent = 'ingesting…';
+
+  try {
+    const r = await fetch('/audit/inbox/api/ingest', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({source_path: sourcePath, destination_dir: destDir}),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      card.classList.remove('ingesting');
+      statusEl.className = 'status-msg error';
+      statusEl.textContent = (data.detail || ('ingest failed: ' + r.status));
+      showToast('ingest failed', 'error');
+      return;
+    }
+    // Success
+    card.classList.remove('ingesting');
+    card.classList.add('ingested');
+    const renderId = data.render_id;
+    const auditUrl = '/audit?render_id=' + renderId +
+                     (SESSION_ID ? '&session_id=' + SESSION_ID : '');
+    statusEl.className = 'status-msg success';
+    if (renderId) {
+      statusEl.innerHTML = 'ingested → <a href="' + auditUrl + '">audit ' + renderId.slice(0, 8) + '…</a>';
+    } else {
+      statusEl.textContent = 'ingested but render_id not resolved (check walker logs)';
+    }
+    showToast('ingested → ' + (renderId ? renderId.slice(0, 8) + '…' : 'OK'));
+  } catch (e) {
+    card.classList.remove('ingesting');
+    statusEl.className = 'status-msg error';
+    statusEl.textContent = 'network error: ' + e.message;
+    showToast('ingest error', 'error');
+  }
+}
+</script>
+
+</body>
+</html>
