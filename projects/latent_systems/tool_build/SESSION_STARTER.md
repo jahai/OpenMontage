@@ -126,38 +126,71 @@ Code's).**
 
 # Active task
 
-**EOD checkpoint — 2026-05-08:**
+**EOD checkpoint — 2026-05-08, updated 2026-05-09 with post-EOD progress.**
 
-Phase 2 acceptance bridge COMPLETE 2026-05-08 (4 commits + 5 findings
-banked: `c3fbbe2`, `a4a0397`, `95b4831`, `a0bc668` + e2e debrief
-edits).
+## Phase 2 acceptance bridge COMPLETE 2026-05-08
 
-Daily-usability sprint COMPLETE 2026-05-08 (`a32572f` — web-UI
-ingestion + JS interaction fixes + hover tooltips + consult button
-full-width fix).
+4 commits + 5 findings banked: `c3fbbe2`, `a4a0397`, `95b4831`,
+`a0bc668` + e2e debrief edits.
 
-Phase 3 v0.4 amendments fully landed 2026-05-08 (6 commits: `f7e0604`
-+ `1065d75` + `ae48115` + `2411811` + `120ac7f` + `717b385`). All F5
-[OPEN] questions resolved including file copy vs move (decision:
-copy). Phase 3 Wave 1 Day 4-5 implementation has zero remaining design
-ambiguity.
+## Daily-usability sprint COMPLETE 2026-05-08
 
-Branch 44 ahead of `origin/main`; push-architecture (calesthio org owns
-repo, jahai needs different remote) unresolved — local commits durable.
+`a32572f` — web-UI ingestion + JS interaction fixes + hover tooltips
++ consult button full-width fix.
+
+## Phase 3 v0.4 amendments fully landed 2026-05-08
+
+6 commits: `f7e0604` + `1065d75` + `ae48115` + `2411811` + `120ac7f`
++ `717b385`. All F5 [OPEN] questions resolved including file copy vs
+move (decision: copy). Phase 3 Wave 1 Day 4-5 implementation has zero
+remaining design ambiguity.
+
+## Post-EOD progress 2026-05-09
+
+**Push-architecture RESOLVED.** Forked `calesthio/OpenMontage` →
+`https://github.com/jahai/OpenMontage`. Set `origin` to jahai fork;
+added `upstream` remote pointing at calesthio for future periodic
+pulls. Pulled-rebased onto fork's existing state (clean rebase, no
+.gitignore conflicts), then pushed all commits. Branch now in sync
+with `origin/main` (= jahai/OpenMontage). 49 total commits durable
+on GitHub.
+
+**Hash translation post-rebase** (commit `1ac0a76`). Rebase rewrote
+SHAs of 45 local commits; updated SESSION_STARTER.md + banked_items.md
+to reference new SHAs via `sed -i` 14-substitution pass. All cited
+hashes resolve in `git log` again.
+
+**H#3 v3 production — partial (one render audited):** nycwillow
+horizontal-lab upscale ingested via `/audit/inbox` workflow (render
+`34db51db61c34c9e`); marked `hero_zone` (verdict `46e04a597551c562`,
+session `013a9cf917cbd5da`); AI consultation fired (`e9969034b45d3e0b`,
+$0.0251, 14.02s, returned `verdict_inference: strong` with two partials
+on Shorts effectiveness + Series continuity).
+
+**Rubric calibration observation banked** (commit `8d4815f`). New
+§"Rubric calibration observations" section in `banked_items.md`. First
+entry: two consecutive horizontal-lab consultations (rat_state1 +
+nycwillow upscale) returned identical partial grades on Shorts
+effectiveness + Series continuity — pattern suggests either rubric
+penalizes structural format choice (reading a) OR Joseph integrates
+criteria beyond independent-grade arithmetic (reading b). Trigger to
+revisit: third consecutive horizontal-lab consultation with same
+identical partials.
 
 ## Next session options (Joseph picks)
 
 **(A) Phase 3 Wave 1 Day 1** — Migration 0004 schema implementation +
 F8 schema-read against actual OpenMontage schemas. Wave 1 Day 4-5
-unblocked by tonight's v0.4 amendments. ~2-3 hours.
+unblocked by v0.4 amendments. ~2-3 hours.
 
-**(B) Push-architecture resolution** — fork-to-jahai or similar, get
-44 commits durable on GitHub. ~30 min UI + 1 git command.
+**(B) Push-architecture** — ✅ DONE 2026-05-09. No further action.
 
-**(C) H#3 v3 reenactment production work** — rat anchor + State 1
-upscales + canonical filename saves, then human anchor MJ generation.
-EP1-launch May 16 (8 days). Drafted human anchor prompt available in
-chat history if needed. ~2-3 hours.
+**(C) H#3 v3 reenactment production work — IN PROGRESS** — first
+render (nycwillow upscale) audited end-to-end. Remaining: more
+upscales + human anchor MJ generation + rat State 2 + canonical
+filename saves. EP1-launch May 16 (7 days remaining). Note workflow:
+upscales/generations save to Downloads via right-click → Save image as
+in MJ web UI; auto-flow to `/audit/inbox`. ~2-3 hours per round.
 
 **(D) Phase 2.5 fixes** (5 banked findings from Wave B real run):
 consult button disable + elapsed counter; discipline_drift extension
@@ -165,8 +198,21 @@ to Migration 0003 tables; YAML staleness audit; PHASE_2_E2E_PLAN.md
 cost amendment paper-work; Step 8 verify-end-link amendment.
 ~2-3 hours.
 
-**Recommended: A or C** depending on energy + EP1-launch timeline
-pressure.
+**Recommended: continue C, or A as alternative.** B done; D still
+deferable.
+
+## Post-reboot startup checklist
+
+If Claude conversation didn't resume cleanly:
+
+1. Open Claude Code in `OpenMontage/projects/latent_systems/tool_build`
+2. Try `claude --resume` first; if fails, fresh session is fine
+3. Restart server: `python serve.py` (in `tool_build/` dir). If `--status`
+   reports stale PID from pre-reboot, run `python serve.py --stop` first
+   to clear, then `python serve.py`
+4. Reload browser at `http://localhost:7890/audit/grid`
+5. Reference this SESSION_STARTER.md + `banked_items.md` "Updated:"
+   index line for current state
 
 ---
 
