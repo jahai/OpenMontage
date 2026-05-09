@@ -29,7 +29,7 @@ Out of scope for this draft:
 
 **Reverse flow (un-promote).** Modal triggered by clicking "Un-promote" button. Visible only when the render IS already in a `winners/` path. Same sidebar location.
 
-**Keyboard shortcut:** [OPEN: need Joseph decision] — recommend `H` for promote (mnemonic: "hero"), `Shift+H` for un-promote (modifier matches the destructive direction). Not part of the existing 1-4/F/C verdict-marking shortcut block; both verdicts confirm on key-press, but F5 always opens a modal — the keyboard shortcut would just open the modal, not bypass it.
+**Keyboard shortcut:** `H` for promote, `Shift+H` for un-promote (resolved v1.2). Mnemonic `H = hero`; Shift+H modifier matches the destructive direction. Not part of the existing 1-4/F/C verdict-marking shortcut block. Verdicts confirm on key-press, but F5 always opens a modal — the keyboard shortcut just opens the modal, doesn't bypass the Confirm step (per resolved item 8 below).
 
 ---
 
@@ -63,8 +63,8 @@ The modal is a **single-column dialog**, ~520px wide, centered overlay over a tr
 │  ─── 4. Doc-update coordination ───                      │
 │  Promotion may surface in:                               │
 │    • ep1/h3_skinner/NOTES.md (F6 prompt above)           │
-│    • [OPEN: need Joseph decision] additional doc list    │
-│  Read-only summary; F9 calibration handles actual updates│
+│  Read-only summary; F9 calibration handles dynamic       │
+│  doc-set lookup post-Phase-3.5.                          │
 │                                                          │
 │  [ Cancel ]                          [ Promote to hero ] │
 └──────────────────────────────────────────────────────────┘
@@ -90,9 +90,11 @@ ep1/h3_skinner/winners/  (will be created)
 ```
 with a subtle visual distinction (italic + warning icon) so Joseph notes the directory creation. No separate confirmation step; the modal's main "Promote" button covers it.
 
+**File-operation semantics (resolved v1.2 item 9): COPY, not MOVE.** The original stays in source path until un-promote (or filesystem cleanup). The label "file-move target" above describes the destination, not the operation — the operation itself is `shutil.copy2(src, dest)` per the §"Atomic-transaction failure semantics" Python shape. Rationale: atomic-transaction rollback is mechanically simpler — if Step 2 (db insert) fails, deleting the destination copy reverses Step 1 cleanly without restoring from backup. Disk overhead is negligible at audit-image scale (~2-10MB per render). Phase 1's router uses move because no transaction wraps it; F5's transaction shape justifies the different default. If a section accumulates too many old originals in `_work/`, Joseph sweeps manually — out of scope for F5.
+
 ### 4.2. hero_promotions row preview
 
-**[OPEN: need Joseph decision] — which fields shown, in what shape.** Recommendation: 4 fields, key:value left-aligned, monospace font:
+**Resolved v1.2:** 4 fields, key:value left-aligned, monospace font:
 - `verdict_id` (16-char hex, abbreviated to 8+`…` for visual scan)
 - `hero_filepath` (canonical path, same as Step 1's to-path)
 - `promoted_at` (ISO timestamp computed at modal-submit time, displayed in viewer-local timezone with timezone abbreviation)
@@ -116,15 +118,13 @@ The link to `/audit/notes-md/<section>` is clickable but doesn't navigate from t
 
 ### 4.4. Doc-update coordination summary
 
-**[OPEN: need Joseph decision] — which docs surface, presentation, dismissable or read-only.**
+**Resolved v1.2 — which docs, presentation, dismissable.**
 
-Recommendations:
-
-**Which docs:** F9 calibration is the source-of-truth for "which docs reference this render's section." Until F9 is implemented, the modal can't compute this dynamically. v0.4 amendment recommendation: list 1-3 known canonical docs that always coordinate with hero promotions — at minimum `ep1/<section>/NOTES.md`, plus any `EP1_STRUCTURAL_ARCHITECTURE_v*.md` reference if section is at SHIPPED state. If the list is empty/unknown, show: "No coordinated doc updates known for this section yet (F9 calibration pending)."
+**Which docs:** Surface ONLY `ep1/<section>/NOTES.md` until F9 calibration ships (every promoted hero implies an authorial NOTES.md update — that's the always-relevant baseline). For edge cases where NOTES.md isn't applicable (e.g., promotion outside `ep1/`), show fallback: "No coordinated doc updates known for this section yet (F9 calibration pending)." Avoiding hardcoded broader lists keeps the modal honest about current capability — F9 is the structural answer for dynamic doc-set lookup; pre-F9 hardcoding risks staleness.
 
 **Presentation:** read-only bullet list. NOT actionable; the modal doesn't open these docs for editing. Joseph reviews + acknowledges by confirming the modal.
 
-**Dismissable:** [OPEN: need Joseph decision] — recommend NOT-dismissable within the modal (it's part of the review surface). Joseph can dismiss the WHOLE modal via Cancel; no per-section dismissal. Rationale: making sub-sections dismissable creates a "what did I dismiss / can I get it back" UX problem; whole-modal cancel + retry is simpler.
+**Dismissable:** NOT-dismissable per-section (resolved v1.2). Joseph can dismiss the WHOLE modal via Cancel; no per-section dismissal. Rationale: making sub-sections dismissable creates a "what did I dismiss / can I get it back" UX problem; whole-modal cancel + retry is simpler.
 
 ---
 
@@ -169,7 +169,7 @@ The reason text is sanitized for filesystem use (lowercase, replace whitespace w
 
 ## Modal sizing, dismiss, focus management
 
-**[OPEN: need Joseph decision] — modal sizing.** Recommendations:
+**Modal sizing (resolved v1.2):**
 
 - **Width:** 520px fixed (not full-screen; not viewport-percentage). Rationale: file paths (the longest text) fit comfortably at 520px without wrapping; sidebar verdict-marking is ~380px so the modal is meaningfully bigger but not overwhelming.
 - **Height:** auto, max 80vh. If content exceeds 80vh (rare but possible if doc-update list is long), scroll inside the modal with the action buttons sticky at bottom.
@@ -389,18 +389,21 @@ Three reasons:
 
 ---
 
-## Open questions for Joseph decision
+## Decisions (resolved v1.2 — 2026-05-09)
 
-These items have [OPEN] markers in the body above; consolidating here for review:
+All 9 originally-open items resolved per cross-Claude review pressure-test + Joseph decision. Consolidated for implementation reference:
 
-1. **Keyboard shortcut for promote/un-promote.** Recommend `H` (promote) + `Shift+H` (un-promote). Joseph's call: stick with this, or different keys, or no shortcut?
-2. **hero_promotions row preview fields.** Recommend 4 fields: `verdict_id`, `hero_filepath`, `promoted_at`, `promoted_by`. Add or remove?
-3. **Doc-update coordination — which docs surface.** Until F9 calibration is implemented, the modal can't compute this dynamically. Acceptable to show a static "no coordinated docs known yet (F9 pending)" message, or do you want a hardcoded short list?
-4. **Doc-update coordination — dismissable per-section?** Recommend NOT (whole-modal Cancel only). Confirm or override?
-5. **Modal width sizing.** Recommend 520px fixed. Joseph use a different display width that would benefit from a different default?
-6. **Reverse flow reason min-char threshold.** Recommend 5 chars min. Trivial to change; Joseph's threshold preference?
-7. **Reverse flow `_DEPRECATED_<reason>/` sanitization rules.** Recommend lowercase + whitespace→underscore + strip non-alphanumeric except `_-`. Sound, or different convention?
-8. **Modal opens on keyboard shortcut, or only on mouse click?** Recommend keyboard shortcut opens modal (modal still requires explicit Confirm — keyboard shortcut is just modal-open shortcut, not action shortcut). Confirm.
+1. **Keyboard shortcut for promote/un-promote: `H` / `Shift+H`.** Mnemonic `H = hero`; Shift modifier signals destructive direction. Both shortcuts open the modal — neither bypasses the Confirm step (per item 8).
+2. **hero_promotions row preview fields: 4 fields.** `verdict_id` (8-char abbreviated + ellipsis), `hero_filepath`, `promoted_at`, `promoted_by`. Internal/redundant fields excluded (e.g., `id`, `created`, `reversed_*` — NULL on forward flow). v2 may add a "details" expansion toggle.
+3. **Doc-update coordination — which docs surface: NOTES.md only, with F9-pending fallback.** Surface ONLY `ep1/<section>/NOTES.md` until F9 calibration ships. Edge cases (e.g., promotion outside `ep1/`) show "No coordinated doc updates known for this section yet (F9 calibration pending)." Avoiding hardcoded broader lists keeps the modal honest about current capability.
+4. **Doc-update coordination — dismissable per-section: NOT.** Whole-modal Cancel only. Per-section dismiss creates UX confusion ("what did I dismiss / can I get it back").
+5. **Modal width: 520px fixed.** Auto-height, max 80vh. Sidebar verdict-marking is ~380px so the modal is meaningfully bigger but not overwhelming. CSS-trivial to adjust later.
+6. **Reverse flow reason min-char threshold: 5 chars.** Enforces non-trivial reasons. Sanitized version becomes `_DEPRECATED_<reason>/` directory name; very short reasons would create useless directory names. Disabled state on Confirm button until threshold met; tooltip explains why.
+7. **Reverse flow `_DEPRECATED_<reason>/` sanitization rules: lowercase + whitespace→underscore + strip non-alphanumeric except `_-`.** Filesystem-safe across Windows/macOS/Linux; collision-resistant; readable; standard slug pattern.
+8. **Modal opens on keyboard shortcut: yes; modal still requires explicit Confirm.** Keyboard shortcut is just a faster way to OPEN the modal — the modal's confirmation gate is the actual safety mechanism. Shortcut doesn't bypass.
+9. **File operation: COPY, not MOVE.** `shutil.copy2(src, dest)` per the §"Atomic-transaction failure semantics" Python shape. Original stays in source path until un-promote (or filesystem cleanup). Rationale: simpler atomic-transaction rollback (delete copy reverses cleanly without backup restore); negligible disk overhead at audit-image scale; Phase 1 router uses move because no transaction wraps it, F5's transaction shape justifies different default.
+
+No remaining `[OPEN: need Joseph decision]` markers in the doc body. Implementation transcribes from this v1.2 spec when Wave 1 Day 4-5 unblocks.
 
 ---
 
@@ -478,6 +481,18 @@ Modal template lives at `templates/hero_promotion_modal.html` — included into 
 
 ## Document maintenance
 
+- **v1.2 DRAFT (2026-05-09; v0.4 amendment 6 — open-questions
+  resolution):** All 9 originally-open items resolved per cross-Claude
+  review pressure-test + Joseph decision. Items 1, 2, 4, 5, 7, 8 land
+  with original recommendations; items 3, 6 land with prior-Claude's
+  refined recommendations (NOTES.md-only doc-update surface; 5-char
+  reason min); item 9 (file COPY vs MOVE — surfaced by build-Claude
+  during authoring, not in original brief) lands as COPY for atomic-
+  transaction rollback simplicity. Inline `[OPEN: need Joseph decision]`
+  markers removed; §"Open questions" renamed to §"Decisions"; modal
+  mockup updated to remove [OPEN] placeholder line. Body changes are
+  resolution-only — no behavioral spec drift. Implementation
+  transcribes from v1.2 when Wave 1 Day 4-5 unblocks.
 - **v1.1 DRAFT (2026-05-09; v0.4 amendment 3):** Atomic-transaction
   failure semantics section added. Per-step rollback table; explicit
   Python try/except shape for hero_promote() + reverse-flow analog;
