@@ -321,6 +321,38 @@ After Phase 2 acceptance bridge closed, immediate post-bridge investment in clos
 
 ---
 
+## Rubric calibration observations — start 2026-05-09
+
+Pattern observations from real AI consultation runs against `docs/AUDIT_RUBRICS_v1_0.md`. Each entry adds when a pattern surfaces. Promotion to `AUDIT_PATTERNS.md` or rubric amendment requires the pattern to repeat at least twice (per the established two-occurrence threshold); one-off observations stay banked here.
+
+### 1. Horizontal-lab 1930s compositions get identical AI partials on Shorts effectiveness + Series continuity (2026-05-09)
+
+Two consecutive consultations on visually-distinct horizontal 1930s lab renders returned the same two criterion grades. Renders involved:
+
+- `rat_state1_1930s_v1.png` — render `78c7eed6bb7e0bcd`, verdict `1e19235b6ceb7178` (`strong`), consultation `ce81acc09de54a42` (audited 2026-05-08)
+- `nycwillow_*Inside_the_same_long_horiz*` upscale — render `34db51db61c34c9e`, verdict `46e04a597551c562` (`hero_zone`), consultation `e9969034b45d3e0b` (audited 2026-05-09)
+
+Identical AI grades on both:
+- **Shorts effectiveness: partial** — "16:9 composition extends laterally, would lose left/right context in 9:16 crop"
+- **Series continuity: partial** — period-specific 1930s lab pins to current episode subject; reduces cross-episode reusability
+
+Joseph's overall verdicts (`strong` + `hero_zone`) elevated above the AI's `strong` inference both times — i.e., Joseph treats the partials as acceptable structural tradeoffs of the chosen format, not as image-specific flaws.
+
+**Two readings of the pattern (don't discriminate yet — two data points insufficient):**
+
+- **(a) Rubric language penalizes a structural format choice rather than execution within it.** Shorts-effectiveness criterion text assumes 9:16 reframe-ability is universally valuable; for horizontal-lab compositions Joseph has consciously committed to as a format, partial-on-Shorts is wrong signal — it grades the choice, not the execution. Same for Series continuity: period-specific 1930s aesthetic *is* the point of the H#3 reenactment direction; it's not a defect.
+
+- **(b) Criteria correctly grade observable properties; Joseph's verdict integrates beyond independent-grade arithmetic.** Each criterion grades honestly (the 16:9 image WOULD lose context in 9:16 crop); Joseph's overall verdict synthesizes against weighting Joseph carries in his head but the rubric doesn't formalize. Then partial-on-Shorts is correct signal for that criterion; the gap is just that humans weight criteria differently than equally.
+
+**Decision implications (deferred until pattern repeats a third time):**
+
+- If reading (a): rubric needs amendment — either per-direction criterion variants (Shorts effectiveness measured differently for 9:16-targeted vs 16:9-targeted compositions), OR conditional language ("if direction targets 9:16 distribution, then…"). Doable as a rubric v1.1 bump.
+- If reading (b): rubric is fine; need a way for Joseph's verdict to record WHICH criteria carried more weight (e.g., a `criteria_weighting_notes` field on verdicts, or a UX prompt during verdict capture asking "criteria you weighted heavier than the AI on?"). Doable as a Phase 2.5 schema + UI extension.
+
+**Trigger to revisit:** third consecutive horizontal-lab AI consultation that produces identical Shorts/Series partials. If pattern holds, address; if it doesn't (next horizontal-lab gets different partials), reading (b) is more likely and rubric stays as-is.
+
+---
+
 ## Phase 2 design — native-API generation path (mixed-path) — moved to Phase 3 territory 2026-05-08
 
 **Problem.** Phase 1 hard-coded the clipboard+browser handoff flow
