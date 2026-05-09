@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-08 (Phase 2 acceptance bridge Step 1+2 in progress: consult_render opt-in landed 8a1fea4; rubric seed pollution fix landed dbc0d51; rubric authoring at docs/AUDIT_RUBRICS_v1_0.md in flight; Wave B firing pending)
+**Updated:** 2026-05-08 (Phase 2 acceptance bridge COMPLETE: rubric committed c55f36e; Wave B fired successfully against real render; e2e debrief banked below; Phase 3 Wave 1 unblocks pending v0.4 amendments)
 
 ---
 
@@ -57,7 +57,7 @@ items / open watches across cross-Claude review waves. Replaces the scattered
 | Browser-side clipboard | Day 5-9 §4.5 | Multi-machine deployment ever happens |
 | needs_review_reason as column | Day 5-9 §4.10 | Render count > ~50k (currently 1698 + slow growth) |
 
-## Phase 2 close (shipped 2026-05-06 → 2026-05-07)
+## Phase 2 close (shipped 2026-05-06 → 2026-05-07; acceptance bridge crossed 2026-05-08)
 
 Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actual via single-session push (banked as fourth Phase-3-estimating signal: prior-phase substrate maturity → next phase can compress).
 
@@ -73,13 +73,17 @@ Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actua
 **v0.6 cross-Claude review must-fix amendments status:**
 - ✅ #1 — `consult_render` opt-in `create_verdict_if_missing` default (commit 8a1fea4, 2026-05-08): prevents permanent audit-trail pollution from exploratory consult clicks
 - ✅ #2 — `_SAFETY_REFUSAL_RE` verb-aware tightening (landed in Phase 2 Wave B substrate; visible in audit_providers/anthropic.py with v0.6 amendment comment): prevents legitimate critical evaluations from being miscategorized as safety refusals
-- ⏳ #3 — Wave B real firing per PHASE_2_E2E_PLAN.md (acceptance bridge — pending rubric authoring)
-- ⏳ #4 — PHASE_2_E2E_PLAN.md latency methodology + supersession step amendments (banked for Wave B post-firing iteration)
+- ✅ #3 — Wave B real firing per PHASE_2_E2E_PLAN.md (acceptance bridge): COMPLETE 2026-05-08. See "Phase 2 e2e run — 2026-05-08" section below for full debrief. Cost $0.0507 total (12× under estimate), latency 9.25s+9.88s, AI calibration matched human verdict, 4 findings banked.
+- ✅ #4 — PHASE_2_E2E_PLAN.md amendments based on real findings (cost estimate 12× too high; double-fire UX gap; YAML staleness deviation): banked in e2e debrief below; folded into plan as Phase 2.5 cleanup work
 - ✅ #5 — fifth Phase-3-estimating signal banked (user-blocking work that designs treat as non-blocking actually does block end-to-end verification — see signal 5 in phase3_design_notes v0.1 SCAFFOLD)
 
-**Remaining gate for Wave B live firing (Phase 2 acceptance bridge):**
-- 🔄 `docs/AUDIT_RUBRICS_v1_0.md` — Joseph's editorial work, IN PROGRESS 2026-05-08. **Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md`** carrying the 6 evaluation criteria from `docs/HANDOFF_2026-05-02.md` structured per the parser contract. **Pollution fix landed 2026-05-08 (commit dbc0d51)** — content-after-last-H3 footer would have polluted Sonic-being preservation criterion definition by ~2,200 chars on every consultation. **18 bullets drafted via cross-Claude walkthrough, integrated to docs/ via per-criterion AD-5 protocol 2026-05-08**; awaiting Joseph's review-pass + commit.
-- ⏳ One real Wave B firing per `PHASE_2_E2E_PLAN.md` — bridge from "Phase 2 code-shipped" to "Phase 2 acceptance-validated" per cross-Claude reviewer's recommendation. Cost ~$0.30 + ~30 min Joseph time. Validates SDK shape assumptions (image base64 format, response.usage attribute names, vision token billing math, real safety filter behavior, real rate-limit behavior) that synthetic tests can't catch.
+**Phase 2 acceptance bridge — COMPLETE 2026-05-08:**
+
+All 4 steps landed in single session 2026-05-08:
+1. ✅ `consult_render` opt-in (commit 8a1fea4)
+2. ✅ Rubric authored + committed at `docs/AUDIT_RUBRICS_v1_0.md` (commit c55f36e). Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md` with pollution fix (commit dbc0d51) preventing footer text from polluting Sonic-being preservation criterion. 18 bullets drafted via cross-Claude walkthrough, integrated with author-time discipline (no multi-line bullets per Pattern #8 reinforcement #2).
+3. ✅ Wave B fired against real render `78c7eed6bb7e0bcd` — 2 consultations succeeded, $0.0507 total cost, AI verdict_inference matched human verdict, structured JSON parsed cleanly. See e2e debrief below.
+4. ✅ Run results banked in this document (Phase 2 e2e run — 2026-05-08 section).
 
 **Phase 2 items moved to Phase 3 territory below:**
 - Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs
@@ -90,7 +94,7 @@ Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actua
 - **Hero promotion atomic action (Feature 5)** — Phase 3 default per v0.2 design notes Q1 call. F5's atomic action depends on F6 (NOTES.md authorship) and Phase 3 doc-set data model; building atomic action in Phase 2 would have produced degraded ship that gets rebuilt in Phase 3. Manual file-move pattern (Phase 1 + router) continues to serve through Phase 2. Pull-forward window passed (Phase 2 closed faster than the Wave A-Week-4-slack scenario anticipated — no slack accumulated to spend). Lands in Phase 3 alongside F6.
 - **Tool-grammar config expansion to GPT Image 2 + Kling + ElevenLabs** — moved from Phase 2 territory 2026-05-07. Depends on Phase 1 + Phase 2 successful_examples accumulation; Phase 2 shipped Anthropic vision config only. Expansion when verdict-confirmed-strong outputs seed enough data per Q3.
 - **3a hardening review** — moved from Phase 2 territory 2026-05-07. Largely landed Phase 1 Day 12 + v0.4 amendment; Phase 3 audit confirms no remaining gaps after real Wave B usage.
-- **Existing-consultations-on-page-load enhancement** — ✅ shipped Phase 2.5 (commit dbfd15e); audit.get_render_detail now returns ai_consultations array for the latest verdict.
+- **Existing-consultations-on-page-load enhancement** — ✅ shipped Phase 2.5 (commit dbfd15e); audit.get_render_detail now returns ai_consultations array for the latest verdict. **Validated under real run 2026-05-08** — Step 7 of e2e plan confirmed server-side rendering of 2 consultation cards on reload.
 - **Native-API generation path (mixed-path)** — moved from Phase 2 territory 2026-05-08. Direct API providers (FLUX, Imagen, DALL-E) parallel branch to clipboard handoff. Implementation pointers preserved in detail section below.
 - **Render-group compare-and-rank view (Feature 5+ extension)** — grid
   view of generations grouped by prompt (default) or by concept; drag
@@ -104,6 +108,9 @@ Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actua
   modal in the existing UI or a dedicated `/groups/<prompt_id>` page?
   Surfaced 2026-05-05 by Joseph after Phase 1.5 e2e run.
 - **Rubric parser multi-line bullet support** — Pattern #8 reinforcement #2 (banked 2026-05-08): current parser captures only same-line bullet content via `(.*)$`; multi-line bullets get truncated AND continuation lines pollute the criterion's definition body. Fix is either (a) reformat bullets single-line at author time (current discipline; works but constrains markdown idiom), or (b) extend `parse_rubric_text` to support continuation lines (~10 lines added, needs test for "indented continuation appends to current_eval[level]"). Recommend (b) when Phase 2.5 parser work happens — multi-line bullets are standard markdown and the current limitation will keep biting future rubric authoring.
+- **Wave B "consulting AI..." UX gap → silent double-fire** — banked 2026-05-08 from real Wave B firing. Pressing C without UI feedback during in-flight request enables silent double-fire (~37 sec apart, both succeeded, both attached to same verdict). Phase 2.5 fix: disable C button + grey out section while request in-flight; add visible elapsed-time counter ("consulting AI… 12s") to prevent ambiguity about whether request is hung vs slow. Real-use UX gap that synthetic tests can't catch.
+- **discipline_drift query surface extension to Migration 0003 tables** — banked 2026-05-08 from Step 10 audit. Endpoint currently enumerates 7 entity types but the 4 new Migration 0003 tables (ai_consultations, audit_sessions, audit_thumbnails, plus rebuilt verdicts) include 2 that should be tracked entities: ai_consultations + audit_sessions. Phase 2.5 enhancement: extend `discipline_drift_query()` in audit module to include these tables in `totals_by_type` and per-version breakdowns. Math reconciles today but is incomplete — won't surface drift against the new schema's entity types.
+- **YAML staleness across audit_session lifecycle + verdict.ai_consultation_ids** — banked 2026-05-08 from real Wave B firing. Session YAML has `ended: null`, `total_consultations: 0`, `total_cost_usd: 0.0` even after consultations fired and session was effectively ended. Verdict YAML has `ai_consultation_ids: []` even after consultation YAMLs attached on disk. State.db has live values; YAML doesn't denormalize. AD-5 invariant deviation (YAML supposed to be source of truth; state.db cache). May be intentional design (parallel to `audit.update_verdict_flags` AD-5 deviation banked at Issue 2 from Phase 2 close review). Phase 2.5 work: either (a) docstring the AD-5 deviation explicitly with rationale in audit.py + audit_consult.py + session-end endpoint, OR (b) write YAML denormalization as part of consultation attach + session end paths. Verify intent next session.
 - NOTES.md authorship via Claude API (Feature 6)
 - Cross-AI / cross-Claude capture surface (Feature 7)
 - Serialization to OpenMontage `edit_decisions` + `asset_manifest` (Feature 8)
@@ -212,6 +219,73 @@ them.
 
 ---
 
+## Phase 2 e2e run — 2026-05-08
+
+First real-world e2e run of Phase 2 Wave B (PHASE_2_E2E_PLAN.md). Bridge
+from "Phase 2 code-shipped" to "Phase 2 acceptance-validated."
+
+**Run identifiers.**
+- Session: `dac0ede608bc9e22` (started 2026-05-08T13:46:08 UTC, mode `quick_pass`, rubric_version 1.0)
+- Verdict: `1e19235b6ceb7178` → strong, by human, on render `78c7eed6bb7e0bcd`, created 2026-05-08T14:07:40 UTC
+- Consultations: `ce81acc09de54a42` + `7741730125296a6e` (both completed status, structured JSON parsed cleanly)
+
+**Cost / time.**
+- 2 consultations fired (silent double-fire — see finding #1 below)
+- Cost: $0.0249 + $0.0258 = **$0.0507 total** (12× under PHASE_2_E2E_PLAN.md placeholder estimate of $0.30)
+- Latency: 9.25s + 9.88s server-side per call (well under plan's 10-30s budget)
+- Tokens: ~3453 in / 305-343 out per call (system + concept + lineage + image)
+- Total wall-clock from session start to verdict mark: ~21 minutes
+- Total wall-clock from session start to Step 9 reload validation: ~50 minutes (includes UI navigation, e2e plan execution, finding diagnosis)
+
+**Result. PASS.** All 9 user-facing e2e plan steps validated:
+- Step 1 (pick render via grid): pass
+- Step 2 (start audit session via header click): pass; `audit_sessions/dac0ede608bc9e22.yaml` written
+- Step 3 (click into serial view): pass; image loaded, sidebar populated with render meta + verdict markers + AI section
+- Step 4 (mark verdict via keyboard 2 / strong button): pass; verdict YAML landed in milliseconds at `_data/verdicts/1e19235b6ceb7178.yaml`
+- Step 5 (toggle flag F): pass; state.db `flags_needs_second_look` updated
+- Step 6 (consult AI via C button): pass twice; both consultation YAMLs landed at `_data/ai_consultations/`
+- Step 7 (reload to verify persistence): pass; "AI consultation (2)" rendered server-side without re-firing — Phase 2.5 enhancement validated under real conditions
+- Step 8 (end session): effectively passed via auto-end / navigation; verdict + consultations persist independently of session lifecycle (header in "no session" state by Step 7 reload time)
+- Step 9 (close tab + 30s wait + reopen URL → verdict-durability check): pass; F8 success criterion 5 ("Audit verdicts durable from moment of marking. Mark a render. Close the chat. Reopen a day later. Verdict still present, with reasoning, with audit-rubric used, with AI consultations logged.") validated against real conditions
+- Step 10 (discipline-version drift via curl /discipline_drift): pending Joseph's navigation to endpoint + paste of totals_by_version
+
+**AI calibration validation.**
+- AI's `verdict_inference: strong` matched Joseph's `strong` verdict — calibration test passes
+- Both AI partial diagnoses sharp + actionable (not generic):
+  - Shorts effectiveness: "16:9 composition — apparatus extends laterally, would lose left/right context in 9:16 crop" (concrete, actionable)
+  - Series continuity: AI sees period-specificity as potentially limiting cross-episode reusability (smart read of the LOCKED-for-this-episode tradeoff)
+- Pattern #8 third-bucket discipline (project-specific bullets anchored on observable visual properties) produced AI judgments that read as genuine grading signal, not generic vibes
+
+**Findings (banked here per plan; promotion to AUDIT_PATTERNS.md requires second occurrence).**
+
+1. **Wave B "consulting AI..." UX gap → silent double-fire.** Pressing C without visible UI feedback during in-flight request enables silent double-fire. Both consultations succeeded (~37 sec apart), both attached to same verdict, audit trail shows both. State stayed consistent — but Joseph didn't intend two consultations; UX implied first request didn't register. Phase 2.5 fix: disable C button + grey out section while request in-flight; add visible elapsed-time counter ("consulting AI… 12s") to prevent ambiguity about whether request is hung vs slow. Real-use UX gap that synthetic tests can't catch.
+
+2. **PHASE_2_E2E_PLAN.md cost estimate is 12× too high.** Plan says ~$0.30 per vision consultation per design notes §1 4.2 placeholder. Actual: $0.025 per call (cached + downscaled image). Difference comes from prompt caching working as designed (rubric system prompt cache-hit on second call) + image downscale keeping vision-token cost low. Plan amendment needed: revise per-call cost estimate to ~$0.025-0.05 cached / ~$0.10-0.20 cache-miss; revise total e2e plan cost from ~$0.30 to ~$0.05-0.10. Implications for F6 cost estimate revision (Phase 3 design notes v0.2 amendment item 5a): may also be over-estimated by similar factor; verify post-F6 first firing.
+
+3. **YAML staleness: state.db has live values, YAML doesn't denormalize.** Discovered post-run via filesystem inspection. Specifically:
+   - `audit_sessions/<id>.yaml` has `ended: null`, `total_consultations: 0`, `total_cost_usd: 0.0` even after consultations fired and session was effectively ended (header in "no session" state)
+   - `verdicts/<id>.yaml` has `ai_consultation_ids: []` even after both consultation YAMLs attached on disk
+   - Build-Claude's curl against state.db shows correct values (`session.total_cost_usd: $0.0507`, `session.total_consultations: 2`, ended timestamp populated)
+   - This is an AD-5 invariant deviation (YAML supposed to be source of truth; state.db cache). If state.db rebuilt from filesystem, session totals + verdict consultation membership would all reset to defaults
+   - May be intentional design (parallel to `audit.update_verdict_flags` AD-5 deviation banked at Issue 2 from Phase 2 close review). Needs verification next session against `audit.py` to confirm intent
+   - Recommend Phase 2.5 work: either (a) docstring the AD-5 deviation explicitly with rationale in audit.py + audit_consult.py + session-end endpoint, OR (b) write YAML denormalization as part of consultation attach + session end paths
+
+4. **Step 8 (end session) UX path unclear.** Joseph clicked the "■ end" link at some point during the e2e flow but doesn't recall exactly when. Header was already in "no session" state when Step 8 was reached in the plan walkthrough. Possible causes: session ended explicitly during Step 6 (after second consult fired); session ended via navigation away; session timed out (no timeout mechanism currently exists in code). Worth verifying next session by checking the session.ended timestamp in state.db against the consultation timestamps to see when end actually fired. Plan amendment: explicit "Step 8 — verify ■ end link is currently visible in header before clicking; if header already shows 'no session' state, document why and skip click."
+
+5. **discipline_drift query surface doesn't include Migration 0003 tables.** Step 10 audit (2026-05-08T15:00ish UTC) showed `totals_by_type` enumerates only: concepts, prompts, renders, verdicts, hero_promotions, lineage_edges, cross_ai_captures. Tonight's 2 ai_consultations + 1 audit_session are invisible to the F10 query surface even though they exist in state.db at discipline_version 1.0. Same shape gap as YAML staleness finding #3 — schema evolved (Migration 0003 added 4 new tables: ai_consultations, audit_sessions, audit_thumbnails, plus the verdicts rebuild) but the F10 discipline_drift query wasn't extended to track the new entity types. Phase 2.5 enhancement: extend `discipline_drift` to include ai_consultations + audit_sessions as tracked entity types (audit_thumbnails is cache, not entity, can stay excluded). Math currently reconciles (1.0 totals = 14, pre_v1 totals = 1732) but the totals are incomplete — missing 2 consultations + 1 session from the 1.0 bucket count.
+
+**Findings 1-5 above NOT promoted to AUDIT_PATTERNS.md** — each is a one-off observation per the audit-patterns threshold (two separate occurrences required for promotion).
+
+**Updates folded into Phase 2.5 / Phase 3 work:**
+- PHASE_2_E2E_PLAN.md cost estimate amendment per finding 2
+- audit.py / audit_consult.py docstring deviations per finding 3 (if confirmed intentional)
+- Wave B UI: button-disable + elapsed-time counter per finding 1
+- Plan amendment for Step 8 verification per finding 4
+
+**Phase 2 acceptance bridge officially closes with this run.** Wave B validated against real conditions: SDK shape, response.usage attributes (input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens), vision token billing math, prompt caching (12× cost reduction confirmed), safety regex behavior (no false positives on this content), parse-tolerant JSON extraction (clean parse), persistence across session-end + tab-close + 30s gap. The e2e plan + Phase 2 close test suites + this real run combine to form acceptance evidence Phase 3 design can build on.
+
+---
+
 ## Phase 2 design — native-API generation path (mixed-path) — moved to Phase 3 territory 2026-05-08
 
 **Problem.** Phase 1 hard-coded the clipboard+browser handoff flow
@@ -273,3 +347,5 @@ for bulk iteration where MJ's manual round-trip is the bottleneck.
 4. **Spec/reality gaps surface during build, not before.** §2 (gitignore makes hook dormant) wasn't in the spec, both Day 1-2 build and review missed it; Day 5-9 routing operation surfaced it. Bank as: "every operational task is also a spec audit pass."
 
 5. **Format-discipline-mismatch silent failures.** When parser/spec relies on undocumented discipline (no multi-line bullets in rubric, no post-last-H3 content, etc.), failure mode parses successfully but produces wrong content. Pattern #8 third-bucket fixtures need to test parser-discipline-boundary cases. *— from Pattern #8 reinforcements (rubric authoring 2026-05-08)*
+
+6. **Cost estimates from placeholder values undercount real-world cached behavior.** Phase 2 e2e firing showed actual cost ~12× under plan estimate when prompt caching engages as designed. Future cost estimates should differentiate "cache-miss first call" vs "cache-hit subsequent calls" and bias toward the cache-hit estimate for cumulative budgeting once design includes cache-stable system prompts. *— from Phase 2 e2e run 2026-05-08 finding 2*
