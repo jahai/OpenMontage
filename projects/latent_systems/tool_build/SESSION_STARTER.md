@@ -129,15 +129,15 @@ Code's).**
 **EOD checkpoint — 2026-05-08:**
 
 Phase 2 acceptance bridge COMPLETE 2026-05-08 (4 commits + 5 findings
-banked: `8a1fea4`, `dbc0d51`, `5cb5b03`, `c55f36e` + e2e debrief
+banked: `c3fbbe2`, `a4a0397`, `95b4831`, `a0bc668` + e2e debrief
 edits).
 
-Daily-usability sprint COMPLETE 2026-05-08 (`a1ab996` — web-UI
+Daily-usability sprint COMPLETE 2026-05-08 (`a32572f` — web-UI
 ingestion + JS interaction fixes + hover tooltips + consult button
 full-width fix).
 
-Phase 3 v0.4 amendments fully landed 2026-05-08 (6 commits: `52ac48d`
-+ `be4d3c0` + `1e474a5` + `acfba49` + `4961508` + `eb96905`). All F5
+Phase 3 v0.4 amendments fully landed 2026-05-08 (6 commits: `f7e0604`
++ `1065d75` + `ae48115` + `2411811` + `120ac7f` + `717b385`). All F5
 [OPEN] questions resolved including file copy vs move (decision:
 copy). Phase 3 Wave 1 Day 4-5 implementation has zero remaining design
 ambiguity.

@@ -4,7 +4,7 @@ Single tracking doc for all decisions deferred / Phase 2+ work / verification
 items / open watches across cross-Claude review waves. Replaces the scattered
 "see Day X review §Y" references.
 
-**Updated:** 2026-05-09 (Phase 2 acceptance bridge COMPLETE: rubric committed c55f36e; Wave B fired successfully against real render; e2e debrief banked below. Daily-usability sprint COMPLETE 2026-05-08 commit a1ab996: web-UI ingestion + 3 JS bugs + hover tooltips. Phase 3 v0.4 amendments IN PROGRESS this session: F5_MODAL_UX_DRAFT.md authored 52ac48d + atomic-transaction failure semantics 1e474a5; F6 cost revision be4d3c0; PHASE_3_E2E_PLAN.md latency methodology acfba49. Phase 3 Wave 1 unblocked pending Joseph review of [OPEN] items in F5_MODAL_UX_DRAFT.md.)
+**Updated:** 2026-05-09 (Phase 2 acceptance bridge COMPLETE: rubric committed a0bc668; Wave B fired successfully against real render; e2e debrief banked below. Daily-usability sprint COMPLETE 2026-05-08 commit a32572f: web-UI ingestion + 3 JS bugs + hover tooltips. Phase 3 v0.4 amendments IN PROGRESS this session: F5_MODAL_UX_DRAFT.md authored f7e0604 + atomic-transaction failure semantics ae48115; F6 cost revision 1065d75; PHASE_3_E2E_PLAN.md latency methodology 2411811. Phase 3 Wave 1 unblocked pending Joseph review of [OPEN] items in F5_MODAL_UX_DRAFT.md.)
 
 ---
 
@@ -71,7 +71,7 @@ Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actua
 - ✅ PHASE_2_E2E_PLAN.md authored (10-step real-API run analogous to PHASE_1_5_E2E_PLAN.md)
 
 **v0.6 cross-Claude review must-fix amendments status:**
-- ✅ #1 — `consult_render` opt-in `create_verdict_if_missing` default (commit 8a1fea4, 2026-05-08): prevents permanent audit-trail pollution from exploratory consult clicks
+- ✅ #1 — `consult_render` opt-in `create_verdict_if_missing` default (commit c3fbbe2, 2026-05-08): prevents permanent audit-trail pollution from exploratory consult clicks
 - ✅ #2 — `_SAFETY_REFUSAL_RE` verb-aware tightening (landed in Phase 2 Wave B substrate; visible in audit_providers/anthropic.py with v0.6 amendment comment): prevents legitimate critical evaluations from being miscategorized as safety refusals
 - ✅ #3 — Wave B real firing per PHASE_2_E2E_PLAN.md (acceptance bridge): COMPLETE 2026-05-08. See "Phase 2 e2e run — 2026-05-08" section below for full debrief. Cost $0.0507 total (12× under estimate), latency 9.25s+9.88s, AI calibration matched human verdict, 4 findings banked.
 - ✅ #4 — PHASE_2_E2E_PLAN.md amendments based on real findings (cost estimate 12× too high; double-fire UX gap; YAML staleness deviation): banked in e2e debrief below; folded into plan as Phase 2.5 cleanup work
@@ -80,8 +80,8 @@ Phase 2 design notes at v0.6. Compressed from 4-5 week estimate to ~2 days actua
 **Phase 2 acceptance bridge — COMPLETE 2026-05-08:**
 
 All 4 steps landed in single session 2026-05-08:
-1. ✅ `consult_render` opt-in (commit 8a1fea4)
-2. ✅ Rubric authored + committed at `docs/AUDIT_RUBRICS_v1_0.md` (commit c55f36e). Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md` with pollution fix (commit dbc0d51) preventing footer text from polluting Sonic-being preservation criterion. 18 bullets drafted via cross-Claude walkthrough, integrated with author-time discipline (no multi-line bullets per Pattern #8 reinforcement #2).
+1. ✅ `consult_render` opt-in (commit c3fbbe2)
+2. ✅ Rubric authored + committed at `docs/AUDIT_RUBRICS_v1_0.md` (commit a0bc668). Scaffold landed 2026-05-07 at `tool_build/seeds/AUDIT_RUBRICS_v1_0_seed.md` with pollution fix (commit a4a0397) preventing footer text from polluting Sonic-being preservation criterion. 18 bullets drafted via cross-Claude walkthrough, integrated with author-time discipline (no multi-line bullets per Pattern #8 reinforcement #2).
 3. ✅ Wave B fired against real render `78c7eed6bb7e0bcd` — 2 consultations succeeded, $0.0507 total cost, AI verdict_inference matched human verdict, structured JSON parsed cleanly. See e2e debrief below.
 4. ✅ Run results banked in this document (Phase 2 e2e run — 2026-05-08 section).
 
@@ -134,7 +134,7 @@ All 4 steps landed in single session 2026-05-08:
 
 Both bugs share the parent insight: the rubric parser's design assumes a discipline (no multi-line bullets, no post-last-H3 content) that isn't enforced by the format. Either tighten the format spec (current path) or extend the parser (Phase 2.5 work).
 
-1. **Footer pollution (caught pre-authoring 2026-05-08, fix landed dbc0d51).** Parser folds post-last-H3 content into the previous criterion's definition. Caught when seed file's footer (Per-direction notes table + Authoring tips + After-authoring instructions) appended ~2,200 chars to Sonic-being preservation's definition body — would have shipped to AI on every consultation as if it were criterion-grading guidance. Fix: moved footer above first H3 as preamble (parser ignores everything before first H3); added footer-pollution sentinel to verification command (any criterion definition >1000 chars triggers warning).
+1. **Footer pollution (caught pre-authoring 2026-05-08, fix landed a4a0397).** Parser folds post-last-H3 content into the previous criterion's definition. Caught when seed file's footer (Per-direction notes table + Authoring tips + After-authoring instructions) appended ~2,200 chars to Sonic-being preservation's definition body — would have shipped to AI on every consultation as if it were criterion-grading guidance. Fix: moved footer above first H3 as preamble (parser ignores everything before first H3); added footer-pollution sentinel to verification command (any criterion definition >1000 chars triggers warning).
 
 2. **Multi-line-bullet pollution (caught post-authoring 2026-05-08).** Parser regex `^\s*[-*]\s*(pass|partial|fail)\s*:\s*(.*)$` captures only same-line content; multi-line bullets get truncated AND continuation lines pollute the criterion's definition body. Fix at author time: bullets single-line. Phase 2.5 parser work: extend `parse_rubric_text` to support continuation lines (~10 lines added, needs test for "indented continuation appends to current_eval[level]").
 
@@ -290,7 +290,7 @@ from "Phase 2 code-shipped" to "Phase 2 acceptance-validated."
 
 After Phase 2 acceptance bridge closed, immediate post-bridge investment in closing the workflow gaps the e2e run surfaced. Goal: make the app usable for real daily creative work without per-render tooling intervention. Single commit closing four workstreams.
 
-**Commit identifier.** `a1ab996` — `latent_systems/tool_build: daily-usability sprint — inbox + JS interaction fixes + hover tooltips`. 5 files changed, +663/-32. New: `inbox.py`, `templates/audit_inbox.html`. Modified: `app.py`, `templates/audit.html`, `templates/audit_grid.html`.
+**Commit identifier.** `a32572f` — `latent_systems/tool_build: daily-usability sprint — inbox + JS interaction fixes + hover tooltips`. 5 files changed, +663/-32. New: `inbox.py`, `templates/audit_inbox.html`. Modified: `app.py`, `templates/audit.html`, `templates/audit_grid.html`.
 
 **Cost / time.** ~3 hours focused work; $0 (no API calls in implementation; verification only via existing /audit endpoints).
 
