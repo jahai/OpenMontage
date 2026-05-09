@@ -226,20 +226,41 @@ section's render count + lineage depth. Plus images NOT included
 
 ## Cost expectations
 
-Per Phase 2 v0.5 cost estimates ($0.05 per text-only Claude API
-call placeholder; F6 is text-only):
+**v0.4 amendment (revised 2026-05-09 per Phase 2 e2e run finding #2):**
+v0.5's $0.05-0.10 placeholder undercounts F6 specifically because the
+gold-standard NOTES.md examples block (h3_skinner SHIPPED + h4_match_cut
+LOCKED + h2_face_glow PENDING patterns pulled verbatim from canonical
+files per system prompt §"Existing NOTES.md gold-standard examples")
+dominates input token cost. Phase 2 Wave B vision e2e ran 12× cheaper
+than its plan estimate due to caching efficiency, but F6's per-call
+input is heavier (text-dense system prompt + per-section user message).
+Sizing the input correctly:
 
-- First-section authoring: ~$0.05-0.10 (full system prompt loaded;
-  cache miss).
-- Subsequent sections in same audit session: ~$0.01-0.02 (cache hit
-  on system prompt; user message dominates input cost).
-- Per-Joseph authoring run (10 sections): ~$0.50-2.00 cumulative
-  if all in single session.
-- Multi-day authoring (cache TTL 5 minutes): cache won't persist
-  across sessions; each new session starts with cache miss.
+Per-call token estimate: **~12,000-23,000 input tokens** (system prompt
+~5-10k cache-stable + user message ~7-13k per-section + ~500-1000
+output). F6 is text-only; no image input.
 
-Cumulative F6 acceptance bridge cost estimate: $1-5 across all
-NOTES.md authoring + iteration cycles.
+- First-section authoring (cache miss): **~$0.18-0.35** (input cost
+  dominates; cache_creation rate applies to system prompt block).
+- Subsequent sections in same audit session (cache hit on system prompt):
+  **~$0.05-0.12** (system prompt at cache_read rate ~10× cheaper;
+  user message at full input rate is now the dominant cost).
+- Per-Joseph authoring run (10 sections, single session, 2-3 iteration
+  cycles per section per signal 5 banking): **~$1.50-4.00 cumulative**.
+- Multi-day authoring (cache TTL 5 minutes): cache won't persist across
+  sessions; each new session starts with cache miss for first call,
+  subsequent calls hit cache. Roughly +$0.15-0.25 per multi-day session
+  start vs single-session continuous authoring.
+
+**Cumulative F6 acceptance bridge cost estimate: ~$3-15** across all
+NOTES.md authoring + iteration cycles for the 10 EP1 sections (revised
+upward from v0.5's $1-5 placeholder).
+
+This is still cheap relative to the editorial value (Joseph's 1-2 weeks
+of authoring time per phase3_design_notes.md v0.2 §F6 acceptance
+bridge magnitude). Cost is NOT a blocker for F6 shipping; revision is
+to make the estimate honest so cost-tracking surfaces in `/api_status`
+match expectation.
 
 ---
 
@@ -446,6 +467,14 @@ Endpoint pair:
 
 ## Document maintenance
 
+- **v1.1 DRAFT (2026-05-09; v0.4 amendment 2):** Cost expectations
+  section revised upward per Phase 2 e2e run finding #2. Placeholder
+  $0.05-0.10 first-call estimate undercounted because gold-standard
+  NOTES.md examples block dominates input token cost. Realistic per-call
+  input sized at 12k-23k tokens; first-call cost $0.18-0.35 (cache miss),
+  subsequent ~$0.05-0.12 (cache hit), cumulative bridge $3-15 across
+  10 sections × 2-3 iteration cycles. Surgical edit; rest of spec
+  unchanged.
 - **v1.0 DRAFT (2026-05-07):** Phase 3 Wave 2 Day 2-3 preparatory
   spec for the F6 NOTES.md authorship Claude API prompt. System
   prompt structure (cache-stable: channel architecture + EP1
