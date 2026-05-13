@@ -178,23 +178,25 @@ integrity).
   Should land before any new audits run with the sharpened rubric;
   F6 NOTES.md drafts on Day 3 will auto-draft from verdict state
   graded under whichever rubric is active at draft time.
-- **Day 3 (2026-05-14):** Rough-cut player v1 — narration audio
-  playback + sequenced asset display + scrub controls. **PULLED
-  FORWARD from Day 4 per Joseph's call 2026-05-14:** rough-cut player
-  is load-bearing for the "see in context to inform creative decisions"
-  loop; one day earlier means Joseph gets the context-view tool one
-  day sooner. F6's "deferred F6 fire" placeholder on F5 hero promotion
-  absorbs the cost of F6 shipping later. Net zero risk; meaningful
-  gain on creative-tooling-in-Joseph's-hands. Sequencing metadata:
-  hybrid (auto from `EP1_STRUCTURAL_ARCHITECTURE_v1_4.md` + manual
-  overrides — Day 3 v1 ships fallback only [hero_zone+strong renders
-  ordered by verdicts.created ASC]; architecture parsing deferred to
-  Day 4 polish). Asset timing: narration timing primary (query by
-  MAX(discipline_version) per section since audio_assets.discipline_version
-  is the audio archival namespace, NOT code/spec
-  CURRENT_DISCIPLINE_VERSION) + hardcoded defaults fallback (3s/image,
-  natural duration for video). Gap handling: explicit banners for
-  partial state.
+- **Day 3 (2026-05-14) — ✅ COMPLETE.** Rough-cut player v1 LANDED
+  commits `52b2fbc` (backend roughcut.py + 9-scenario tests) +
+  `b550802` (endpoint + template + 10th HTTP integration test). Full
+  suite 97 passed + 1 documented skip; production state.db row counts
+  byte-identical pre/post pytest. **Pulled forward from Day 4 per
+  Joseph's call** — rough-cut player is load-bearing for the "see in
+  context to inform creative decisions" loop; F6's
+  `deferred_f6_not_shipped` placeholder on `dispatcher.hero_promote()`
+  absorbs the cost of F6 shipping Day 5. Day 3 v1 ships:
+  fallback sequencing only (hero_zone+strong renders ordered by
+  verdicts.created ASC); MAX(discipline_version) audio query per
+  section_label; HTML5 audio chain with multi-paragraph 'ended'-event
+  coordination + master clock from summed durations; 3s/image
+  synthetic-timer fallback when no narration; explicit
+  `no_assets`/`no_narration` banners. Open paths: visit
+  `http://localhost:7890/video/ep1/section/<section>/roughcut`.
+  Architecture parsing + manual override UI + scrub bar + thumbnail
+  strip + server-side duration probing (mutagen) all deferred to Day 4
+  polish.
 - **Day 4 (2026-05-15):** Rough-cut player polish — timeline
   visualization, asset highlight, partial-state surfacing, manual
   sequence override UI. Adds: scrub bar with timeline, click-to-jump,
