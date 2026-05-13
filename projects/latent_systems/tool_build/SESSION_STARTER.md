@@ -83,7 +83,7 @@ sqlite3 projects/latent_systems/tool_build/_data/state.db \
 for f in projects/latent_systems/tool_build/tests/test_*.py; do
   python "$f" >/dev/null 2>&1 && echo "PASS: $(basename $f)" || echo "FAIL: $(basename $f)"
 done
-# Expected: 16 PASS lines. Tests are standalone scripts (main() + cleanup()
+# Expected: 15 PASS lines. Tests are standalone scripts (main() + cleanup()
 # bookends, write to real state.db with prefix-keyed cleanup). pytest
 # discovery skips main()/cleanup() → pollutes state.db with orphan rows
 # that cause UNIQUE constraint failures on retry. Don't run pytest here.
@@ -131,80 +131,82 @@ Code's).**
 
 # Active task
 
-**EOD checkpoint — 2026-05-08, updated 2026-05-09 with post-EOD progress.**
+**Last updated 2026-05-13.** Multi-page UI WIP parked; H#3 v3 production
+is the launch-blocking priority.
 
-## Phase 2 acceptance bridge COMPLETE 2026-05-08
+## ACTIVE PRIORITY: H#3 v3 reenactment production — EP1 launch in 3 days
 
-4 commits + 5 findings banked: `c3fbbe2`, `a4a0397`, `95b4831`,
-`a0bc668` + e2e debrief edits.
+EP1 launches **2026-05-16 (3 days from today)**. Launch-blocking creative
+path per `shared/h3_reenactment_phase3/NOTES.md`:
 
-## Daily-usability sprint COMPLETE 2026-05-08
+- Rat anchor + State 1 upscaled and **LOCKED**
+- nycwillow horizontal-lab render audited end-to-end
+  (render `34db51db61c34c9e`, verdict `46e04a597551c562`,
+  session `013a9cf917cbd5da`, AI consult `e9969034b45d3e0b`)
+- **PENDING:** human anchor MJ generation · rat State 2/2B/4 ·
+  scientist cutaways (3) · 11 Kling clips · assembly to
+  `EP1_H3_v3_block_v1.mp4` · v2 vs v3 comparison decision
 
-`a32572f` — web-UI ingestion + JS interaction fixes + hover tooltips
-+ consult button full-width fix.
+**Workflow:** upscales/generations save to Downloads via right-click →
+Save image as in MJ web UI; auto-flow to `/audit/inbox`. ~2-3 hours per
+round. AD-5 still applies — Joseph commits canonical-path work himself.
 
-## Phase 3 v0.4 amendments fully landed 2026-05-08
+## PARKED WIP: multi-page UI + assistant runner — `b9935cb` + `a17e36a`
 
-6 commits: `f7e0604` + `1065d75` + `ae48115` + `2411811` + `120ac7f`
-+ `717b385`. All F5 [OPEN] questions resolved including file copy vs
-move (decision: copy). Phase 3 Wave 1 Day 4-5 implementation has zero
-remaining design ambiguity.
+WIP commit `b9935cb` (2026-05-13) introduced a journey-oriented multi-page
+UI (home shell with sidebar, episode dashboard with chat panel, section
+workspace, settings page, video-new stub) backed by `assistant_runner.py`
+(Anthropic tool-use loop with system-prompt caching + cost accounting +
+vision support) and `assistant_tools.py` (8 tools with AD-5 enforcement).
+Audit on 2026-05-13 confirmed the work is **mostly-functional, not scaffold**
+— end-to-end-wired home + episode dashboard + chat + section workspace +
+`/audit/rank-batch` Claude-vision pre-ranking.
 
-## Post-EOD progress 2026-05-09
+Cleanup commit `a17e36a` fixed three cosmetic bugs the audit surfaced:
+iterations counter expression that always returned 1, no-op bare attribute
+access in `/audit/rank-batch`, and an over-greedy auto-linker regex in
+`episode_dashboard.html` that matched any `/foo`-shaped substring (now
+whitelisted to `/audit|video|tools|settings` prefixes).
 
-**Push-architecture RESOLVED.** Forked `calesthio/OpenMontage` →
-`https://github.com/jahai/OpenMontage`. Set `origin` to jahai fork;
-added `upstream` remote pointing at calesthio for future periodic
-pulls. Pulled-rebased onto fork's existing state (clean rebase, no
-.gitignore conflicts), then pushed all commits. Branch now in sync
-with `origin/main` (= jahai/OpenMontage). 49 total commits durable
-on GitHub.
+**Remaining work for completion (post-EP1-launch):**
+- `/video/new` wizard (greenfield project creation — currently stub)
+- write-to-`.env` for `/settings/keys` (currently read-only)
+- Fold `assistant_ranks` table into Migration 0004 (currently
+  `CREATE TABLE IF NOT EXISTS`; schema_version stays 0003 despite new table)
+- Tests for `assistant_runner`, `assistant_tools`, `/video/*` endpoints,
+  `/audit/rank-batch`, `/homepage_stats` — none exist yet
 
-**Hash translation post-rebase** (commit `1ac0a76`). Rebase rewrote
-SHAs of 45 local commits; updated SESSION_STARTER.md + banked_items.md
-to reference new SHAs via `sed -i` 14-substitution pass. All cited
-hashes resolve in `git log` again.
+## Decision deferred to post-launch: `_data/` YAML commit cadence
 
-**H#3 v3 production — partial (one render audited):** nycwillow
-horizontal-lab upscale ingested via `/audit/inbox` workflow (render
-`34db51db61c34c9e`); marked `hero_zone` (verdict `46e04a597551c562`,
-session `013a9cf917cbd5da`); AI consultation fired (`e9969034b45d3e0b`,
-$0.0251, 14.02s, returned `verdict_inference: strong` with two partials
-on Shorts effectiveness + Series continuity).
+b9935cb bundled ~90 runtime YAMLs (`_data/renders/`, `_data/verdicts/`,
+`_data/audit_sessions/`, `_data/ai_consultations/`) alongside the code WIP.
+This muddies audit-trail signal. Three options to choose deliberately
+post-launch: commit-every-audit-session (audit-trail tax), gitignore them
+(breaks AD-5 reproducibility), or middle path. Decide before next
+multi-page UI session resumes.
 
-**Rubric calibration observation banked** (commit `8d4815f`). New
-§"Rubric calibration observations" section in `banked_items.md`. First
-entry: two consecutive horizontal-lab consultations (rat_state1 +
-nycwillow upscale) returned identical partial grades on Shorts
-effectiveness + Series continuity — pattern suggests either rubric
-penalizes structural format choice (reading a) OR Joseph integrates
-criteria beyond independent-grade arithmetic (reading b). Trigger to
-revisit: third consecutive horizontal-lab consultation with same
-identical partials.
+## Earlier completed milestones (audit trail)
 
-## Next session options (Joseph picks)
+- **2026-05-08** Phase 2 acceptance bridge: `c3fbbe2` + `a4a0397` +
+  `95b4831` + `a0bc668`. Daily-usability sprint: `a32572f`. Phase 3 v0.4
+  amendments: `f7e0604` + `1065d75` + `ae48115` + `2411811` + `120ac7f` +
+  `717b385`.
+- **2026-05-09** Push resolved (forked to `jahai/OpenMontage`,
+  origin/upstream set, 49 commits durable). Hash translation: `1ac0a76`.
+  H#3 v3 nycwillow render audited end-to-end. Rubric calibration banked:
+  `8d4815f`.
+- **2026-05-13** b9935cb (WIP multi-page UI + assistant runner) audited +
+  `a17e36a` cleanup landed. Multi-page UI parked; H#3 v3 promoted to
+  active priority.
 
-**(A) Phase 3 Wave 1 Day 1** — Migration 0004 schema implementation +
-F8 schema-read against actual OpenMontage schemas. Wave 1 Day 4-5
-unblocked by v0.4 amendments. ~2-3 hours.
+## Deferred (touch only if H#3 v3 is fully shipped before launch)
 
-**(B) Push-architecture** — ✅ DONE 2026-05-09. No further action.
-
-**(C) H#3 v3 reenactment production work — IN PROGRESS** — first
-render (nycwillow upscale) audited end-to-end. Remaining: more
-upscales + human anchor MJ generation + rat State 2 + canonical
-filename saves. EP1-launch May 16 (7 days remaining). Note workflow:
-upscales/generations save to Downloads via right-click → Save image as
-in MJ web UI; auto-flow to `/audit/inbox`. ~2-3 hours per round.
-
-**(D) Phase 2.5 fixes** (5 banked findings from Wave B real run):
-consult button disable + elapsed counter; discipline_drift extension
-to Migration 0003 tables; YAML staleness audit; PHASE_2_E2E_PLAN.md
-cost amendment paper-work; Step 8 verify-end-link amendment.
-~2-3 hours.
-
-**Recommended: continue C, or A as alternative.** B done; D still
-deferable.
+- **(A) Phase 3 Wave 1 Day 1** — Migration 0004 schema implementation +
+  F8 schema-read against actual OpenMontage schemas. ~2-3 hours.
+- **(D) Phase 2.5 fixes** (5 banked findings from Wave B real run):
+  consult button disable + elapsed counter; discipline_drift extension
+  to Migration 0003 tables; YAML staleness audit; `PHASE_2_E2E_PLAN.md`
+  cost amendment; Step 8 verify-end-link amendment. ~2-3 hours.
 
 ## Post-reboot startup checklist
 
