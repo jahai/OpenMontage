@@ -198,5 +198,14 @@ def main():
     return 0
 
 
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    (conftest.py). Note: pytest will also discover the individual `def
+    test_*` functions above and run them separately; that's redundant
+    with test_main but harmless. Standalone `python tests/test_walker_classifier.py`
+    invocation remains supported via the if __name__ block below."""
+    assert main() == 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

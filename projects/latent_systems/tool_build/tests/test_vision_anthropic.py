@@ -35,7 +35,12 @@ import llm  # noqa: E402
 from audit_providers import anthropic as vision  # noqa: E402
 
 
-TEST_DIR = db.DATA_DIR / "_test_vision"
+def _test_dir():
+    """Lazy resolution of db.DATA_DIR (monkey-patched per-test by the
+    isolated_db fixture in conftest.py). Cannot be a module-level constant
+    because that would snapshot the production db.DATA_DIR at import time
+    — defeating Pattern #8 reinforcement #3 / Banking principle #7."""
+    return db.DATA_DIR / "_test_vision"
 TRACKED_CALL_IDS: list[str] = []
 
 
@@ -81,14 +86,14 @@ def cleanup():
         finally:
             conn.close()
         TRACKED_CALL_IDS.clear()
-    if TEST_DIR.exists():
-        shutil.rmtree(TEST_DIR, ignore_errors=True)
+    if _test_dir().exists():
+        shutil.rmtree(_test_dir(), ignore_errors=True)
 
 
 def _make_test_png() -> Path:
     """Synthetic small PNG for image-encoding tests."""
-    TEST_DIR.mkdir(parents=True, exist_ok=True)
-    p = TEST_DIR / "fixture.png"
+    _test_dir().mkdir(parents=True, exist_ok=True)
+    p = _test_dir() / "fixture.png"
     Image.new("RGB", (64, 64), color=(180, 80, 40)).save(p, format="PNG")
     return p
 
@@ -153,7 +158,7 @@ def test_encode_image_b64_png():
 
 
 def test_encode_image_b64_unsupported_extension():
-    p = TEST_DIR / "fixture.bmp"
+    p = _test_dir() / "fixture.bmp"
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_bytes(b"BMx\x00\x00\x00")  # garbage; won't be opened
     try:
@@ -166,7 +171,7 @@ def test_encode_image_b64_unsupported_extension():
 
 def test_encode_image_b64_missing_file():
     try:
-        vision.encode_image_b64(TEST_DIR / "ghost.png")
+        vision.encode_image_b64(_test_dir() / "ghost.png")
     except FileNotFoundError:
         return
     _assert(False, "expected FileNotFoundError")
@@ -428,6 +433,15 @@ def main():
           "(completed / parse_failed / safety_refused / context_exceeded / "
           "rate_limit / auth / bad_request)")
     return 0
+
+
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    (conftest.py). Note: pytest will also discover the individual `def
+    test_*` functions above and run them separately; that's redundant
+    with test_main but harmless. Standalone `python tests/test_vision_anthropic.py`
+    invocation remains supported via the if __name__ block below."""
+    assert main() == 0
 
 
 if __name__ == "__main__":

@@ -79,14 +79,18 @@ sqlite3 projects/latent_systems/tool_build/_data/state.db \
   "SELECT value FROM app_meta WHERE key='schema_version'"
 # Expected: 0003 currently. Phase 3 Wave 1 lands 0004.
 
-# 4. Test baseline (scripts, NOT pytest — see banked_items.md "Test runner")
-for f in projects/latent_systems/tool_build/tests/test_*.py; do
-  python "$f" >/dev/null 2>&1 && echo "PASS: $(basename $f)" || echo "FAIL: $(basename $f)"
-done
-# Expected: 15 PASS lines. Tests are standalone scripts (main() + cleanup()
-# bookends, write to real state.db with prefix-keyed cleanup). pytest
-# discovery skips main()/cleanup() → pollutes state.db with orphan rows
-# that cause UNIQUE constraint failures on retry. Don't run pytest here.
+# 4. Test baseline (pytest with tmp_path-isolated DB fixture per Phase 2.5
+#    conftest fix landed 2026-05-13 commit on Day 1 of Phase 3 sprint)
+cd projects/latent_systems/tool_build && python -m pytest tests/ -q
+# Expected: 94+ passed, 1 skipped (test_router_tail::test_main —
+# _ingest_roundtrip needs real-repo file structure; covered by standalone
+# `python tests/test_router_tail.py` invocation). Production
+# _data/state.db row counts must be byte-identical before/after the run
+# (Pattern #8 reinforcement #3 / Banking principle #7 structurally
+# guaranteed by the conftest fixture; verify via row-count diff if in
+# doubt). Standalone `python tests/test_X.py` invocation still works
+# per the def test_main wrapper pattern but bypasses the fixture isolation
+# and touches production state.db — use pytest for routine sanity checks.
 
 # 5. Server status (informational; don't restart)
 python projects/latent_systems/tool_build/serve.py --status

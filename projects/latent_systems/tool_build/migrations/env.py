@@ -9,6 +9,7 @@ ORM target_metadata is needed.
 
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 from pathlib import Path
 
@@ -21,11 +22,18 @@ if config.config_file_name is not None:
 
 # Resolve _data/state.db relative to this env.py file (tool_build/migrations/env.py
 # → tool_build/_data/state.db is two levels up from env.py).
+# TOOL_BUILD_ALEMBIC_URL env var override exists for tests/conftest.py to point
+# migrations at a tmp_path-isolated DB (Phase 2.5 fix per Pattern #8
+# reinforcement #3 + Banking principle #7). Production paths leave it unset.
 TOOL_BUILD_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = TOOL_BUILD_DIR / "_data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DATA_DIR / "state.db"
-config.set_main_option("sqlalchemy.url", f"sqlite:///{DB_PATH.as_posix()}")
+override_url = os.environ.get("TOOL_BUILD_ALEMBIC_URL")
+if override_url:
+    config.set_main_option("sqlalchemy.url", override_url)
+else:
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{DB_PATH.as_posix()}")
 
 target_metadata = None  # raw-SQL migrations only in Phase 1
 

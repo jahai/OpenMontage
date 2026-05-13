@@ -39,7 +39,12 @@ from audit_providers import anthropic as vision  # noqa: E402
 
 
 PREFIX = "test_consult_"
-TEST_RENDERS_DIR = db.DATA_DIR / "_test_consult_renders"
+def _test_dir():
+    """Lazy resolution of db.DATA_DIR (monkey-patched per-test by the
+    isolated_db fixture in conftest.py). Cannot be a module-level constant
+    because that would snapshot the production db.DATA_DIR at import time
+    — defeating Pattern #8 reinforcement #3 / Banking principle #7."""
+    return db.DATA_DIR / "_test_consult_renders"
 TRACKED_API_CALL_IDS: list[str] = []
 TRACKED_AUDIT_SESSION_IDS: list[str] = []
 
@@ -69,8 +74,8 @@ def _assert(cond, msg="assertion failed"):
 
 
 def _make_test_png(name: str) -> Path:
-    TEST_RENDERS_DIR.mkdir(parents=True, exist_ok=True)
-    p = TEST_RENDERS_DIR / f"{name}.png"
+    _test_dir().mkdir(parents=True, exist_ok=True)
+    p = _test_dir() / f"{name}.png"
     Image.new("RGB", (800, 600), color=(120, 90, 70)).save(p, format="PNG")
     return p
 
@@ -232,8 +237,8 @@ def cleanup():
     # session_id no longer present in state.db).
     _sweep_orphans()
 
-    if TEST_RENDERS_DIR.exists():
-        shutil.rmtree(TEST_RENDERS_DIR, ignore_errors=True)
+    if _test_dir().exists():
+        shutil.rmtree(_test_dir(), ignore_errors=True)
 
 
 def _sweep_orphans():
@@ -519,6 +524,13 @@ def main():
           "provider / no-verdict-no-flag errors, safety-refused persistence, "
           "session-cost rollup")
     return 0
+
+
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    (conftest.py). Standalone `python tests/test_audit_consult.py`
+    invocation remains supported via the if __name__ block below."""
+    assert main() == 0
 
 
 if __name__ == "__main__":

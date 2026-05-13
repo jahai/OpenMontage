@@ -242,5 +242,12 @@ def main() -> int:
     return 0
 
 
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    (conftest.py). Standalone `python tests/test_acceptance.py` invocation
+    remains supported via the if __name__ block below."""
+    assert main() == 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

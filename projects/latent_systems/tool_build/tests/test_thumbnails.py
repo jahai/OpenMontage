@@ -31,7 +31,12 @@ import thumbnails  # noqa: E402
 
 
 PREFIX = "test_thumb_"
-TEST_RENDERS_DIR = db.DATA_DIR / "_test_thumb_renders"
+def _test_dir():
+    """Lazy resolution of db.DATA_DIR (monkey-patched per-test by the
+    isolated_db fixture in conftest.py). Cannot be a module-level constant
+    because that would snapshot the production db.DATA_DIR at import time
+    — defeating Pattern #8 reinforcement #3 / Banking principle #7."""
+    return db.DATA_DIR / "_test_thumb_renders"
 
 
 def _assert(cond, msg="assertion failed"):
@@ -43,9 +48,9 @@ def _assert(cond, msg="assertion failed"):
 
 def _make_test_png(name: str, width: int = 2400, height: int = 1600,
                    color: tuple = (200, 100, 50)) -> Path:
-    """Create a synthetic PNG at TEST_RENDERS_DIR/<name>.png. Returns abs path."""
-    TEST_RENDERS_DIR.mkdir(parents=True, exist_ok=True)
-    abs_path = TEST_RENDERS_DIR / f"{name}.png"
+    """Create a synthetic PNG at _test_dir()/<name>.png. Returns abs path."""
+    _test_dir().mkdir(parents=True, exist_ok=True)
+    abs_path = _test_dir() / f"{name}.png"
     im = Image.new("RGB", (width, height), color=color)
     im.save(abs_path, format="PNG")
     return abs_path
@@ -99,8 +104,8 @@ def cleanup():
             )
     finally:
         conn.close()
-    if TEST_RENDERS_DIR.exists():
-        shutil.rmtree(TEST_RENDERS_DIR, ignore_errors=True)
+    if _test_dir().exists():
+        shutil.rmtree(_test_dir(), ignore_errors=True)
     for thumb_path in (db.DATA_DIR / "_audit_thumbnails").glob(f"{PREFIX}*.jpg"):
         thumb_path.unlink(missing_ok=True)
 
@@ -234,6 +239,13 @@ def main():
     print("PASS: thumbnails — generate, cache-hit, invalidation, "
           "downscale, missing-render, missing-file, render-abs-path")
     return 0
+
+
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    (conftest.py). Standalone `python tests/test_thumbnails.py` invocation
+    remains supported via the if __name__ block below."""
+    assert main() == 0
 
 
 if __name__ == "__main__":

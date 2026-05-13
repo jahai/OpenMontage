@@ -315,5 +315,17 @@ def main():
     return 0
 
 
+def test_main():
+    """pytest entry point — runs main() under autouse isolated_db fixture
+    in conftest.py. Standalone `python tests/test_rubric.py` invocation
+    remains supported via the if __name__ block below.
+
+    Note: pytest will also discover the individual `def test_*` functions
+    above and run them separately. That's redundant with test_main but
+    harmless; the individual tests don't touch DB so the fixture overhead
+    is the only cost."""
+    assert main() == 0
+
+
 if __name__ == "__main__":
     sys.exit(main())
