@@ -16,12 +16,17 @@ or extend the dict if/when other clipboard-handoff tools land.
 
 from __future__ import annotations
 
+import hashlib
+import re
+import shutil
 import sqlite3
 import webbrowser
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 import pyperclip
+import yaml as _yaml
 
 import db
 from constants import CURRENT_DISCIPLINE_VERSION
@@ -1782,3 +1787,402 @@ def inbox_renders(*, limit: int = 50) -> list[dict]:
         ]
     finally:
         conn.close()
+
+
+# ----------------------------------------------------------------------
+# F5 hero promotion atomic action (per F5_MODAL_UX_DRAFT.md v1.2)
+# ----------------------------------------------------------------------
+#
+# Forward flow (hero_promote): atomic file-COPY + DB-INSERT transaction;
+# F6 NOTES.md prompt fire is post-commit, best-effort.
+# Reverse flow (hero_un_promote): atomic file-MOVE (winner→_DEPRECATED_) +
+# DB-UPDATE; same post-commit shape for F6.
+# Modal UI deferred to sprint Day 6 (per phase3 sprint plan); backend
+# functions + endpoints land Day 2.
+
+
+class HeroPromotionError(Exception):
+    """F5 atomic action setup or execution error.
+
+    Raised on pre-validation failures (render not found, no current
+    verdict, ineligible verdict, no section), already-promoted state,
+    and atomic-transaction failures (file move fail, db insert fail,
+    rollback fail). The endpoint layer maps these to HTTP 400/409/500
+    based on caller-recoverability.
+    """
+
+
+_HERO_ELIGIBLE_VERDICTS = frozenset({"hero_zone", "strong"})
+_UN_PROMOTE_REASON_MIN_CHARS = 5
+
+
+def _hashed_id(*parts: str) -> str:
+    """Derive a stable 16-char hex ID from joined input parts.
+
+    Same sha256[:16] pattern as audit._verdict_id_from etc., so test
+    coverage via Pattern #7 (_id_override) stays consistent across
+    F5 + Phase 2 derived-ID modules.
+    """
+    return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
+def _sanitize_un_promote_reason(reason: str) -> str:
+    """Sanitize an un-promotion reason for use as a _DEPRECATED_<x>/
+    directory name per F5_MODAL_UX_DRAFT.md §"Reverse flow":
+    lowercase + whitespace→underscore + strip non-alphanumeric except
+    `_` and `-`. Filesystem-safe across Windows/macOS/Linux.
+    """
+    s = reason.strip().lower().replace(" ", "_")
+    s = re.sub(r"[^a-z0-9_-]", "", s)
+    return s
+
+
+def _winners_dir_for(section: str) -> Path:
+    """Resolve the canonical winners/ directory for a section under ep1/.
+    Per F5 design — promotions land at ep1/<section>/winners/<filename>.
+    """
+    return (
+        db.REPO_ROOT / "projects" / "latent_systems" / "ep1"
+        / section / "winners"
+    )
+
+
+def _un_promote_dest_dir_for(section: str, sanitized_reason: str) -> Path:
+    """Resolve the _DEPRECATED_<reason>/ destination under ep1/<section>/_work/."""
+    return (
+        db.REPO_ROOT / "projects" / "latent_systems" / "ep1"
+        / section / "_work" / "un_promoted"
+        / f"_DEPRECATED_{sanitized_reason}"
+    )
+
+
+def _hero_promotions_yaml_dir() -> Path:
+    return db.DATA_DIR / "hero_promotions"
+
+
+def _write_hero_promotion_yaml(record: dict) -> None:
+    """Write hero_promotion YAML sidecar. Atomic via tmp + rename.
+
+    Mirrors audit._write_yaml pattern: tmp file written then atomically
+    renamed so partial writes never become visible at the canonical path.
+    """
+    yaml_path = _hero_promotions_yaml_dir() / f"{record['id']}.yaml"
+    yaml_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = yaml_path.with_suffix(yaml_path.suffix + ".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        _yaml.safe_dump(record, f, sort_keys=False,
+                        default_flow_style=False, allow_unicode=True)
+    tmp.replace(yaml_path)
+
+
+def _resolve_promoted_by(audit_session_id: Optional[str]) -> str:
+    """Resolve `promoted_by` per F5 design: pulled from the active audit
+    session's user; defaults to 'joseph' if no session.
+
+    audit_sessions table has no user column at schema 0004; this function
+    returns 'joseph' unconditionally for now. When user-tracking lands
+    (future migration), this looks up the user from the session row.
+    """
+    return "joseph"
+
+
+def hero_promote(
+    *,
+    render_id: str,
+    audit_session_id: Optional[str] = None,
+    _id_override: Optional[str] = None,  # FOR TESTING ONLY (Pattern #7)
+) -> dict:
+    """F5 forward flow per F5_MODAL_UX_DRAFT.md v1.2.
+
+    Atomic boundary: Steps 1+2 (file COPY + hero_promotions row INSERT)
+    commit together or roll back together. Step 3 (F6 NOTES.md prompt
+    fire) is post-commit, best-effort — queued for retry on failure,
+    doesn't roll back Steps 1+2. Step 4 (doc-update coordination
+    summary) is read-only modal display, no operation here.
+
+    File operation is COPY (not MOVE) per F5 v1.2 item 9: simpler
+    atomic-transaction rollback (delete copy reverses cleanly without
+    backup restore); negligible disk overhead at audit-image scale.
+
+    Pre-validation raises HeroPromotionError before any state change:
+      - render not found
+      - no current verdict
+      - verdict ineligible (not hero_zone/strong)
+      - no section resolvable (no prompt→concept→section join)
+      - already promoted (winners/ destination exists)
+
+    Atomic transaction failures within the boundary surface as
+    HeroPromotionError with rollback state in the message.
+
+    Returns dict on success:
+      {ok: True,
+       hero_promotion_id: <16-char hex>,
+       hero_filepath: <repo-relative POSIX path>,
+       f6_prompt_status: 'fired'|'queued'|'deferred_f6_not_shipped'|'failed_queued_for_retry'}
+    """
+    import audit  # late import: avoid module-load cycle (audit imports dispatcher)
+
+    # Pre-validation
+    detail = audit.get_render_detail(render_id)
+    if detail is None:
+        raise HeroPromotionError(f"render {render_id!r} not found")
+    verdict = detail.get("verdict")
+    if verdict is None:
+        raise HeroPromotionError(
+            f"render {render_id!r} has no current verdict; mark a verdict first"
+        )
+    if verdict["verdict"] not in _HERO_ELIGIBLE_VERDICTS:
+        raise HeroPromotionError(
+            f"verdict {verdict['verdict']!r} ineligible for promotion; "
+            f"requires hero_zone or strong"
+        )
+    if not detail.get("concept") or not detail["concept"].get("section"):
+        raise HeroPromotionError(
+            f"render {render_id!r} has no associated section "
+            f"(prompt→concept→section join unresolved); F5 needs a section "
+            f"to determine the winners/ destination"
+        )
+    section = detail["concept"]["section"]
+
+    src_path = db.REPO_ROOT / detail["filepath"]
+    if not src_path.exists():
+        # Failure mode 5.1 surfaced pre-transaction (cheaper than failing
+        # inside the atomic boundary).
+        raise HeroPromotionError(
+            f"render file missing at {detail['filepath']}; cannot promote"
+        )
+    winners_dir = _winners_dir_for(section)
+    winners_dir.mkdir(parents=True, exist_ok=True)  # 5.2: auto-create OK
+    dest_path = winners_dir / src_path.name
+
+    if dest_path.exists():
+        raise HeroPromotionError(
+            f"render already promoted at {dest_path.relative_to(db.REPO_ROOT).as_posix()}; "
+            f"un-promote first if reverting"
+        )
+
+    promoted_at = _iso_now()
+    promotion_id = _id_override or _hashed_id(verdict["id"], dest_path.as_posix())
+    hero_filepath_rel = dest_path.relative_to(db.REPO_ROOT).as_posix()
+    promoted_by = _resolve_promoted_by(audit_session_id)
+    yaml_path_rel = (
+        f"projects/latent_systems/tool_build/_data/hero_promotions/"
+        f"{promotion_id}.yaml"
+    )
+
+    # === ATOMIC BOUNDARY (Steps 1 + 2) ===
+    file_copied = False
+    try:
+        # Step 1: file COPY (preserves source per F5 v1.2 item 9)
+        shutil.copy2(src_path, dest_path)
+        file_copied = True
+
+        # Step 2: hero_promotions row insert
+        conn = db.connect()
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    INSERT INTO hero_promotions (
+                        id, render_id, verdict_id, hero_filepath,
+                        promoted_at, promoted_by, audit_session_id,
+                        reversed_at, reversed_reason,
+                        discipline_version, yaml_path, created
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)
+                    """,
+                    (promotion_id, render_id, verdict["id"], hero_filepath_rel,
+                     promoted_at, promoted_by, audit_session_id,
+                     CURRENT_DISCIPLINE_VERSION, yaml_path_rel, promoted_at),
+                )
+        finally:
+            conn.close()
+
+        # YAML write after db commit (verdict-capture YAML-after-row pattern)
+        _write_hero_promotion_yaml({
+            "id": promotion_id,
+            "render_id": render_id,
+            "verdict_id": verdict["id"],
+            "hero_filepath": hero_filepath_rel,
+            "promoted_at": promoted_at,
+            "promoted_by": promoted_by,
+            "audit_session_id": audit_session_id,
+            "reversed_at": None,
+            "reversed_reason": None,
+            "discipline_version": CURRENT_DISCIPLINE_VERSION,
+            "section": section,
+            "source_filepath": detail["filepath"],
+            "created": promoted_at,
+        })
+
+    except HeroPromotionError:
+        # Re-raise unchanged (HeroPromotionError from inside the boundary
+        # is already framed for the caller).
+        raise
+    except Exception as e:
+        # Rollback Step 1 if it landed.
+        if file_copied and dest_path.exists():
+            try:
+                dest_path.unlink()
+            except OSError as rollback_err:
+                raise HeroPromotionError(
+                    f"hero_promote transaction failed AND rollback failed; "
+                    f"manual cleanup needed at "
+                    f"{dest_path.relative_to(db.REPO_ROOT).as_posix()}. "
+                    f"original error: {e}; rollback error: {rollback_err}"
+                )
+        raise HeroPromotionError(f"hero promotion failed: {e}")
+    # === END ATOMIC BOUNDARY ===
+
+    # Step 3: F6 NOTES.md prompt fire — post-commit, best-effort.
+    # F6 hasn't shipped yet (lands Day 3 of sprint); graceful-degradation
+    # status per F5_MODAL_UX_DRAFT.md failure mode 5.3.
+    f6_status = "deferred_f6_not_shipped"
+
+    return {
+        "ok": True,
+        "hero_promotion_id": promotion_id,
+        "hero_filepath": hero_filepath_rel,
+        "f6_prompt_status": f6_status,
+    }
+
+
+def hero_un_promote(
+    *,
+    render_id: str,
+    reason: str,
+    audit_session_id: Optional[str] = None,
+) -> dict:
+    """F5 reverse flow per F5_MODAL_UX_DRAFT.md v1.2.
+
+    Validates reason (≥5 chars after strip; sanitized form must be
+    non-empty), then atomically MOVES the file from winners/<filename>
+    → _work/un_promoted/_DEPRECATED_<sanitized>/<filename> and updates
+    the hero_promotions row (reversed_at + reversed_reason). F6 fires
+    post-commit, best-effort.
+
+    Move (not copy) for reverse flow — the winner is being unmade, so
+    no reason to leave it in winners/. The original (in reference/ etc.)
+    is untouched.
+
+    Raises HeroPromotionError for:
+      - reason missing or <5 chars (channel staple #12)
+      - sanitized reason empty (no alphanumeric content)
+      - no active promotion to reverse
+      - promoted file missing on disk
+      - destination collision (_DEPRECATED_<reason>/<filename> exists)
+    """
+    if not reason or len(reason.strip()) < _UN_PROMOTE_REASON_MIN_CHARS:
+        raise HeroPromotionError(
+            f"un-promotion requires a reason of >= "
+            f"{_UN_PROMOTE_REASON_MIN_CHARS} chars per channel staple #12; "
+            f"got {reason!r}"
+        )
+    sanitized = _sanitize_un_promote_reason(reason)
+    if not sanitized:
+        raise HeroPromotionError(
+            f"un-promotion reason {reason!r} sanitized to empty string; "
+            f"provide a reason with alphanumeric content"
+        )
+
+    # Find the active promotion for this render.
+    conn = db.connect()
+    try:
+        prow = conn.execute(
+            """
+            SELECT id, hero_filepath
+            FROM hero_promotions
+            WHERE render_id = ? AND reversed_at IS NULL
+            ORDER BY promoted_at DESC LIMIT 1
+            """,
+            (render_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if prow is None:
+        raise HeroPromotionError(
+            f"render {render_id!r} has no active promotion to reverse"
+        )
+    promotion_id, hero_filepath_rel = prow
+
+    src_path = db.REPO_ROOT / hero_filepath_rel
+    if not src_path.exists():
+        raise HeroPromotionError(
+            f"promoted file missing at {hero_filepath_rel}; "
+            f"cannot un-promote (filesystem and db are out of sync; "
+            f"investigate manually)"
+        )
+
+    # Resolve section for the _DEPRECATED_/ destination path.
+    import audit  # late import: avoid module-load cycle
+    detail = audit.get_render_detail(render_id)
+    if detail is None or not detail.get("concept") or not detail["concept"].get("section"):
+        raise HeroPromotionError(
+            f"render {render_id!r} section unresolved; cannot determine "
+            f"_DEPRECATED_/ destination"
+        )
+    section = detail["concept"]["section"]
+
+    deprecated_dir = _un_promote_dest_dir_for(section, sanitized)
+    deprecated_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = deprecated_dir / src_path.name
+    if dest_path.exists():
+        raise HeroPromotionError(
+            f"destination already exists at "
+            f"{dest_path.relative_to(db.REPO_ROOT).as_posix()}; "
+            f"refuse to overwrite — pick a different reason or clean up first"
+        )
+
+    reversed_at = _iso_now()
+    reversed_reason = reason.strip()
+
+    # === ATOMIC BOUNDARY (Steps 1 + 2) ===
+    file_moved = False
+    try:
+        # Step 1: file MOVE (winners/ → _DEPRECATED_/)
+        shutil.move(str(src_path), str(dest_path))
+        file_moved = True
+
+        # Step 2: hero_promotions row update
+        conn = db.connect()
+        try:
+            with conn:
+                conn.execute(
+                    """
+                    UPDATE hero_promotions
+                       SET reversed_at = ?, reversed_reason = ?
+                     WHERE id = ?
+                    """,
+                    (reversed_at, reversed_reason, promotion_id),
+                )
+        finally:
+            conn.close()
+
+    except HeroPromotionError:
+        raise
+    except Exception as e:
+        # Rollback Step 1 if it landed.
+        if file_moved and dest_path.exists() and not src_path.exists():
+            try:
+                shutil.move(str(dest_path), str(src_path))
+            except OSError as rollback_err:
+                raise HeroPromotionError(
+                    f"hero_un_promote transaction failed AND rollback failed; "
+                    f"file at {dest_path.relative_to(db.REPO_ROOT).as_posix()}, "
+                    f"expected at {hero_filepath_rel}. "
+                    f"original error: {e}; rollback error: {rollback_err}"
+                )
+        raise HeroPromotionError(f"hero un-promotion failed: {e}")
+    # === END ATOMIC BOUNDARY ===
+
+    # Step 3: F6 NOTES.md update prompt fire — same shape as forward flow.
+    f6_status = "deferred_f6_not_shipped"
+
+    return {
+        "ok": True,
+        "hero_promotion_id": promotion_id,
+        "reversed_at": reversed_at,
+        "reversed_reason": reversed_reason,
+        "deprecated_subdir": f"_DEPRECATED_{sanitized}",
+        "f6_prompt_status": f6_status,
+    }

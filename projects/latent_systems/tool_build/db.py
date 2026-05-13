@@ -83,21 +83,26 @@ def journal_mode(conn: sqlite3.Connection) -> str:
 
 # FK-respecting deletion order. Children rows that reference parents must
 # be deleted FIRST, otherwise foreign_keys=ON raises IntegrityError. Order
-# derived from migrations 0001-0003 schema:
+# derived from migrations 0001-0004 schema:
 #   concepts <- prompts <- generation_attempts <- renders <- (verdicts <- ai_consultations,
 #                                                             hero_promotions,
 #                                                             lineage_edges,
 #                                                             audit_thumbnails)
 #                       \- api_calls (FK to prompts)
 #   audit_sessions (root; verdicts FK to it via audit_session_id)
+#   notes_md_state, audio_assets (Migration 0004 leaf tables; no FKs)
 # Tables without FKs (cross_ai_captures, tool_grammar_configs, app_meta)
 # are excluded — tests that touch them clean up directly.
 _CASCADE_DELETE_ORDER = (
     # ai_consultations is child of verdicts (FK verdict_id) — delete first
     ("ai_consultations", "id LIKE ? OR verdict_id LIKE ?"),
-    # children of renders
-    ("verdicts",         "id LIKE ?"),
-    ("hero_promotions",  "id LIKE ?"),
+    # children of renders. hero_promotions extended to OR on render_id
+    # because F5 hero_promote() derives promotion_id via sha256 of
+    # verdict_id + dest_path (Pattern #7 — derived IDs don't carry the
+    # test prefix). render_id always carries the test prefix when the
+    # render was test-seeded, so the OR catches those rows.
+    ("verdicts",         "id LIKE ? OR render_id LIKE ?"),
+    ("hero_promotions",  "id LIKE ? OR render_id LIKE ?"),
     ("audit_thumbnails", "render_id LIKE ?"),
     # lineage_edges has no FK but references render IDs through
     # source_id/target_id; clean both sides so test_acceptance-style
@@ -115,6 +120,12 @@ _CASCADE_DELETE_ORDER = (
     ("concepts",         "id LIKE ?"),
     # audit_sessions has no parent FK; verdicts FK to it (already cleaned above)
     ("audit_sessions",   "id LIKE ?"),
+    # Migration 0004 additions — leaf tables, no FKs. notes_md_state
+    # uses `section` as PK (free-text label); tests use test-prefix
+    # section names. audio_assets uses `id` as PK; tests use
+    # test-prefix IDs OR test-prefix filepaths.
+    ("notes_md_state",   "section LIKE ?"),
+    ("audio_assets",     "id LIKE ? OR filepath LIKE ?"),
 )
 
 

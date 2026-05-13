@@ -59,6 +59,9 @@ _ARTIFACT_SUBDIRS = (
     "ai_consultations",
     "audit_thumbnails",
     "_audit_thumbnails",
+    # Migration 0004 additions
+    "notes_md_state",
+    "audio_assets",
 )
 
 

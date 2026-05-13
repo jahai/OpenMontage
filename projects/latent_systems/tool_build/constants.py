@@ -19,10 +19,13 @@ DISCIPLINE_PRE_V1 = "pre_v1"
 
 
 # --- Schema version (state.db structure, NOT discipline_version above) ---
-# When migrations 0004+ land, ADD them to this set. Walker + future
+# When migrations 0005+ land, ADD them to this set. Walker + future
 # schema_version-checking components read this to decide whether to
 # refuse-to-run on unrecognized schema versions.
 # Pattern from Day 3 review §4.2 (was deferred; landed with 0002 migration).
 # 0003 added 2026-05-06 for Phase 2 Wave A audit consultation schema
 # (audit_sessions, ai_consultations, audit_thumbnails + verdicts rebuild).
-SUPPORTED_SCHEMA_VERSIONS = frozenset({"0001", "0002", "0003"})
+# 0004 added 2026-05-14 for Phase 3 substrate: notes_md_state (F6),
+# cross_ai_captures expansion (F7), hero_promotions ALTER (F5 atomic
+# action), audio_assets (rough-cut player Days 4-5).
+SUPPORTED_SCHEMA_VERSIONS = frozenset({"0001", "0002", "0003", "0004"})

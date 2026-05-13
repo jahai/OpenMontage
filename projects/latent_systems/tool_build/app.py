@@ -1450,6 +1450,71 @@ def update_verdict_flags_endpoint(
         raise HTTPException(status_code=400, detail=msg)
 
 
+# --- F5 hero promotion atomic action (per F5_MODAL_UX_DRAFT.md v1.2) ---
+
+
+class HeroPromoteRequest(BaseModel):
+    audit_session_id: Optional[str] = None
+
+
+class HeroUnPromoteRequest(BaseModel):
+    reason: str
+    audit_session_id: Optional[str] = None
+
+
+@app.post("/audit/render/{render_id}/promote", status_code=201)
+def hero_promote_endpoint(
+    render_id: str, body: Optional[HeroPromoteRequest] = None,
+) -> dict[str, Any]:
+    """Atomic file-COPY + hero_promotions row insert; F6 prompt fires
+    post-commit best-effort. Pre-validation surfaces caller-correctable
+    errors as 400; missing render is 404; downstream atomic-transaction
+    failures as 500 with rollback state in the message.
+    """
+    try:
+        return dispatcher.hero_promote(
+            render_id=render_id,
+            audit_session_id=body.audit_session_id if body else None,
+        )
+    except dispatcher.HeroPromotionError as e:
+        msg = str(e)
+        # 404 for missing render; 409 for already-promoted (the only
+        # conflict state); 400 for ineligible verdict / no section /
+        # other pre-validation; 500 for atomic-transaction failures.
+        if "not found" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        if "already promoted" in msg:
+            raise HTTPException(status_code=409, detail=msg)
+        if "transaction failed" in msg or "rollback failed" in msg:
+            raise HTTPException(status_code=500, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
+@app.post("/audit/render/{render_id}/un_promote", status_code=201)
+def hero_un_promote_endpoint(
+    render_id: str, body: HeroUnPromoteRequest,
+) -> dict[str, Any]:
+    """Atomic file-MOVE (winners/ → _DEPRECATED_<reason>/) + DB update.
+    Reason is required (>= 5 chars per channel staple #12); sanitization
+    happens server-side. F6 prompt fires post-commit best-effort.
+    """
+    try:
+        return dispatcher.hero_un_promote(
+            render_id=render_id,
+            reason=body.reason,
+            audit_session_id=body.audit_session_id,
+        )
+    except dispatcher.HeroPromotionError as e:
+        msg = str(e)
+        if "no active promotion" in msg or "missing at" in msg:
+            raise HTTPException(status_code=404, detail=msg)
+        if "destination already exists" in msg:
+            raise HTTPException(status_code=409, detail=msg)
+        if "transaction failed" in msg or "rollback failed" in msg:
+            raise HTTPException(status_code=500, detail=msg)
+        raise HTTPException(status_code=400, detail=msg)
+
+
 @app.get("/audit/queue")
 def audit_queue_endpoint(
     only_unverdicted: bool = False, tool: Optional[str] = None,
