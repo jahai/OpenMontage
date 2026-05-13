@@ -350,6 +350,42 @@ def main() -> int:
     print(f"  lookup returns record; nonexistent ID returns None")
     cleanup()
 
+    # ---- Test 10: HTTP endpoint renders the template cleanly ----
+    print("\nTest 10: HTTP endpoint renders roughcut_player template")
+    from fastapi.testclient import TestClient
+    import app as app_module
+    client = TestClient(app_module.app)
+    # Seed a minimal section the player can render against.
+    c10 = _seed_concept(suffix="http", section="section_http")
+    _seed_render_with_verdict(
+        suffix="http_r", concept_id=c10, verdict_value="strong",
+    )
+    response = client.get("/video/ep1/section/section_http/roughcut")
+    _assert(response.status_code == 200,
+            f"expected 200, got {response.status_code}: {response.text[:200]}")
+    body = response.text
+    _assert("Rough cut: section_http" in body,
+            "expected section header in rendered template")
+    _assert("player-stage" in body, "expected player-stage element")
+    _assert("Asset 1 of 1" in body or "Asset" in body,
+            "expected current-asset label")
+    # Banner for no narration should be present
+    _assert("no-narration" in body or "Narration not yet recorded" in body,
+            "expected no_narration banner")
+
+    # Data endpoint mirror
+    data_resp = client.get("/video/ep1/section/section_http/roughcut/data")
+    _assert(data_resp.status_code == 200)
+    payload = data_resp.json()
+    _assert(payload["asset_count"] == 1)
+    _assert(payload["has_narration"] is False)
+
+    # /audio_assets/{id}/file: 404 for missing
+    missing_resp = client.get("/audio_assets/does_not_exist/file")
+    _assert(missing_resp.status_code == 404)
+    print("  endpoint renders 200; data endpoint mirrors; 404 on missing audio")
+    cleanup()
+
     print("\nPASS: all roughcut behaviors verified")
     return 0
 

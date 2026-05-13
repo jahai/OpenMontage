@@ -1,0 +1,298 @@
+{% extends "_base.html" %}
+{% block title %}Rough cut · {{ section }} · {{ ep_id }} · tool_build{% endblock %}
+
+{% block extra_css %}
+  .breadcrumbs { color: var(--text-muted); font-size: 0.85em; margin-bottom: 0.5em; }
+  .breadcrumbs a { color: var(--text-muted); }
+  .breadcrumbs a:hover { color: var(--accent); }
+
+  .roughcut-banners { margin-bottom: 1em; }
+  .banner {
+    padding: 0.7em 1em;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5em;
+    background: var(--bg-elev-1);
+    border-left: 3px solid var(--accent);
+    font-size: 0.92em;
+    color: var(--text);
+  }
+  .banner.no-assets   { border-left-color: #f59e0b; }
+  .banner.no-narration { border-left-color: #6b7280; }
+
+  .player-stage {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 1em;
+    color: var(--text-faint);
+  }
+  .player-stage img, .player-stage video {
+    width: 100%; height: 100%; object-fit: contain;
+  }
+
+  .player-controls {
+    display: flex; gap: 0.7em; align-items: center;
+    margin-bottom: 0.7em;
+  }
+  .player-controls button {
+    padding: 0.5em 1em;
+    background: var(--bg-elev-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.95em;
+    font-family: inherit;
+  }
+  .player-controls button:hover { border-color: var(--accent); }
+  .player-controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .player-status {
+    font-size: 0.87em; color: var(--text-muted);
+    margin-bottom: 1em;
+  }
+
+  .narration-info {
+    font-size: 0.85em; color: var(--text-muted);
+    padding: 0.5em 0;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between;
+  }
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumbs">
+  <a href="/">home</a> ·
+  <a href="/video/{{ ep_id }}">{{ ep_id }}</a> ·
+  <a href="/video/{{ ep_id }}/section/{{ section }}">{{ section }}</a> ·
+  rough cut
+</div>
+<h1>Rough cut: {{ section }}</h1>
+
+<div class="roughcut-banners">
+  {% for banner in banners %}
+    <div class="banner {{ banner.kind | replace('_', '-') }}">{{ banner.message }}</div>
+  {% endfor %}
+</div>
+
+<div class="player-stage" id="player-stage">
+  {% if not assets %}<span>(no visual assets to display)</span>{% endif %}
+</div>
+
+<div class="player-controls">
+  <button id="play-btn"{% if not assets %} disabled{% endif %}>▶ Play</button>
+  <button id="pause-btn" disabled>⏸ Pause</button>
+  <button id="restart-btn"{% if not assets %} disabled{% endif %}>↻ Restart</button>
+</div>
+
+<div class="player-status">
+  {{ asset_count }} asset{{ '' if asset_count == 1 else 's' }};
+  timing: {{ timing_strategy | replace('_', ' ') }};
+  {% if audio_discipline_version %}audio v{{ audio_discipline_version }};{% endif %}
+  {% if has_narration %}{{ narration_count }} narration paragraph{{ '' if narration_count == 1 else 's' }}{% endif %}
+</div>
+
+<audio id="narration-audio" preload="metadata" style="display:none"></audio>
+
+<div class="narration-info">
+  <span id="current-asset-label">{% if assets %}Asset 1 of {{ asset_count }}{% else %}—{% endif %}</span>
+  <span id="elapsed-label">0:00 / —:—</span>
+</div>
+
+<script>
+(function () {
+  // Server-rendered payload (Day 3 v1 — see roughcut.py).
+  const ASSETS = {{ assets | tojson }};
+  const NARRATIONS = {{ narration_audios | tojson }};
+  const TIMING_STRATEGY = {{ timing_strategy | tojson }};
+  const DEFAULT_IMAGE_DURATION = {{ default_image_duration }};
+
+  const stage = document.getElementById('player-stage');
+  const audio = document.getElementById('narration-audio');
+  const playBtn = document.getElementById('play-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const restartBtn = document.getElementById('restart-btn');
+  const assetLabel = document.getElementById('current-asset-label');
+  const elapsedLabel = document.getElementById('elapsed-label');
+
+  // Master clock = sum of (durations of completed narrations) +
+  // audio.currentTime within the currently-playing narration. In the
+  // no-narration mode the synthetic timer drives cumulativePriorSeconds
+  // directly.
+  let currentNarrationIdx = 0;
+  let currentAssetIdx = -1;
+  let cumulativePriorSeconds = 0;
+  let totalDuration = null;
+  const narrationDurations = NARRATIONS.map(() => null);
+
+  function formatTime(seconds) {
+    if (seconds === null || !isFinite(seconds)) return '—:—';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function showAsset(idx) {
+    if (ASSETS.length === 0) return;
+    idx = Math.max(0, Math.min(idx, ASSETS.length - 1));
+    if (idx === currentAssetIdx) return;
+    currentAssetIdx = idx;
+    const asset = ASSETS[idx];
+    const url = '/audit/render/' + encodeURIComponent(asset.id) + '/file';
+    if (asset.asset_type === 'video') {
+      stage.innerHTML = '<video src="' + url + '" muted autoplay loop playsinline></video>';
+    } else {
+      stage.innerHTML = '<img src="' + url + '" alt="' + asset.filename + '">';
+    }
+    assetLabel.textContent =
+      'Asset ' + (idx + 1) + ' of ' + ASSETS.length + ' — ' + asset.filename;
+  }
+
+  function masterClockSeconds() {
+    return cumulativePriorSeconds + (audio.currentTime || 0);
+  }
+
+  function updateAssetByClock() {
+    if (ASSETS.length === 0) return;
+    let assetDuration;
+    if (TIMING_STRATEGY === 'narration_distributed' && totalDuration && totalDuration > 0) {
+      assetDuration = totalDuration / ASSETS.length;
+    } else {
+      assetDuration = DEFAULT_IMAGE_DURATION;
+    }
+    const expectedIdx = Math.min(
+      Math.floor(masterClockSeconds() / assetDuration),
+      ASSETS.length - 1
+    );
+    if (expectedIdx !== currentAssetIdx) {
+      showAsset(expectedIdx);
+    }
+  }
+
+  function loadNarration(idx) {
+    if (idx >= NARRATIONS.length) return;
+    currentNarrationIdx = idx;
+    audio.src = '/audio_assets/' + encodeURIComponent(NARRATIONS[idx].id) + '/file';
+    audio.load();
+  }
+
+  function onAudioMetadata() {
+    narrationDurations[currentNarrationIdx] = audio.duration;
+    if (narrationDurations.every(d => d !== null)) {
+      totalDuration = narrationDurations.reduce((a, b) => a + b, 0);
+    }
+  }
+
+  function onAudioTimeUpdate() {
+    updateAssetByClock();
+    elapsedLabel.textContent =
+      formatTime(masterClockSeconds()) + ' / ' + formatTime(totalDuration);
+  }
+
+  function onAudioEnded() {
+    cumulativePriorSeconds +=
+      (narrationDurations[currentNarrationIdx] || audio.duration || 0);
+    if (currentNarrationIdx + 1 < NARRATIONS.length) {
+      loadNarration(currentNarrationIdx + 1);
+      audio.play();
+    } else {
+      // All narrations done.
+      showAsset(ASSETS.length - 1);
+      playBtn.disabled = false;
+      pauseBtn.disabled = true;
+    }
+  }
+
+  // No-narration synthetic timer.
+  let timerHandle = null;
+  let timerStartMs = null;
+  let timerAccumulated = 0;
+
+  function startNoNarrationTimer() {
+    timerStartMs = performance.now();
+    timerHandle = setInterval(() => {
+      const elapsed = (performance.now() - timerStartMs) / 1000;
+      cumulativePriorSeconds = timerAccumulated + elapsed;
+      const total = DEFAULT_IMAGE_DURATION * ASSETS.length;
+      updateAssetByClock();
+      elapsedLabel.textContent =
+        formatTime(cumulativePriorSeconds) + ' / ' + formatTime(total);
+      if (cumulativePriorSeconds >= total) {
+        stopNoNarrationTimer();
+        showAsset(ASSETS.length - 1);
+        playBtn.disabled = false;
+        pauseBtn.disabled = true;
+      }
+    }, 200);
+  }
+
+  function stopNoNarrationTimer() {
+    if (timerHandle) {
+      timerAccumulated += (performance.now() - timerStartMs) / 1000;
+      clearInterval(timerHandle);
+      timerHandle = null;
+    }
+  }
+
+  function play() {
+    if (ASSETS.length === 0) return;
+    playBtn.disabled = true;
+    pauseBtn.disabled = false;
+    if (NARRATIONS.length > 0) {
+      audio.play();
+    } else {
+      startNoNarrationTimer();
+    }
+  }
+
+  function pause() {
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    if (NARRATIONS.length > 0) {
+      audio.pause();
+    } else {
+      stopNoNarrationTimer();
+    }
+  }
+
+  function restart() {
+    pause();
+    cumulativePriorSeconds = 0;
+    timerAccumulated = 0;
+    currentAssetIdx = -1;
+    if (NARRATIONS.length > 0) {
+      audio.currentTime = 0;
+      loadNarration(0);
+    }
+    if (ASSETS.length > 0) {
+      showAsset(0);
+    }
+  }
+
+  audio.addEventListener('loadedmetadata', onAudioMetadata);
+  audio.addEventListener('timeupdate', onAudioTimeUpdate);
+  audio.addEventListener('ended', onAudioEnded);
+  playBtn.addEventListener('click', play);
+  pauseBtn.addEventListener('click', pause);
+  restartBtn.addEventListener('click', restart);
+
+  // Initial: show first asset; prep first narration if any; otherwise
+  // set elapsed label to total fallback duration.
+  if (ASSETS.length > 0) {
+    showAsset(0);
+  }
+  if (NARRATIONS.length > 0) {
+    loadNarration(0);
+  } else if (ASSETS.length > 0) {
+    elapsedLabel.textContent =
+      '0:00 / ' + formatTime(DEFAULT_IMAGE_DURATION * ASSETS.length);
+  }
+})();
+</script>
+{% endblock %}

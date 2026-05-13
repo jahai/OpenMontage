@@ -26,6 +26,7 @@ import audit_consult
 import db
 import dispatcher
 import llm
+import roughcut
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -446,6 +447,58 @@ def video_section_data_endpoint(ep_id: str, section: str) -> dict[str, Any]:
     except (FileNotFoundError, sqlite3.Error) as e:
         payload["error"] = str(e)
     return payload
+
+
+# --- Day 3 of Phase 3 sprint: rough-cut player v1 ---
+
+
+@app.get("/video/{ep_id}/section/{section}/roughcut", response_class=HTMLResponse)
+def roughcut_player_page(request: Request, ep_id: str, section: str):
+    """Rough-cut player for a section. Sequences hero_zone + strong
+    renders bound to the section (via concept.section OR filename
+    pattern), plays paragraph-ordered narration audio over them. Day 3
+    v1 — fallback sequencing only (Day 4 polish adds architecture-derived
+    sequence + manual override UI). See roughcut.py for the backend
+    payload shape."""
+    data = roughcut.build_roughcut_data(ep_id, section)
+    return TEMPLATES.TemplateResponse(
+        "roughcut_player.html",
+        {"request": request, "active": ep_id, **data},
+    )
+
+
+@app.get("/video/{ep_id}/section/{section}/roughcut/data")
+def roughcut_player_data_endpoint(ep_id: str, section: str) -> dict[str, Any]:
+    """JSON payload for the rough-cut player (mirror of the template
+    payload). Useful for debugging + future client-side refresh
+    without full-page reload. Day 4 may consume this for sequence-
+    override UI."""
+    return roughcut.build_roughcut_data(ep_id, section)
+
+
+@app.get("/audio_assets/{audio_id}/file")
+def audio_asset_file_endpoint(audio_id: str):
+    """Serve the on-disk audio file (mp3) for a given audio_asset id.
+    Mirror of /audit/render/{render_id}/file for narration playback in
+    the rough-cut player. Resolves repo-relative filepath against
+    db.REPO_ROOT, returns FileResponse with audio/mpeg media type so
+    HTML5 <audio> picks it up correctly."""
+    rec = roughcut.get_audio_asset_by_id(audio_id)
+    if rec is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"audio_asset {audio_id!r} not found",
+        )
+    abs_path = db.REPO_ROOT / rec["filepath"]
+    if not abs_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"audio_asset {audio_id!r} row exists but file missing "
+                f"at {rec['filepath']!r}"
+            ),
+        )
+    return FileResponse(str(abs_path), media_type="audio/mpeg")
 
 
 @app.get("/settings/keys", response_class=HTMLResponse)
