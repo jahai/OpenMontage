@@ -191,7 +191,7 @@ def run_assistant(
         "tool_trace": tool_trace,
         "cost_usd": round(total_cost, 6),
         "latency_s": round(time.perf_counter() - started, 2),
-        "iterations": len(tool_trace) // max(1, len(tool_trace)) if tool_trace else 1,
+        "iterations": iteration + 1,
         "tokens_in": total_in,
         "tokens_out": total_out,
         "cache_read_tokens": total_cache_read,

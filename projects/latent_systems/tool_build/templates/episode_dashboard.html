@@ -316,7 +316,7 @@ function appendMessage(role, content, meta) {
   let body = escapeHtml(content);
   body = body.replace(/`([^`]+)`/g, '<code>$1</code>');
   body = body.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
-  body = body.replace(/(\/[a-zA-Z][a-zA-Z0-9_\/\?=&\.\-]*)/g, '<a href="$1">$1</a>');
+  body = body.replace(/(\/(?:audit|video|tools|settings)[a-zA-Z0-9_\/\?=&\.\-]*)/g, '<a href="$1">$1</a>');
   div.innerHTML = `
     <div class="avatar">${avatarText}</div>
     <div class="body">${body}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</div>`;

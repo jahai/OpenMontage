@@ -682,7 +682,6 @@ def audit_rank_batch_endpoint(body: RankBatchRequest) -> dict[str, Any]:
                 "skipped_reason": "no candidates match (already ranked or empty)"}
 
     client = anthropic.Anthropic()
-    audit._ensure_assistant_ranks_table  # access ensures import works
     total_cost = 0.0
     ranked = 0
     batches = 0
