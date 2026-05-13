@@ -131,27 +131,97 @@ Code's).**
 
 # Active task
 
-**Last updated 2026-05-13.** Multi-page UI WIP parked; H#3 v3 production
-is the launch-blocking priority.
+**Last updated 2026-05-13 (second pivot, same-day).** Phase 3
+complete-the-app sprint IN PROGRESS — target 2026-05-23 EP1 launch
+(pushed +7 days from 2026-05-16).
 
-## ACTIVE PRIORITY: H#3 v3 reenactment production — EP1 launch in 3 days
+## ACTIVE: Phase 3 complete-the-app sprint — target 2026-05-23 EP1 launch
 
-EP1 launches **2026-05-16 (3 days from today)**. Launch-blocking creative
-path per `shared/h3_reenactment_phase3/NOTES.md`:
+Scope locked: full Phase 3 (F5 hero promotion / F6 NOTES.md authorship /
+F7 cross-AI capture / F8 OpenMontage serialization / F9 doc-set
+coordination) + ROUGH-CUT PLAYER (new feature for EP1 creative judgment
+in-app) + WIP multi-page UI finishing + Phase 2.5 fixes including
+conftest.py + rubric calibration (Pattern #8 reinforcement #4 —
+apparatus accuracy + period authenticity criteria added to Documentary
+integrity).
 
-- Rat anchor + State 1 upscaled and **LOCKED**
-- nycwillow horizontal-lab render audited end-to-end
-  (render `34db51db61c34c9e`, verdict `46e04a597551c562`,
-  session `013a9cf917cbd5da`, AI consult `e9969034b45d3e0b`)
-- **PENDING:** human anchor MJ generation · rat State 2/2B/4 ·
-  scientist cutaways (3) · 11 Kling clips · assembly to
-  `EP1_H3_v3_block_v1.mp4` · v2 vs v3 comparison decision
+**Day-by-day plan:**
 
-**Workflow:** upscales/generations save to Downloads via right-click →
-Save image as in MJ web UI; auto-flow to `/audit/inbox`. ~2-3 hours per
-round. AD-5 still applies — Joseph commits canonical-path work himself.
+- **Day 1 (2026-05-13):** Phase 2.5 conftest.py + tmp_path-isolated DB
+  migration across the 15-test script suite. Single-workstream (code).
+  Operational discipline: run the full 15-test suite after every 3-4
+  file migration batch to localize isolation regressions — don't
+  migrate all 15 then run tests. **Workstream 1B (parallel doc-draft,
+  non-blocking):** draft proposed apparatus-accuracy + period-
+  authenticity criterion language as scratch file in `tool_build/` for
+  Joseph review before integration into `docs/AUDIT_RUBRICS_v1_0.md`
+  on Day 2 morning.
+- **Day 2:** Rubric calibration morning — integrate apparatus accuracy
+  + period authenticity criteria into Documentary integrity criterion
+  in `docs/AUDIT_RUBRICS_v1_0.md` (per Day 1 Workstream 1B scratch).
+  Must land before F5 so all downstream verdict-derived artifacts
+  inherit the sharpened criteria (causal chain: rubric → verdict
+  grading → hero state → F6 NOTES.md drafts auto-drafted from verdict
+  state via Claude API on Day 3). Per AD-5, Joseph commits the
+  `docs/` integration; Claude Code prepares the scratch + diff. Then
+  Migration 0004 + F5 hero promotion atomic action + audio asset
+  first-class support in state.db (prereq for rough-cut player).
+- **Day 3:** F6 NOTES.md authorship via Claude API.
+- **Day 4:** Rough-cut player v1 — narration audio playback + sequenced
+  asset display + scrub controls. Sequencing metadata: hybrid (auto from
+  `EP1_STRUCTURAL_ARCHITECTURE_v1_4.md` + manual overrides). Asset
+  timing: narration timing primary + hardcoded defaults fallback. Gap
+  handling: honest partial state.
+- **Day 5:** Rough-cut player polish — timeline visualization, asset
+  highlight, partial-state surfacing, manual sequence override UI.
+- **Day 6:** F8 OpenMontage serialization (asset_manifest only per v0.4
+  amendment) + WIP multi-page UI finishing.
+- **Day 7 (2026-05-19):** F7 cross-AI capture surface (M3 pattern) +
+  F9 doc-set coordination.
+- **Days 8-10 (2026-05-20 to 2026-05-22):** Buffer + integration
+  testing + EP1 final production work using rough-cut player + final
+  polish + Phase 2.5 remaining fixes (consult button disable + elapsed
+  counter; discipline_drift extension to Migration 0003 tables; YAML
+  staleness audit; `PHASE_2_E2E_PLAN.md` cost amendment; Step 8
+  verify-end-link amendment).
 
-## PARKED WIP: multi-page UI + assistant runner — `b9935cb` + `a17e36a`
+**Cut-order if novel-work velocity slips:** F7 first, then F9. F8 +
+Phase 2.5 conftest + rubric calibration + rough-cut player are
+non-negotiable for May 23 ship.
+
+**Velocity assumption:** observed velocity over the past week has been
+5-10× prior estimates on substrate-on-substrate work (Phase 2
+4-5 weeks → 2 days; Phase 2 e2e cost 12× under estimate; v0.4
+amendments hours not days; multi-page UI mostly-finished in one
+session). Sprint scope assumes this velocity sustains across
+partially-novel work (F7 M3 pattern; F8 schema mapping; rough-cut
+player). **Day 5 EOD checkpoint criteria (binary):** F8 asset_manifest
+serialization landing on Day 5 = clean. Uncovered schema gap requiring
+scope expansion beyond asset_manifest mapping = cut F7 (cross-AI
+capture + M3 compressed-input + AI-expansion pattern) immediately and
+reallocate Day 7 to F8 completion. F9 (doc-set coordination — "which
+canonical docs may need updating when X changes") remains in scope;
+it's small and substrate-heavy. Specific schema-gap risks to evaluate
+against: `scene_id` mapping (OpenMontage `asset_manifest` requires
+`scene_id` on every asset but tool_build has no scenes concept —
+closest is `concepts.section`); filename heuristics for
+`unknown_image_terminal` status; `additionalProperties: false` strict
+mode meaning tool_build-specific metadata can't ride on individual
+assets.
+
+## H#3 v3 reenactment PARKED
+
+H#3 v3 reenactment (h3_skinner Skinner box section, parallel
+exploratory work) PARKED at locked rat anchor + State 1. v2 SHIPPED
+canonical for EP1 launch. Water-in-rat-anchor issue resolved by
+parking v3; resume post-2026-05-23 with sharpened rubric (apparatus
+accuracy + period authenticity criteria from Day 1 calibration).
+
+Render/verdict/session/consult trail preserved for v3 resume:
+render `34db51db61c34c9e`, verdict `46e04a597551c562`, session
+`013a9cf917cbd5da`, AI consult `e9969034b45d3e0b`.
+
+## Multi-page UI WIP — `b9935cb` + `a17e36a` (resumes Day 6 of sprint)
 
 WIP commit `b9935cb` (2026-05-13) introduced a journey-oriented multi-page
 UI (home shell with sidebar, episode dashboard with chat panel, section
@@ -168,7 +238,7 @@ access in `/audit/rank-batch`, and an over-greedy auto-linker regex in
 `episode_dashboard.html` that matched any `/foo`-shaped substring (now
 whitelisted to `/audit|video|tools|settings` prefixes).
 
-**Remaining work for completion (post-EP1-launch):**
+**Day 6 completion items:**
 - `/video/new` wizard (greenfield project creation — currently stub)
 - write-to-`.env` for `/settings/keys` (currently read-only)
 - Fold `assistant_ranks` table into Migration 0004 (currently
@@ -195,18 +265,20 @@ multi-page UI session resumes.
   origin/upstream set, 49 commits durable). Hash translation: `1ac0a76`.
   H#3 v3 nycwillow render audited end-to-end. Rubric calibration banked:
   `8d4815f`.
-- **2026-05-13** b9935cb (WIP multi-page UI + assistant runner) audited +
-  `a17e36a` cleanup landed. Multi-page UI parked; H#3 v3 promoted to
-  active priority.
-
-## Deferred (touch only if H#3 v3 is fully shipped before launch)
-
-- **(A) Phase 3 Wave 1 Day 1** — Migration 0004 schema implementation +
-  F8 schema-read against actual OpenMontage schemas. ~2-3 hours.
-- **(D) Phase 2.5 fixes** (5 banked findings from Wave B real run):
-  consult button disable + elapsed counter; discipline_drift extension
-  to Migration 0003 tables; YAML staleness audit; `PHASE_2_E2E_PLAN.md`
-  cost amendment; Step 8 verify-end-link amendment. ~2-3 hours.
+- **2026-05-13 (first decision, same-day)** b9935cb (WIP multi-page UI +
+  assistant runner) audited + `a17e36a` cleanup landed. Multi-page UI
+  initially parked; H#3 v3 promoted to active priority on 3-day EP1
+  launch path.
+- **2026-05-13 (second pivot, same-day)** Strategic pivot. EP1 launch
+  pushed from 2026-05-16 to 2026-05-23 (+7 days). Phase 3
+  complete-the-app sprint scoped (F5-F9 + rough-cut player + multi-page
+  UI finishing + Phase 2.5 + rubric calibration). H#3 v3 re-parked at
+  locked rat anchor; v2 SHIPPED carries EP1. Multi-page UI work resumes
+  Day 6 as part of sprint. Rationale: observed velocity 5-10× prior
+  estimates over the past week sustains the expanded scope with
+  variance buffer; rough-cut player added for EP1 creative judgment
+  in-app; rubric calibration ships before EP1 to catch
+  apparatus-accuracy issues going forward.
 
 ## Post-reboot startup checklist
 
