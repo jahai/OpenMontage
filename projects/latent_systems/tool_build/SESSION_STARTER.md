@@ -161,16 +161,23 @@ integrity).
   integrity sharpening draft (apparatus accuracy + period authenticity
   dimensions) pending Joseph review + integration into
   `docs/AUDIT_RUBRICS_v1_0.md` before Day 2 morning F5 work begins.
-- **Day 2:** Rubric calibration morning — integrate apparatus accuracy
-  + period authenticity criteria into Documentary integrity criterion
-  in `docs/AUDIT_RUBRICS_v1_0.md` (per Day 1 Workstream 1B scratch).
-  Must land before F5 so all downstream verdict-derived artifacts
-  inherit the sharpened criteria (causal chain: rubric → verdict
-  grading → hero state → F6 NOTES.md drafts auto-drafted from verdict
-  state via Claude API on Day 3). Per AD-5, Joseph commits the
-  `docs/` integration; Claude Code prepares the scratch + diff. Then
-  Migration 0004 + F5 hero promotion atomic action + audio asset
-  first-class support in state.db (prereq for rough-cut player).
+- **Day 2 (2026-05-14) — ✅ Claude Code substrate COMPLETE; rubric
+  integration PENDING Joseph.** Substrate landed commit `62793d3`:
+  Migration 0004 (notes_md_state + cross_ai_captures +7 cols +
+  hero_promotions +4 cols + audio_assets) bumps schema 0003→0004;
+  F5 hero promotion atomic action per F5_MODAL_UX_DRAFT.md v1.2
+  (dispatcher.hero_promote/un_promote + POST /audit/render/<id>/promote
+  + /un_promote + 14-scenario test_hero_promotion.py); audio_assets
+  module + 12-scenario test_audio_assets.py for rough-cut player
+  prereq. Full suite 96 passed + 1 documented skip; production
+  state.db row counts byte-identical pre/post. F5 modal UI deferred
+  to Day 6 per original Wave 1 plan. **PENDING Joseph:** rubric
+  calibration integration from `tool_build/RUBRIC_CALIBRATION_SCRATCH_2026_05_13.md`
+  → `docs/AUDIT_RUBRICS_v1_0.md` (apparatus accuracy + period
+  authenticity dimensions added to Documentary integrity criterion).
+  Should land before any new audits run with the sharpened rubric;
+  F6 NOTES.md drafts on Day 3 will auto-draft from verdict state
+  graded under whichever rubric is active at draft time.
 - **Day 3:** F6 NOTES.md authorship via Claude API.
 - **Day 4:** Rough-cut player v1 — narration audio playback + sequenced
   asset display + scrub controls. Sequencing metadata: hybrid (auto from
