@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+import assistant_tools
 import audit
 import audit_consult
 import db
@@ -89,8 +90,397 @@ def pending_downloads() -> dict[str, Any]:
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    """Minimal HTML UI for prompt drafting + dispatch (Day 7)."""
-    return TEMPLATES.TemplateResponse("index.html", {"request": request})
+    """New journey-oriented home. Sidebar shell + hero cards for
+    'New video' / 'Continue EP1' / 'API keys'. Power-user shell moved to /tools."""
+    return TEMPLATES.TemplateResponse("home.html", {"request": request, "active": None})
+
+
+@app.get("/tools", response_class=HTMLResponse)
+def tools_page(request: Request):
+    """Power-user shell — concepts CRUD, draft prompts, recent prompts,
+    awaiting/unbound/inbox queues, discipline drift. The pre-shell homepage."""
+    return TEMPLATES.TemplateResponse("index.html", {"request": request, "active": "tools"})
+
+
+@app.get("/video/new", response_class=HTMLResponse)
+def video_new_page(request: Request):
+    """Placeholder for 'start a new video' wizard. Greenfield creation
+    isn't wired in v1; EP1 is the only project."""
+    return TEMPLATES.TemplateResponse("video_new.html", {"request": request, "active": None})
+
+
+@app.get("/video/{ep_id}", response_class=HTMLResponse)
+def video_dashboard_page(request: Request, ep_id: str):
+    """Episode dashboard — section progress + quick actions."""
+    titles = {
+        "ep1": ("EP1 — The Business of Addiction",
+                "Behavioral psychology + attention economy. Launches 2026-05-16."),
+    }
+    ep_title, ep_subtitle = titles.get(
+        ep_id, (ep_id.upper(), "Episode dashboard"))
+    return TEMPLATES.TemplateResponse(
+        "episode_dashboard.html",
+        {"request": request, "active": ep_id, "ep_id": ep_id,
+         "ep_title": ep_title, "ep_subtitle": ep_subtitle},
+    )
+
+
+@app.get("/video/{ep_id}/sections")
+def video_sections_endpoint(ep_id: str) -> dict[str, Any]:
+    """Section progress for an episode. v1 derives sections from filename
+    patterns (concept→prompt→render linkage is sparse — most renders predate
+    the concept system). Patterns matched: EP1_section_<N><L>_, ^H<N>_, ^K<N>_,
+    ^section_<N><L>_."""
+    import re
+    payload: dict[str, Any] = {"ep_id": ep_id, "sections": [], "totals": {}}
+    ep_token = ep_id.upper()  # filenames use EP1 not ep1
+    # Patterns to extract section name from filename
+    patterns = [
+        re.compile(rf"^{ep_token}_section_(\d+[A-Z]?)_", re.IGNORECASE),
+        re.compile(r"^section_(\d+[A-Z]?)_", re.IGNORECASE),
+        re.compile(r"^(H\d+)[_.]", re.IGNORECASE),
+        re.compile(r"^(K\d+)[_.]", re.IGNORECASE),
+        re.compile(rf"^{ep_token}_(H\d+)[_.]", re.IGNORECASE),
+        re.compile(rf"^{ep_token}_(K\d+)[_.]", re.IGNORECASE),
+        re.compile(r"_(H\d+)_", re.IGNORECASE),
+        re.compile(rf"^{ep_token}_(\d+[A-Z]?)_", re.IGNORECASE),
+    ]
+
+    def extract_section(filename: str) -> Optional[str]:
+        if not filename:
+            return None
+        for pat in patterns:
+            m = pat.search(filename)
+            if m:
+                tok = m.group(1)
+                # Normalize: numeric sections as "§N", H/K as-is
+                if tok[0].isdigit():
+                    return f"§{tok}"
+                return tok.upper()
+        return None
+
+    try:
+        with db.connect() as conn:
+            conn.row_factory = sqlite3.Row
+            # Aggregate by section over all renders
+            section_data: dict[str, dict[str, int]] = {}
+            for row in conn.execute(
+                "SELECT id, filename FROM renders"
+            ):
+                sec = extract_section(row["filename"] or "")
+                if not sec:
+                    continue
+                d = section_data.setdefault(sec, {
+                    "renders": 0, "verdicts": 0, "heroes": 0,
+                })
+                d["renders"] += 1
+            # Verdicts per section
+            for row in conn.execute(
+                "SELECT r.filename FROM verdicts v "
+                "JOIN renders r ON r.id = v.render_id"
+            ):
+                sec = extract_section(row["filename"] or "")
+                if not sec or sec not in section_data:
+                    continue
+                section_data[sec]["verdicts"] += 1
+            # Hero promotions per section
+            for row in conn.execute(
+                "SELECT r.filename FROM hero_promotions h "
+                "JOIN renders r ON r.id = h.render_id"
+            ):
+                sec = extract_section(row["filename"] or "")
+                if not sec or sec not in section_data:
+                    continue
+                section_data[sec]["heroes"] += 1
+
+            sections = []
+            totals = {"verdicts": 0, "renders": 0, "hero_locked": 0,
+                      "audit_pending": 0}
+            for sec, d in sorted(section_data.items(),
+                                 key=lambda kv: (kv[0][0] != '§', kv[0])):
+                if d["heroes"] > 0:
+                    status = "hero_locked"
+                elif d["verdicts"] > 0:
+                    status = "verdict_stage"
+                elif d["renders"] > 0:
+                    status = "audit_pending"
+                else:
+                    status = "unstarted"
+                sections.append({"section": sec, "status": status, "counts": d})
+                totals["renders"] += d["renders"]
+                totals["verdicts"] += d["verdicts"]
+                if status == "hero_locked":
+                    totals["hero_locked"] += 1
+                if status == "audit_pending":
+                    totals["audit_pending"] += 1
+            payload["sections"] = sections
+            payload["totals"] = totals
+    except (FileNotFoundError, sqlite3.Error) as e:
+        payload["error"] = str(e)
+    return payload
+
+
+class VideoChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class VideoChatRequest(BaseModel):
+    message: str
+    history: list[VideoChatMessage] = []
+
+
+@app.post("/video/{ep_id}/chat")
+def video_chat_endpoint(ep_id: str, body: VideoChatRequest) -> dict[str, Any]:
+    """Project assistant chat for an episode. Builds project context
+    (sections, recent activity) into system prompt; takes message history
+    + new message, returns Claude response.
+
+    Single-turn under the hood — history is concatenated into the user
+    message rather than sent as separate messages list. Multi-turn
+    structured chat is a future iteration.
+    """
+    # Pull fresh project context from sections endpoint logic
+    sections_data = video_sections_endpoint(ep_id)
+    sections = sections_data.get("sections", [])
+    totals = sections_data.get("totals", {})
+
+    # Recent activity for grounding
+    last_verdict = None
+    last_consult = None
+    try:
+        with db.connect() as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT v.verdict, v.audited_by, v.created, r.filename "
+                "FROM verdicts v LEFT JOIN renders r ON r.id=v.render_id "
+                "ORDER BY v.created DESC LIMIT 1"
+            ).fetchone()
+            last_verdict = dict(row) if row else None
+            row = conn.execute(
+                "SELECT c.model, c.cost_usd, c.consulted_at, "
+                "       v.verdict AS verdict_label, r.filename "
+                "FROM ai_consultations c "
+                "LEFT JOIN verdicts v ON v.id=c.verdict_id "
+                "LEFT JOIN renders r ON r.id=v.render_id "
+                "ORDER BY c.consulted_at DESC LIMIT 1"
+            ).fetchone()
+            last_consult = dict(row) if row else None
+    except (FileNotFoundError, sqlite3.Error):
+        pass
+
+    # System prompt: project identity + state + behavioral rules
+    from datetime import date
+    launch = date(2026, 5, 16)
+    today = date.today()
+    days_left = (launch - today).days
+    days_phrase = (
+        f"in {days_left} days" if days_left > 0
+        else "TODAY" if days_left == 0
+        else f"{-days_left} days ago (LAUNCHED)"
+    )
+    system_lines = [
+        f"You are the project assistant for a video production workspace. "
+        f"The user (Joseph) is producing **EP1 — The Business of Addiction**, "
+        f"an investigative-essay docudrama on behavioral psychology and the "
+        f"attention economy, launching 2026-05-16 ({days_phrase}). "
+        f"Today is {today.isoformat()}.",
+        "",
+        "**Your role:** help Joseph decide what to work on next, draft prompts, "
+        "interpret audit results, and reason about production decisions. "
+        "Be concrete and specific — name sections, name renders, name actions. "
+        "Don't be sycophantic. Push back if his idea has a problem.",
+        "",
+        "**Current production state:**",
+        f"- Sections detected: {len(sections)} ({totals.get('hero_locked', 0)} hero-locked, "
+        f"{totals.get('audit_pending', 0)} audit-pending)",
+        f"- Total renders in workspace: {totals.get('renders', 0)}",
+        f"- Verdicts captured: {totals.get('verdicts', 0)}",
+        "",
+        "**Section breakdown:**",
+    ]
+    for s in sections:
+        c = s["counts"]
+        system_lines.append(
+            f"- {s['section']}: {s['status']} "
+            f"({c['renders']} renders, {c['verdicts']} verdicts, "
+            f"{c.get('heroes', 0)} heroes)"
+        )
+    if last_verdict:
+        system_lines += [
+            "",
+            f"**Most recent verdict:** {last_verdict['verdict']} on "
+            f"`{(last_verdict.get('filename') or '')[:80]}` at "
+            f"{last_verdict.get('created', '')[:19]} (by {last_verdict['audited_by']}).",
+        ]
+    if last_consult:
+        system_lines += [
+            f"**Most recent AI consult:** {last_consult.get('verdict_label')} verdict, "
+            f"${last_consult.get('cost_usd', 0):.4f}, model={last_consult.get('model')}, "
+            f"file `{(last_consult.get('filename') or '')[:80]}`.",
+        ]
+    system_lines += [
+        "",
+        "**You have file/shell/db tools** (read_file, list_directory, search_files, "
+        "query_db, see_image, write_file, edit_file, run_bash). Use them freely to "
+        "investigate before answering. AD-5: writes are AUTO-REFUSED for "
+        "`projects/latent_systems/{shared,ep1,docs,tools}/` — those are Joseph's "
+        "creative paths. You may write/edit anywhere else (especially "
+        "`projects/latent_systems/tool_build/`). Bash refuses commands that mention "
+        "canonical paths.",
+        "",
+        "**Available pages in this app:**",
+        "- /  (home / project picker)",
+        "- /video/ep1  (this dashboard)",
+        "- /video/ep1/section/<NAME>  (per-section asset workspace with thumbnails)",
+        "- /audit/grid  (audit grid; supports ?section=&only_unverdicted=true)",
+        "- /audit/inbox  (process pending downloads)",
+        "- /tools  (power-user shell — concepts CRUD, draft prompts, etc.)",
+        "- /settings/keys  (API key status)",
+        "",
+        "When recommending action, name the section and link the URL. When changing "
+        "code, read first, edit precisely, restart the server if needed, run tests "
+        "if you touched backend code (`for f in projects/latent_systems/tool_build/"
+        "tests/test_*.py; do python \"$f\"; done`).",
+    ]
+    system_prompt = "\n".join(system_lines)
+
+    history_dicts = [{"role": m.role, "content": m.content} for m in body.history]
+
+    try:
+        import assistant_runner
+        result = assistant_runner.run_assistant(
+            system=system_prompt,
+            user_message=body.message,
+            history=history_dicts,
+        )
+    except llm.LLMError as e:
+        status = 502 if e.retryable else 500
+        raise HTTPException(
+            status_code=status,
+            detail={"error": str(e), "retryable": e.retryable,
+                    "api_call_id": e.api_call_id},
+        )
+    return result
+
+
+def _section_filename_match(filename: str, ep_id: str, section: str) -> bool:
+    """Does this filename look like it belongs to this section? Mirrors the
+    extraction logic used in /video/{ep_id}/sections."""
+    import re
+    if not filename:
+        return False
+    ep_token = ep_id.upper()
+    # Strip § prefix for matching
+    sec_match = section.lstrip("§")
+    pats = [
+        rf"^{ep_token}_section_{re.escape(sec_match)}_",
+        rf"^section_{re.escape(sec_match)}_",
+        rf"^{re.escape(sec_match)}[_.]",
+        rf"^{ep_token}_{re.escape(sec_match)}[_.]",
+        rf"_{re.escape(sec_match)}_",
+    ]
+    fl = filename
+    for p in pats:
+        if re.search(p, fl, re.IGNORECASE):
+            return True
+    return False
+
+
+@app.get("/video/{ep_id}/section/{section}", response_class=HTMLResponse)
+def video_section_workspace_page(request: Request, ep_id: str, section: str):
+    """Section workspace page — renders, audio players, verdicts, actions
+    scoped to one section of the episode."""
+    return TEMPLATES.TemplateResponse(
+        "section_workspace.html",
+        {"request": request, "active": ep_id, "ep_id": ep_id,
+         "section": section},
+    )
+
+
+@app.get("/video/{ep_id}/section/{section}/data")
+def video_section_data_endpoint(ep_id: str, section: str) -> dict[str, Any]:
+    """Renders + verdicts + counts for one section, identified by filename
+    pattern matching."""
+    payload: dict[str, Any] = {
+        "ep_id": ep_id, "section": section,
+        "renders": [], "verdicts": [], "counts": {},
+    }
+    try:
+        with db.connect() as conn:
+            conn.row_factory = sqlite3.Row
+            # Renders for this section
+            renders = []
+            for row in conn.execute(
+                "SELECT id, filename, filepath, tool, hero_status, created "
+                "FROM renders ORDER BY created DESC"
+            ):
+                if _section_filename_match(row["filename"] or "", ep_id, section):
+                    renders.append(dict(row))
+            payload["renders"] = renders
+
+            # Verdicts on those renders
+            render_ids = [r["id"] for r in renders]
+            if render_ids:
+                placeholders = ",".join("?" * len(render_ids))
+                verdicts = conn.execute(
+                    f"SELECT v.id, v.render_id, v.verdict, v.audited_by, "
+                    f"       v.created, r.filename "
+                    f"FROM verdicts v JOIN renders r ON r.id=v.render_id "
+                    f"WHERE v.render_id IN ({placeholders}) "
+                    f"ORDER BY v.created DESC",
+                    render_ids,
+                ).fetchall()
+                payload["verdicts"] = [dict(v) for v in verdicts]
+                # Counts
+                payload["counts"] = {
+                    "renders": len(renders),
+                    "verdicts": len(verdicts),
+                    "verdicted_render_ids": list(set(
+                        v["render_id"] for v in verdicts
+                    )),
+                }
+            else:
+                payload["counts"] = {"renders": 0, "verdicts": 0,
+                                     "verdicted_render_ids": []}
+    except (FileNotFoundError, sqlite3.Error) as e:
+        payload["error"] = str(e)
+    return payload
+
+
+@app.get("/settings/keys", response_class=HTMLResponse)
+def settings_keys_page(request: Request):
+    """API keys + integrations management."""
+    return TEMPLATES.TemplateResponse(
+        "settings_keys.html", {"request": request, "active": "keys"})
+
+
+@app.get("/settings/keys/status")
+def settings_keys_status() -> dict[str, Any]:
+    """Status of known + future integrations. v1 read-only — surfaces
+    which env vars are set, what each unlocks. Add/edit via UI is deferred."""
+    import os
+    known = [
+        {
+            "label": "Anthropic (Claude)",
+            "env_var": "ANTHROPIC_API_KEY",
+            "configured": bool(os.environ.get("ANTHROPIC_API_KEY")),
+            "used_for": "Prompt drafting (/prompts/draft_via_api), AI vision audit consultation (/audit/render/.../consult)",
+        },
+    ]
+    future = [
+        {"label": "ElevenLabs", "env_var": "ELEVENLABS_API_KEY",
+         "unlocks": "TTS for narration takes (currently done in ElevenLabs web UI manually)"},
+        {"label": "OpenAI", "env_var": "OPENAI_API_KEY",
+         "unlocks": "GPT Image 2 generation, ChatGPT-side scripting passes"},
+        {"label": "Midjourney", "env_var": "MIDJOURNEY_API_KEY",
+         "unlocks": "Direct MJ generation (currently clipboard-handoff workflow)"},
+        {"label": "fal.ai", "env_var": "FAL_KEY",
+         "unlocks": "FLUX, Seedance, Kling video generation via fal gateway"},
+        {"label": "Replicate", "env_var": "REPLICATE_API_TOKEN",
+         "unlocks": "Open-source model hosting (FLUX, Stable Diffusion, etc.)"},
+    ]
+    return {"known": known, "future": future}
 
 
 @app.get("/audit", response_class=HTMLResponse)
@@ -176,14 +566,17 @@ def audit_grid_view(
     only_unverdicted: bool = False,
     tool: Optional[str] = None,
     section: Optional[str] = None,
+    media_type: Optional[str] = None,
     flagged_only: bool = False,
+    sort_by: str = "created",
     page: int = 1,
     per_page: int = 20,
 ):
-    """Grid view (4x5 thumbnails by default). Click a thumbnail to
-    switch to serial view at that render. Filters compose with
-    audit.list_audit_queue same as serial view; pagination via
-    page (1-indexed) + per_page.
+    """Grid view. Filters compose with audit.list_audit_queue;
+    pagination via page (1-indexed) + per_page.
+
+    media_type: 'image' / 'video' / 'audio' (filename-extension based).
+    sort_by: 'created' (default) or 'rank' (Claude pre-rank score DESC).
     """
     if page < 1:
         page = 1
@@ -192,7 +585,8 @@ def audit_grid_view(
     offset = (page - 1) * per_page
     queue = audit.list_audit_queue(
         only_unverdicted=only_unverdicted, tool_filter=tool,
-        section_filter=section, flagged_only=flagged_only,
+        section_filter=section, media_type_filter=media_type,
+        flagged_only=flagged_only, sort_by=sort_by,
         limit=per_page, offset=offset,
     )
 
@@ -245,9 +639,159 @@ def audit_grid_view(
             "filters": {
                 "only_unverdicted": only_unverdicted, "tool": tool,
                 "section": section, "flagged_only": flagged_only,
+                "media_type": media_type, "sort_by": sort_by,
             },
         },
     )
+
+
+class RankBatchRequest(BaseModel):
+    section: Optional[str] = None
+    media_type: Optional[str] = None
+    only_unverdicted: bool = True
+    only_unranked: bool = True
+    max_renders: int = 60
+    batch_size: int = 6
+
+
+@app.post("/audit/rank-batch")
+def audit_rank_batch_endpoint(body: RankBatchRequest) -> dict[str, Any]:
+    """Score renders with Claude vision (1-10) and persist to assistant_ranks.
+
+    Picks renders matching filters, batches them through claude-opus-4-7,
+    parses scores, writes assistant_ranks rows. Reloads of the audit grid
+    sorted by rank surface the highest-scored renders first.
+    """
+    import json as _json
+    import re
+    import anthropic
+    from datetime import datetime, timezone
+
+    # Pull candidate renders
+    queue = audit.list_audit_queue(
+        only_unverdicted=body.only_unverdicted,
+        section_filter=body.section,
+        media_type_filter=body.media_type or "image",  # only images for v1
+        limit=body.max_renders, offset=0,
+    )
+    candidates = queue["items"]
+    if body.only_unranked:
+        candidates = [c for c in candidates if c.get("rank_score") is None]
+    if not candidates:
+        return {"ranked": 0, "batches": 0, "cost_usd": 0,
+                "skipped_reason": "no candidates match (already ranked or empty)"}
+
+    client = anthropic.Anthropic()
+    audit._ensure_assistant_ranks_table  # access ensures import works
+    total_cost = 0.0
+    ranked = 0
+    batches = 0
+    errors: list[str] = []
+
+    section_label = body.section or "(no section)"
+    system = (
+        "You evaluate AI-generated production renders for a docudrama project "
+        "(EP1: behavioral psychology + attention economy) on a 1-10 hero-strength "
+        "scale. 10 = lock as hero, 8-9 = strong contender, 5-7 = usable but not "
+        "leading, 1-4 = reject. Be calibrated, not generous — most renders should "
+        "land 3-6. For each image, return a JSON object with fields {render_id, "
+        "score, summary} where summary is a single-sentence rationale. "
+        f"Current section context: {section_label}."
+    )
+
+    # Process in batches
+    for i in range(0, len(candidates), body.batch_size):
+        chunk = candidates[i:i + body.batch_size]
+        batches += 1
+        # Build vision messages content
+        content_blocks: list[dict] = [{
+            "type": "text",
+            "text": (
+                f"Score these {len(chunk)} renders. Return a JSON array; one "
+                "object per render in the same order as the images, each:\n"
+                "{\"render_id\": \"...\", \"score\": <1-10>, \"summary\": \"...\"}\n"
+                "Render IDs (in order):\n"
+                + "\n".join(f"- {c['render_id']}  ({c['filename'][:80]})" for c in chunk)
+            ),
+        }]
+        skipped: list[str] = []
+        for c in chunk:
+            try:
+                img_block, _ = assistant_tools.execute_tool(
+                    "see_image", {"render_id": c["render_id"]})
+                if isinstance(img_block, dict) and img_block.get("type") == "image":
+                    content_blocks.append(img_block)
+                else:
+                    skipped.append(c["render_id"])
+            except Exception as e:
+                skipped.append(c["render_id"])
+                errors.append(f"{c['render_id']}: {e}")
+        if len(content_blocks) <= 1:
+            continue  # nothing usable in this batch
+
+        try:
+            response = client.messages.create(
+                model="claude-opus-4-7",
+                max_tokens=2000,
+                system=system,
+                messages=[{"role": "user", "content": content_blocks}],
+            )
+        except anthropic.APIError as e:
+            errors.append(f"batch {batches}: {e}")
+            continue
+
+        usage = response.usage
+        total_cost += llm.compute_cost(
+            response.model,
+            tokens_input=usage.input_tokens,
+            tokens_output=usage.output_tokens,
+            cache_read=getattr(usage, "cache_read_input_tokens", 0) or 0,
+            cache_creation=getattr(usage, "cache_creation_input_tokens", 0) or 0,
+        )
+
+        # Extract JSON array from response text
+        text = "".join(b.text for b in response.content if b.type == "text")
+        # Strip markdown code fences if present
+        match = re.search(r"\[\s*\{.*?\}\s*\]", text, re.DOTALL)
+        if not match:
+            errors.append(f"batch {batches}: no JSON array found in response")
+            continue
+        try:
+            scores = _json.loads(match.group(0))
+        except Exception as e:
+            errors.append(f"batch {batches}: JSON parse failed: {e}")
+            continue
+
+        # Persist
+        now = datetime.now(timezone.utc).isoformat()
+        with db.connect() as conn:
+            audit._ensure_assistant_ranks_table(conn)
+            for s in scores:
+                rid = s.get("render_id")
+                score = s.get("score")
+                summary = s.get("summary", "")
+                if not rid or score is None:
+                    continue
+                try:
+                    score_f = float(score)
+                except (TypeError, ValueError):
+                    continue
+                conn.execute(
+                    "INSERT OR REPLACE INTO assistant_ranks "
+                    "(render_id, score, summary, model, ranked_at) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (rid, score_f, summary, response.model, now),
+                )
+                ranked += 1
+            conn.commit()
+
+    return {
+        "ranked": ranked,
+        "batches": batches,
+        "candidates": len(candidates),
+        "cost_usd": round(total_cost, 6),
+        "errors": errors[:10],
+    }
 
 
 @app.get("/prompts")
@@ -484,6 +1028,88 @@ def api_status_endpoint() -> dict[str, Any]:
             payload["banner"] = f"Rate limited persistently ({recent_rate[0]} times in last hour) — backoff active"
         # Day 13 — cost breakdown
         payload["cost_breakdown"] = dispatcher.cost_breakdown()
+    except (FileNotFoundError, sqlite3.Error) as e:
+        payload["error"] = str(e)
+    return payload
+
+
+@app.get("/homepage_stats")
+def homepage_stats_endpoint() -> dict[str, Any]:
+    """At-a-glance counts + recent audit activity for the homepage.
+    One round-trip vs spreading these across /api_status, /audit/queue,
+    /verdicts, etc. Cheap COUNT(*) queries against indexed columns."""
+    payload: dict[str, Any] = {}
+    try:
+        with db.connect() as conn:
+            conn.row_factory = sqlite3.Row
+
+            payload["stats"] = {
+                "verdicts_total": conn.execute(
+                    "SELECT COUNT(*) FROM verdicts"
+                ).fetchone()[0],
+                "consults_total": conn.execute(
+                    "SELECT COUNT(*) FROM ai_consultations"
+                ).fetchone()[0],
+                "consults_completed": conn.execute(
+                    "SELECT COUNT(*) FROM ai_consultations WHERE status='completed'"
+                ).fetchone()[0],
+                "renders_total": conn.execute(
+                    "SELECT COUNT(*) FROM renders"
+                ).fetchone()[0],
+                "renders_unverdicted": conn.execute(
+                    "SELECT COUNT(*) FROM renders r "
+                    "LEFT JOIN verdicts v ON v.render_id=r.id "
+                    "WHERE v.id IS NULL"
+                ).fetchone()[0],
+                "renders_pre_v1_hero": conn.execute(
+                    "SELECT COUNT(*) FROM renders WHERE hero_status='pre_v1_hero'"
+                ).fetchone()[0],
+                "concepts_active": conn.execute(
+                    "SELECT COUNT(*) FROM concepts WHERE status != 'archived'"
+                ).fetchone()[0],
+                "prompts_total": conn.execute(
+                    "SELECT COUNT(*) FROM prompts"
+                ).fetchone()[0],
+                "prompts_draft": conn.execute(
+                    "SELECT COUNT(*) FROM prompts WHERE status='draft'"
+                ).fetchone()[0],
+                "prompts_awaiting_return": conn.execute(
+                    "SELECT COUNT(*) FROM prompts WHERE status='awaiting_return'"
+                ).fetchone()[0],
+                "attempts_in_flight": conn.execute(
+                    "SELECT COUNT(*) FROM generation_attempts WHERE status='in_flight'"
+                ).fetchone()[0],
+            }
+
+            row = conn.execute(
+                "SELECT v.id, v.render_id, v.verdict, v.audited_by, v.created, "
+                "       r.filename, r.tool "
+                "FROM verdicts v "
+                "LEFT JOIN renders r ON r.id = v.render_id "
+                "ORDER BY v.created DESC LIMIT 1"
+            ).fetchone()
+            payload["last_verdict"] = dict(row) if row else None
+
+            row = conn.execute(
+                "SELECT c.id, c.verdict_id, c.model, c.status, c.cost_usd, "
+                "       c.consulted_at, v.render_id, v.verdict AS verdict_label, "
+                "       r.filename "
+                "FROM ai_consultations c "
+                "LEFT JOIN verdicts v ON v.id = c.verdict_id "
+                "LEFT JOIN renders r ON r.id = v.render_id "
+                "ORDER BY c.consulted_at DESC LIMIT 1"
+            ).fetchone()
+            payload["last_consult"] = dict(row) if row else None
+
+            rows = conn.execute(
+                "SELECT c.id, c.model, c.status, c.cost_usd, c.consulted_at, "
+                "       v.verdict AS verdict_label, r.filename "
+                "FROM ai_consultations c "
+                "LEFT JOIN verdicts v ON v.id = c.verdict_id "
+                "LEFT JOIN renders r ON r.id = v.render_id "
+                "ORDER BY c.consulted_at DESC LIMIT 3"
+            ).fetchall()
+            payload["recent_consults"] = [dict(r) for r in rows]
     except (FileNotFoundError, sqlite3.Error) as e:
         payload["error"] = str(e)
     return payload

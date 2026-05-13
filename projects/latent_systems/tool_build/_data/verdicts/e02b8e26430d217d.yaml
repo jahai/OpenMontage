@@ -1,0 +1,16 @@
+id: e02b8e26430d217d
+render_id: a1e9b7a81079e6d2
+discipline_version: '1.0'
+verdict: hero_zone
+verdict_reasoning: null
+rubric_version: null
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: null
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/e02b8e26430d217d.yaml
+created: '2026-05-07T12:11:48.481152+00:00'

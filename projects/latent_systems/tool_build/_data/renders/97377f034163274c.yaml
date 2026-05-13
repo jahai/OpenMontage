@@ -1,0 +1,10 @@
+id: 97377f034163274c
+discipline_version: pre_v1
+filename: 2026-04-08_voice_memo.mp3
+filepath: projects/latent_systems/ep1/_recordings/voice_memos/2026-04-08_voice_memo.mp3
+canonical_hash: 7ec97662b262cffccfac50540a2f1a69570f29dead3716cc06dbe015ccc901c4
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:51.355534+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 08c2de09629f5430
+discipline_version: pre_v1
+filename: E1_Act2A.mp3
+filepath: projects/latent_systems/ep1/_audio/acts/E1_Act2A.mp3
+canonical_hash: 5691eeb80129cc54bb6d5b6654b47ea5145041c20805c8343609baa30298e32b
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:51.435963+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

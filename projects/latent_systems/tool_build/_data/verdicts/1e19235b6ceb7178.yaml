@@ -1,0 +1,16 @@
+id: 1e19235b6ceb7178
+render_id: 78c7eed6bb7e0bcd
+discipline_version: '1.0'
+verdict: strong
+verdict_reasoning: null
+rubric_version: null
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: dac0ede608bc9e22
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/1e19235b6ceb7178.yaml
+created: '2026-05-08T14:07:40.615379+00:00'

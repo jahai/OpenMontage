@@ -1,0 +1,10 @@
+id: 78c7eed6bb7e0bcd
+discipline_version: pre_v1
+filename: rat_state1_1930s_v1.png
+filepath: projects/latent_systems/shared/h3_reenactment_phase3/anchors/rat_state1_1930s_v1.png
+canonical_hash: f07d028ac592dc1ee52a5ffb2c9b876c6b9d1e64381fe43786c35a34a6198c92
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:42.223352+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

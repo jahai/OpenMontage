@@ -1,0 +1,10 @@
+id: 09d2b52f48fd9ff7
+discipline_version: pre_v1
+filename: the_man_who_designed_that_gesture.mp3
+filepath: projects/latent_systems/ep1/_audio/vo_takes/the_man_who_designed_that_gesture.mp3
+canonical_hash: 8bb83d37021f1c97d2912bea92a549ecf6229f64fe1cd6f5590d295e9aa58923
+tool: audio
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:51.680246+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

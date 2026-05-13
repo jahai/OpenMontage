@@ -1,0 +1,16 @@
+id: 098c788680bc5745
+render_id: c02c1f972f5de3a2
+discipline_version: '1.0'
+verdict: strong
+verdict_reasoning: null
+rubric_version: '1.0'
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: cb84181550a2c09b
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/098c788680bc5745.yaml
+created: '2026-05-09T16:27:42.601222+00:00'

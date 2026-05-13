@@ -1,0 +1,305 @@
+{% extends "_base.html" %}
+{% block title %}{{ section }} · {{ ep_id }} · tool_build{% endblock %}
+
+{% block extra_css %}
+  .breadcrumbs { color: var(--text-muted); font-size: 0.85em; margin-bottom: 0.5em; }
+  .breadcrumbs a { color: var(--text-muted); }
+  .breadcrumbs a:hover { color: var(--accent); }
+
+  .filter-bar {
+    display: flex; gap: 0.5em; margin-bottom: 1em;
+    align-items: center; flex-wrap: wrap;
+  }
+  .filter-bar .chip {
+    padding: 0.3em 0.8em; border-radius: 20px;
+    background: var(--bg-elev-2); border: 1px solid var(--border);
+    cursor: pointer; font-size: 0.85em; color: var(--text-muted);
+  }
+  .filter-bar .chip.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+  .filter-bar .chip:hover { color: var(--text); }
+
+  .asset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.1em;
+  }
+  .asset {
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color 0.15s, transform 0.15s;
+    display: flex; flex-direction: column;
+  }
+  .asset:hover { border-color: var(--accent); }
+  .asset .thumb {
+    aspect-ratio: 16/10;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .asset .thumb img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .asset .thumb .icon-large {
+    font-size: 2.5em; color: var(--text-faint);
+  }
+  .asset .info { padding: 0.7em 0.9em; font-size: 0.92em; }
+  .asset .info .filename {
+    color: var(--text); font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    margin-bottom: 0.25em;
+  }
+  .asset .info .meta {
+    color: var(--text-muted); font-size: 0.88em;
+    display: flex; gap: 0.5em; align-items: center;
+  }
+  .asset .badge {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+    color: white; padding: 3px 8px; border-radius: 4px;
+    font-size: 0.78em; font-weight: 600; text-transform: uppercase;
+  }
+  .asset .audio-player {
+    padding: 0.6em;
+  }
+  .asset .audio-player audio { width: 100%; }
+  .asset .verdict-tag {
+    position: absolute; top: 8px; left: 8px;
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 0.78em; font-weight: 600;
+  }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    z-index: 50; padding: 2em;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal-content {
+    max-width: 90vw; max-height: 90vh;
+    background: var(--bg-elev-1); border-radius: var(--radius);
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .modal-content img { max-width: 100%; max-height: 75vh; display: block; }
+  .modal-bar {
+    padding: 0.8em 1.2em; display: flex; justify-content: space-between;
+    align-items: center; gap: 1em;
+    border-top: 1px solid var(--border);
+  }
+{% endblock %}
+
+{% block content %}
+
+<div class="breadcrumbs">
+  <a href="/">Home</a> ›
+  <a href="/video/{{ ep_id }}">EP1</a> ›
+  <span>{{ section }}</span>
+</div>
+
+<h1>Section {{ section }}</h1>
+<p class="page-subtitle" id="section-subtitle">Loading…</p>
+
+<div class="filter-bar" id="filter-bar">
+  <span class="muted small">Filter:</span>
+  <button class="chip active" data-filter="all">All</button>
+  <button class="chip" data-filter="image">Images</button>
+  <button class="chip" data-filter="video">Video</button>
+  <button class="chip" data-filter="audio">Audio</button>
+  <button class="chip" data-filter="verdicted">Verdicted</button>
+  <button class="chip" data-filter="unverdicted">Unverdicted</button>
+  <span style="flex:1;"></span>
+  <a class="btn" href="/audit/grid?section={{ section }}&only_unverdicted=true">Open in audit grid →</a>
+</div>
+
+<h2 class="section-title">Assets</h2>
+<div id="asset-grid" class="asset-grid">
+  <div class="muted small">Loading assets…</div>
+</div>
+
+<h2 class="section-title">Recent verdicts</h2>
+<div class="panel" id="verdicts-panel">Loading…</div>
+
+<!-- Lightbox modal -->
+<div class="modal-backdrop" id="modal" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div id="modal-body"></div>
+    <div class="modal-bar">
+      <div class="mono small" id="modal-name"></div>
+      <button class="ghost" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EP_ID = "{{ ep_id }}";
+const SECTION = "{{ section }}";
+
+let allAssets = [];
+let verdictedRenderIds = new Set();
+let activeFilter = 'all';
+
+const IMG_EXT = /\.(png|jpg|jpeg|webp|gif|tif|tiff)$/i;
+const VID_EXT = /\.(mp4|mov|webm|mkv|avi)$/i;
+const AUD_EXT = /\.(mp3|wav|m4a|ogg|flac|aac)$/i;
+
+function classify(filename) {
+  if (IMG_EXT.test(filename || '')) return 'image';
+  if (VID_EXT.test(filename || '')) return 'video';
+  if (AUD_EXT.test(filename || '')) return 'audio';
+  return 'other';
+}
+
+async function loadSection() {
+  const r = await fetch(`/video/${EP_ID}/section/${encodeURIComponent(SECTION)}/data`);
+  const data = await r.json();
+  allAssets = data.renders || [];
+  verdictedRenderIds = new Set((data.counts.verdicted_render_ids || []));
+  document.getElementById('section-subtitle').textContent =
+    `${data.counts.renders} renders · ${data.counts.verdicts} verdicts captured`;
+  renderAssets();
+  renderVerdicts(data.verdicts || []);
+}
+
+function renderAssets() {
+  const grid = document.getElementById('asset-grid');
+  let items = allAssets;
+  if (activeFilter === 'image') items = items.filter(r => classify(r.filename) === 'image');
+  else if (activeFilter === 'video') items = items.filter(r => classify(r.filename) === 'video');
+  else if (activeFilter === 'audio') items = items.filter(r => classify(r.filename) === 'audio');
+  else if (activeFilter === 'verdicted') items = items.filter(r => verdictedRenderIds.has(r.id));
+  else if (activeFilter === 'unverdicted') items = items.filter(r => !verdictedRenderIds.has(r.id));
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="muted small">No assets match this filter.</div>`;
+    return;
+  }
+
+  grid.innerHTML = items.slice(0, 240).map(r => {
+    const kind = classify(r.filename);
+    const isVerdicted = verdictedRenderIds.has(r.id);
+    const verdictTag = isVerdicted
+      ? `<span class="verdict-tag badge-success" style="background:rgba(52,211,153,0.85);color:#022c22;">verdicted</span>`
+      : '';
+    const tool = r.tool ? `<span class="badge">${escapeHtml(r.tool)}</span>` : '';
+
+    if (kind === 'image') {
+      return `
+        <div class="asset" onclick="openModal('${r.id}', '${escapeHtml(r.filename || '')}')">
+          <div class="thumb">
+            <img src="/audit/thumbnail/${r.id}" loading="lazy" alt="${escapeHtml(r.filename || '')}"
+                 onerror="this.parentElement.innerHTML='<div class=icon-large>⊠</div>'">
+            ${verdictTag}
+            ${tool}
+          </div>
+          <div class="info">
+            <div class="filename" title="${escapeHtml(r.filename || '')}">${escapeHtml(r.filename || '')}</div>
+            <div class="meta">${fmtDate(r.created)}</div>
+          </div>
+        </div>`;
+    }
+    if (kind === 'video') {
+      return `
+        <div class="asset">
+          <div class="thumb" style="background:#000;">
+            <video src="/audit/render/${r.id}/file" preload="metadata" muted controls
+                   style="width:100%;height:100%;object-fit:cover;"></video>
+            ${verdictTag}
+            ${tool}
+          </div>
+          <div class="info">
+            <div class="filename" title="${escapeHtml(r.filename || '')}">${escapeHtml(r.filename || '')}</div>
+            <div class="meta">${fmtDate(r.created)}</div>
+          </div>
+        </div>`;
+    }
+    if (kind === 'audio') {
+      return `
+        <div class="asset">
+          <div class="thumb" style="aspect-ratio:auto;padding:1.2em 0.7em 0.4em;display:flex;flex-direction:column;justify-content:flex-start;">
+            <div class="icon-large" style="font-size:1.6em;">♪</div>
+            ${verdictTag}
+            ${tool}
+          </div>
+          <div class="audio-player">
+            <audio src="/audit/render/${r.id}/file" preload="metadata" controls></audio>
+          </div>
+          <div class="info">
+            <div class="filename" title="${escapeHtml(r.filename || '')}">${escapeHtml(r.filename || '')}</div>
+            <div class="meta">${fmtDate(r.created)}</div>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="asset">
+        <div class="thumb">
+          <div class="icon-large">▣</div>
+          ${verdictTag}
+          ${tool}
+        </div>
+        <div class="info">
+          <div class="filename" title="${escapeHtml(r.filename || '')}">${escapeHtml(r.filename || '')}</div>
+          <div class="meta">${fmtDate(r.created)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (items.length > 240) {
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="muted small" style="grid-column:1/-1;text-align:center;padding:1em;">Showing 240 of ${items.length}. <a href="/audit/grid?section=${encodeURIComponent(SECTION)}&only_unverdicted=true">Open audit grid for full set →</a></div>`);
+  }
+}
+
+function renderVerdicts(verdicts) {
+  const panel = document.getElementById('verdicts-panel');
+  if (!verdicts.length) {
+    panel.innerHTML = '<div class="muted small">No verdicts on this section yet.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>When</th><th>Verdict</th><th>By</th><th>Render</th></tr></thead><tbody>';
+  for (const v of verdicts) {
+    html += `
+      <tr>
+        <td class="small muted">${fmtDate(v.created)}</td>
+        <td><span class="badge badge-warn">${escapeHtml(v.verdict)}</span></td>
+        <td class="small">${escapeHtml(v.audited_by)}</td>
+        <td class="mono small">${escapeHtml((v.filename || '').substring(0, 70))}</td>
+      </tr>`;
+  }
+  html += '</tbody></table>';
+  panel.innerHTML = html;
+}
+
+// Filter chips
+document.getElementById('filter-bar').addEventListener('click', (e) => {
+  if (e.target.matches('.chip[data-filter]')) {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    activeFilter = e.target.dataset.filter;
+    renderAssets();
+  }
+});
+
+// Lightbox
+function openModal(renderId, filename) {
+  document.getElementById('modal-body').innerHTML =
+    `<img src="/audit/render/${renderId}/file" alt="${escapeHtml(filename)}">`;
+  document.getElementById('modal-name').textContent = filename;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e) {
+  if (e && e.target.id !== 'modal' && !e.target.closest('.modal-bar')) return;
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('modal-body').innerHTML = '';
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+loadSection();
+</script>
+{% endblock %}

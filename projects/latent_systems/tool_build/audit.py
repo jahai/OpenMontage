@@ -288,6 +288,7 @@ def get_render_detail(render_id: str) -> Optional[dict]:
 
         # Concept (joined via prompts.concept_id when prompt_id is set).
         record["concept"] = None
+        record["prompt"] = None
         if record["prompt_id"]:
             crow = conn.execute(
                 """
@@ -302,6 +303,24 @@ def get_render_detail(render_id: str) -> Optional[dict]:
                     "id": crow[0], "name": crow[1], "ep": crow[2],
                     "section": crow[3], "subject": crow[4],
                     "register": crow[5], "status": crow[6],
+                }
+            # Prompt metadata from db; full text from YAML sidecar.
+            prow = conn.execute(
+                "SELECT id, tool, status, drafted_by, text_preview, "
+                "       yaml_path, created "
+                "FROM prompts WHERE id = ?",
+                (record["prompt_id"],),
+            ).fetchone()
+            if prow:
+                # Resolve full text from the canonical YAML sidecar
+                # (prompts.text_preview holds only the first ~200 chars).
+                import dispatcher as _dispatcher  # late import: cycle-safe
+                full_text = _dispatcher.get_prompt_text(prow[0]) or prow[4] or ""
+                record["prompt"] = {
+                    "id": prow[0], "text": full_text,
+                    "text_preview": prow[4], "tool": prow[1],
+                    "status": prow[2], "drafted_by": prow[3],
+                    "yaml_path": prow[5], "created": prow[6],
                 }
 
         # Latest non-superseded verdict (a verdict V is superseded if
@@ -555,13 +574,53 @@ def update_verdict_flags(
 # Audit queue
 # ----------------------------------------------------------------------
 
+# Media-type extension groups for the audit queue's media_type filter.
+# Filenames are classified by extension because walker.tool tracks the
+# generator (mj, kling, gpt_image_2, etc.), not the medium.
+MEDIA_TYPE_EXTS = {
+    "image": (".png", ".jpg", ".jpeg", ".webp", ".gif", ".tif", ".tiff"),
+    "video": (".mp4", ".mov", ".webm", ".mkv", ".avi"),
+    "audio": (".mp3", ".wav", ".m4a", ".ogg", ".flac", ".aac"),
+}
+
+
+def _media_type_where(media_type: str) -> tuple[str, list[str]]:
+    """SQL fragment + params for filename-extension based media filter."""
+    exts = MEDIA_TYPE_EXTS.get(media_type)
+    if not exts:
+        return "", []
+    clauses = ["LOWER(r.filename) LIKE ?" for _ in exts]
+    return "(" + " OR ".join(clauses) + ")", [f"%{e}" for e in exts]
+
+
+def _ensure_assistant_ranks_table(conn) -> None:
+    """Create assistant_ranks sidecar if missing.
+
+    Tech debt: this is CREATE-IF-NOT-EXISTS rather than an Alembic migration.
+    Folds into Migration 0004 when Phase 3 Wave 1 lands; for now it keeps
+    the boundary minimal — the table is purely additive and bypasses the
+    schema_version contract (caveat: schema_version stays 0003)."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assistant_ranks (
+            render_id      TEXT PRIMARY KEY,
+            score          REAL NOT NULL,
+            summary        TEXT,
+            model          TEXT,
+            ranked_at      TEXT NOT NULL,
+            FOREIGN KEY (render_id) REFERENCES renders(id) ON DELETE CASCADE
+        )
+    """)
+
+
 def list_audit_queue(
     *,
     only_unverdicted: bool = False,
     tool_filter: Optional[str] = None,
     section_filter: Optional[str] = None,
+    media_type_filter: Optional[str] = None,
     flagged_only: bool = False,
     needs_review_paths: bool = False,
+    sort_by: str = "created",
     limit: int = 50,
     offset: int = 0,
 ) -> dict:
@@ -570,46 +629,84 @@ def list_audit_queue(
       - only_unverdicted: renders with no verdict at all
       - tool_filter: exact match on tool column
       - section_filter: filepath substring match (e.g. 'h5_slot_machine')
+      - media_type_filter: 'image' / 'video' / 'audio' (by filename extension)
       - flagged_only: renders with at least one needs_second_look=1 verdict
       - needs_review_paths: renders under _unclassified/ or _inbox/
+      - sort_by: 'created' (default, newest first) or 'rank' (Claude score DESC)
 
-    Returns {total, limit, offset, items: [...]}. Default order: newest first.
+    Items include `rank_score` and `rank_summary` when an assistant_ranks row
+    exists for the render; null otherwise.
     """
     where: list[str] = []
     params: list[Any] = []
     if only_unverdicted:
-        # Any verdict — even superseded — counts as "verdicted" for the
-        # queue. Re-audit happens via supersedes_verdict_id mechanism;
-        # this filter is for "never been audited at all."
-        where.append("id NOT IN (SELECT DISTINCT render_id FROM verdicts)")
+        where.append(
+            "r.id NOT IN (SELECT DISTINCT render_id FROM verdicts)"
+        )
     if tool_filter is not None:
-        where.append("tool = ?")
+        where.append("r.tool = ?")
         params.append(tool_filter)
     if section_filter is not None:
-        where.append("filepath LIKE ?")
-        params.append(f"%/{section_filter}/%")
+        # Section can be matched in multiple ways:
+        #  - filepath substring (e.g. h5_slot_machine in folder name)
+        #  - filename prefix (e.g. H4_*, K1_*)
+        #  - filename infix (e.g. EP1_H4_*, *_H4_*)
+        #  - §N normalized form → match section_N_ in filename
+        sec = section_filter.lstrip("§")
+        clauses = [
+            "r.filepath LIKE ?",
+            "LOWER(r.filename) LIKE ?",
+            "LOWER(r.filename) LIKE ?",
+            "LOWER(r.filename) LIKE ?",
+        ]
+        params.extend([
+            f"%/{section_filter}/%",
+            f"{sec.lower()}_%",
+            f"%_{sec.lower()}_%",
+            f"%section_{sec.lower()}_%",
+        ])
+        where.append("(" + " OR ".join(clauses) + ")")
+    if media_type_filter:
+        clause, mp = _media_type_where(media_type_filter)
+        if clause:
+            where.append(clause)
+            params.extend(mp)
     if flagged_only:
         where.append(
-            "id IN (SELECT DISTINCT render_id FROM verdicts "
+            "r.id IN (SELECT DISTINCT render_id FROM verdicts "
             "WHERE flags_needs_second_look = 1)"
         )
     if needs_review_paths:
         where.append(
-            "(filepath LIKE '%_unclassified%' OR filepath LIKE '%_inbox%')"
+            "(r.filepath LIKE '%_unclassified%' "
+            "OR r.filepath LIKE '%_inbox%')"
         )
     where_clause = "WHERE " + " AND ".join(where) if where else ""
 
+    if sort_by == "rank":
+        # Nulls last so unranked items sink to the bottom when sorting by score
+        order_clause = (
+            "ORDER BY (ar.score IS NULL), ar.score DESC, r.created DESC"
+        )
+    else:
+        order_clause = "ORDER BY r.created DESC"
+
     conn = db.connect()
     try:
+        _ensure_assistant_ranks_table(conn)
         total = conn.execute(
-            f"SELECT COUNT(*) FROM renders {where_clause}", tuple(params)
+            f"SELECT COUNT(*) FROM renders r {where_clause}",
+            tuple(params),
         ).fetchone()[0]
         rows = conn.execute(
             f"""
-            SELECT id, filename, filepath, tool, variant, hero_status,
-                   discipline_version, created
-            FROM renders {where_clause}
-            ORDER BY created DESC LIMIT ? OFFSET ?
+            SELECT r.id, r.filename, r.filepath, r.tool, r.variant,
+                   r.hero_status, r.discipline_version, r.created,
+                   ar.score, ar.summary
+            FROM renders r
+            LEFT JOIN assistant_ranks ar ON ar.render_id = r.id
+            {where_clause}
+            {order_clause} LIMIT ? OFFSET ?
             """,
             tuple(params) + (limit, offset),
         ).fetchall()
@@ -623,6 +720,7 @@ def list_audit_queue(
                 "render_id": r[0], "filename": r[1], "filepath": r[2],
                 "tool": r[3], "variant": r[4], "hero_status": r[5],
                 "discipline_version": r[6], "created": r[7],
+                "rank_score": r[8], "rank_summary": r[9],
             }
             for r in rows
         ],

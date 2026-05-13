@@ -1,0 +1,44 @@
+id: 67a7cf1cc4e4a8c6
+verdict_id: 098c788680bc5745
+discipline_version: '1.0'
+provider: anthropic
+model: claude-opus-4-7
+consulted_at: '2026-05-09T16:27:55.575537+00:00'
+status: completed
+cost_usd: 0.02675
+used_downscale: true
+raw_response: "{\n  \"verdict_inference\": \"strong\",\n  \"criteria_match\": {\n\
+  \    \"Documentary integrity\": \"pass\",\n    \"Shorts effectiveness\": \"partial\"\
+  ,\n    \"Channel recognition\": \"pass\",\n    \"Series continuity\": \"pass\",\n\
+  \    \"Production feasibility\": \"pass\",\n    \"Sonic-being preservation\": \"\
+  pass\"\n  },\n  \"key_observations\": [\n    \"Sepia-toned single-source lighting\
+  \ reads as archival documentation, not movie-trailer drift\",\n    \"Skinner-box-adjacent\
+  \ apparatus with white rat as subject lands in schematic_apparatus direction cleanly\"\
+  ,\n    \"16:9 framing places rat slightly off-center; 9:16 crop would lose right-side\
+  \ instrumentation context\",\n    \"Calm-observational register holds — apparatus\
+  \ dominates, subject is small and embedded, not performed\",\n    \"Period-accurate\
+  \ wood-paneled lab and brass instrumentation reads as channel-level vocabulary reusable\
+  \ across episodes\"\n  ]\n}"
+parsed:
+  verdict_inference: strong
+  criteria_match:
+    Documentary integrity: pass
+    Shorts effectiveness: partial
+    Channel recognition: pass
+    Series continuity: pass
+    Production feasibility: pass
+    Sonic-being preservation: pass
+  key_observations:
+  - Sepia-toned single-source lighting reads as archival documentation, not movie-trailer
+    drift
+  - Skinner-box-adjacent apparatus with white rat as subject lands in schematic_apparatus
+    direction cleanly
+  - 16:9 framing places rat slightly off-center; 9:16 crop would lose right-side instrumentation
+    context
+  - Calm-observational register holds — apparatus dominates, subject is small and
+    embedded, not performed
+  - Period-accurate wood-paneled lab and brass instrumentation reads as channel-level
+    vocabulary reusable across episodes
+failure_reason: null
+api_call_id: call_3c696559f18f4eaf
+yaml_path: projects/latent_systems/tool_build/_data/ai_consultations/67a7cf1cc4e4a8c6.yaml

@@ -1,0 +1,10 @@
+id: 078bbc696acf8ca9
+discipline_version: pre_v1
+filename: pov_phone_already_caught_1080.mp4
+filepath: projects/latent_systems/ep1/cold_open/sources/pov_phone_already_caught_1080.mp4
+canonical_hash: 620187860e0ae5cdfb5b88f088d35329aca604870ba4efab0aa4b50e00aebdae
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:50.782403+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

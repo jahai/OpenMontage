@@ -1,0 +1,16 @@
+id: 410899b9ef4575c7
+render_id: 4a75295dea4c23fa
+discipline_version: '1.0'
+verdict: reject
+verdict_reasoning: null
+rubric_version: null
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: null
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/410899b9ef4575c7.yaml
+created: '2026-05-09T10:31:29.147030+00:00'

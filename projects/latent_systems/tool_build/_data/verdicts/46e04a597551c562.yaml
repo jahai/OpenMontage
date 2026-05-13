@@ -1,0 +1,16 @@
+id: 46e04a597551c562
+render_id: 34db51db61c34c9e
+discipline_version: '1.0'
+verdict: hero_zone
+verdict_reasoning: null
+rubric_version: '1.0'
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: 013a9cf917cbd5da
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/46e04a597551c562.yaml
+created: '2026-05-09T20:31:18.968438+00:00'

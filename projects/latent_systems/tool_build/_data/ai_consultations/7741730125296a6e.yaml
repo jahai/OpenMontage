@@ -1,0 +1,44 @@
+id: 7741730125296a6e
+verdict_id: 1e19235b6ceb7178
+discipline_version: '1.0'
+provider: anthropic
+model: claude-opus-4-7
+consulted_at: '2026-05-08T15:39:43.952560+00:00'
+status: completed
+cost_usd: 0.02584
+used_downscale: true
+raw_response: "{\n  \"verdict_inference\": \"weak\",\n  \"criteria_match\": {\n  \
+  \  \"Documentary integrity\": \"partial\",\n    \"Shorts effectiveness\": \"fail\"\
+  ,\n    \"Channel recognition\": \"partial\",\n    \"Series continuity\": \"partial\"\
+  ,\n    \"Production feasibility\": \"partial\",\n    \"Sonic-being preservation\"\
+  : \"pass\"\n  },\n  \"key_observations\": [\n    \"Sepia archival register reads\
+  \ observational but tilts toward period-pastiche rather than calm-documentary\"\
+  ,\n    \"16:9 composition with apparatus spanning horizontally — 9:16 crop would\
+  \ sever the chamber and lose the rat-apparatus relationship\",\n    \"Hot pendant\
+  \ lamp creates a single dramatic light source that drifts toward performative chiaroscuro\"\
+  ,\n    \"Episode-specific Skinner-box iconography pins this to behaviorism subject;\
+  \ limits cross-EP reuse\",\n    \"Subject (rat) small in frame and low-contrast\
+  \ against grid floor — fails thumbnail-scale legibility\"\n  ]\n}"
+parsed:
+  verdict_inference: weak
+  criteria_match:
+    Documentary integrity: partial
+    Shorts effectiveness: fail
+    Channel recognition: partial
+    Series continuity: partial
+    Production feasibility: partial
+    Sonic-being preservation: pass
+  key_observations:
+  - Sepia archival register reads observational but tilts toward period-pastiche rather
+    than calm-documentary
+  - 16:9 composition with apparatus spanning horizontally — 9:16 crop would sever
+    the chamber and lose the rat-apparatus relationship
+  - Hot pendant lamp creates a single dramatic light source that drifts toward performative
+    chiaroscuro
+  - Episode-specific Skinner-box iconography pins this to behaviorism subject; limits
+    cross-EP reuse
+  - Subject (rat) small in frame and low-contrast against grid floor — fails thumbnail-scale
+    legibility
+failure_reason: null
+api_call_id: call_96097e0c58f44504
+yaml_path: projects/latent_systems/tool_build/_data/ai_consultations/7741730125296a6e.yaml

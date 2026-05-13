@@ -79,9 +79,14 @@ sqlite3 projects/latent_systems/tool_build/_data/state.db \
   "SELECT value FROM app_meta WHERE key='schema_version'"
 # Expected: 0003 currently. Phase 3 Wave 1 lands 0004.
 
-# 4. Test baseline
-pytest projects/latent_systems/tool_build/tests/ -x --no-header -q | tail -20
-# Expected: 16 suites green at Phase 2 close.
+# 4. Test baseline (scripts, NOT pytest — see banked_items.md "Test runner")
+for f in projects/latent_systems/tool_build/tests/test_*.py; do
+  python "$f" >/dev/null 2>&1 && echo "PASS: $(basename $f)" || echo "FAIL: $(basename $f)"
+done
+# Expected: 16 PASS lines. Tests are standalone scripts (main() + cleanup()
+# bookends, write to real state.db with prefix-keyed cleanup). pytest
+# discovery skips main()/cleanup() → pollutes state.db with orphan rows
+# that cause UNIQUE constraint failures on retry. Don't run pytest here.
 
 # 5. Server status (informational; don't restart)
 python projects/latent_systems/tool_build/serve.py --status

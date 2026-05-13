@@ -1,0 +1,42 @@
+id: e9969034b45d3e0b
+verdict_id: 46e04a597551c562
+discipline_version: '1.0'
+provider: anthropic
+model: claude-opus-4-7
+consulted_at: '2026-05-09T20:31:35.455063+00:00'
+status: completed
+cost_usd: 0.025065
+used_downscale: true
+raw_response: '{"verdict_inference":"strong","criteria_match":{"Documentary integrity":"pass","Shorts
+  effectiveness":"partial","Channel recognition":"pass","Series continuity":"partial","Production
+  feasibility":"pass","Sonic-being preservation":"pass"},"key_observations":["Sepia-toned
+  archival register reads as calm-observational, aligned with H#3 Skinner box hero
+  shot canon","Single-source pendant lighting and restrained palette avoid trailer-grade
+  drift","16:9 framing with apparatus extending across full width — 9:16 crop would
+  lose lateral instrumentation","White rat + glass chamber composition centers subject-apparatus
+  relationship clearly","Period-specific apparatus detail ties to behavioral-conditioning
+  episode subject; reusability across EP1-EP10 limited","Still subject and quiet frame
+  subordinate cleanly to narration, silent-by-default friendly"]}'
+parsed:
+  verdict_inference: strong
+  criteria_match:
+    Documentary integrity: pass
+    Shorts effectiveness: partial
+    Channel recognition: pass
+    Series continuity: partial
+    Production feasibility: pass
+    Sonic-being preservation: pass
+  key_observations:
+  - Sepia-toned archival register reads as calm-observational, aligned with H#3 Skinner
+    box hero shot canon
+  - Single-source pendant lighting and restrained palette avoid trailer-grade drift
+  - 16:9 framing with apparatus extending across full width — 9:16 crop would lose
+    lateral instrumentation
+  - White rat + glass chamber composition centers subject-apparatus relationship clearly
+  - Period-specific apparatus detail ties to behavioral-conditioning episode subject;
+    reusability across EP1-EP10 limited
+  - Still subject and quiet frame subordinate cleanly to narration, silent-by-default
+    friendly
+failure_reason: null
+api_call_id: call_5f5d0dc2363449f2
+yaml_path: projects/latent_systems/tool_build/_data/ai_consultations/e9969034b45d3e0b.yaml

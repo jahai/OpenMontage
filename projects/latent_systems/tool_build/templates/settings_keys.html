@@ -1,0 +1,65 @@
+{% extends "_base.html" %}
+{% block title %}API keys · tool_build{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:0.5em;">
+  <a href="/" class="muted small">← Home</a>
+</div>
+
+<h1>API keys</h1>
+<p class="page-subtitle">Configure the AI tools the workspace can call. Keys are read from environment variables loaded at server start.</p>
+
+<div class="banner banner-info" style="margin-top:1em;">
+  <strong>Read-only for now.</strong> v1 surfaces which keys are configured and what each tool unlocks. Adding/editing keys via the UI will write to <code>.env</code> and require a server restart — coming next iteration. For now, edit <code>.env</code> directly and run <code>python serve.py --stop &amp;&amp; python serve.py</code>.
+</div>
+
+<h2 class="section-title">Configured</h2>
+<div id="keys-list" class="panel">Loading…</div>
+
+<h2 class="section-title">Available integrations (not yet wired)</h2>
+<div class="panel">
+  <p class="muted small">These tools have known APIs but aren't yet wired into tool_build. Adding them is a per-tool integration task (provider client + cost tracking + endpoint).</p>
+  <div id="future-list" style="margin-top:1em;"></div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadKeys() {
+  const r = await fetch('/settings/keys/status');
+  const data = await r.json();
+  const known = data.known || [];
+  const future = data.future || [];
+
+  let html = '<table><thead><tr><th>Tool</th><th>Env var</th><th>Status</th><th>Used for</th></tr></thead><tbody>';
+  for (const k of known) {
+    const badge = k.configured
+      ? '<span class="badge badge-success">configured</span>'
+      : '<span class="badge badge-error">missing</span>';
+    html += `
+      <tr>
+        <td><strong>${escapeHtml(k.label)}</strong></td>
+        <td class="mono">${escapeHtml(k.env_var)}</td>
+        <td>${badge}</td>
+        <td class="muted">${escapeHtml(k.used_for)}</td>
+      </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('keys-list').innerHTML = html;
+
+  let fhtml = '<table><thead><tr><th>Tool</th><th>Env var (when wired)</th><th>What it would unlock</th></tr></thead><tbody>';
+  for (const f of future) {
+    fhtml += `
+      <tr>
+        <td><strong>${escapeHtml(f.label)}</strong></td>
+        <td class="mono muted">${escapeHtml(f.env_var)}</td>
+        <td class="muted">${escapeHtml(f.unlocks)}</td>
+      </tr>`;
+  }
+  fhtml += '</tbody></table>';
+  document.getElementById('future-list').innerHTML = fhtml;
+}
+loadKeys();
+</script>
+{% endblock %}

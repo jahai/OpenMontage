@@ -1,0 +1,10 @@
+id: 71cd955b2bd5999e
+discipline_version: pre_v1
+filename: state1.mp4
+filepath: projects/latent_systems/ep1/_strays/state1.mp4
+canonical_hash: 027bbb4128b155ed48c5df118061283058aca941ec38928c8175b72282749b15
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:46.054160+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

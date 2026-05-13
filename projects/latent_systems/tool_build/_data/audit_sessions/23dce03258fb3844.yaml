@@ -1,0 +1,13 @@
+id: 23dce03258fb3844
+started: '2026-05-08T13:33:52.789502+00:00'
+ended: null
+rubric_version: '1.0'
+discipline_version: '1.0'
+mode: deep_eval
+scope_concept_id: null
+scope_section: null
+scope_filter: null
+total_consultations: 0
+total_cost_usd: 0.0
+notes: null
+yaml_path: projects/latent_systems/tool_build/_data/audit_sessions/23dce03258fb3844.yaml

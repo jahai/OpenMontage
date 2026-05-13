@@ -1,0 +1,16 @@
+id: afc0d0d9fe81c501
+render_id: db4c44078d277540
+discipline_version: '1.0'
+verdict: reject
+verdict_reasoning: null
+rubric_version: '1.0'
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: 5bf0c1413920ce50
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/afc0d0d9fe81c501.yaml
+created: '2026-05-09T10:34:27.890807+00:00'

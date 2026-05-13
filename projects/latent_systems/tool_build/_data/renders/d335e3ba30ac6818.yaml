@@ -1,0 +1,10 @@
+id: d335e3ba30ac6818
+discipline_version: pre_v1
+filename: LS_iphone_notification_16x9.mp4
+filepath: projects/latent_systems/ep1/cold_open/sources/LS_iphone_notification_16x9.mp4
+canonical_hash: edbb2555dfb9e139c55d972a56ca0a0a3b22b2d889d8ae764dd83a4163517e97
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:50.700621+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

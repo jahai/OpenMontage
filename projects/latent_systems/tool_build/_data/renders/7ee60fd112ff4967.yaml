@@ -1,0 +1,10 @@
+id: 7ee60fd112ff4967
+discipline_version: pre_v1
+filename: LS_pov_notification_overlay.png
+filepath: projects/latent_systems/ep1/cold_open/sources/LS_pov_notification_overlay.png
+canonical_hash: 5e1f2b55bbdfc98ba4212678397eb46224c1e9512bf748d4849be7bb34299c11
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:45.876760+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,10 @@
+id: 91be088c4225c76d
+discipline_version: pre_v1
+filename: v4_01_phone_dark_room_EXTENDED.mp4
+filepath: projects/latent_systems/ep1/cold_open/sources/v4_01_phone_dark_room_EXTENDED.mp4
+canonical_hash: fd0a8649462b216f51a0a80852eaf4115412bd2a64d62780111d34a2c7907950
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:50.843902+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

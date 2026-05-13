@@ -1,0 +1,10 @@
+id: 85593b3c0e05eed6
+discipline_version: pre_v1
+filename: Phone_Screen_Lights_Up_with_Notification.mp4
+filepath: projects/latent_systems/ep1/cold_open/sources/Phone_Screen_Lights_Up_with_Notification.mp4
+canonical_hash: 6f82a521db741a91bf5692bb67b785e6fbb9e57f80fcefda8d212c26308a4662
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:50.742490+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -83,6 +83,63 @@
     bottom: auto;
     top: calc(100% + 6px);
   }
+
+  /* Media-type tabs */
+  .media-tabs { background: #fff; border-bottom: 1px solid #d1d5db;
+                padding: 0.5em 1em; display: flex; gap: 0.4em; align-items: center;
+                font-size: 0.9em; }
+  .media-tab { padding: 0.4em 1em; border-radius: 0.3em;
+               background: #f3f4f6; color: #4b5563;
+               text-decoration: none; border: 1px solid transparent;
+               transition: background 0.1s, border-color 0.1s; }
+  .media-tab:hover { background: #e5e7eb; }
+  .media-tab.active { background: #1f2937; color: white; border-color: #1f2937; }
+  .media-tab .count { opacity: 0.7; font-size: 0.85em; margin-left: 0.4em; }
+  .rank-btn { margin-left: auto;
+              padding: 0.45em 1em; border-radius: 0.3em; background: #6366f1;
+              color: white; font-weight: 500; cursor: pointer;
+              border: none; font-size: 0.9em; }
+  .rank-btn:hover { background: #4f46e5; }
+  .rank-btn:disabled { background: #9ca3af; cursor: wait; }
+  .sort-toggle { padding: 0.4em 0.8em; border-radius: 0.3em;
+                 background: #f3f4f6; color: #4b5563; text-decoration: none;
+                 border: 1px solid #d1d5db; font-size: 0.85em; }
+  .sort-toggle.active { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+  .rank-score { position: absolute; bottom: 0.4em; left: 0.4em;
+                background: rgba(99,102,241,0.95); color: white;
+                padding: 0.15em 0.55em; border-radius: 0.25em;
+                font-size: 0.8em; font-weight: 700;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  .rank-score.high { background: rgba(5,150,105,0.95); }   /* >=8 */
+  .rank-score.mid { background: rgba(217,119,6,0.95); }    /* 5-7 */
+  .rank-score.low { background: rgba(185,28,28,0.95); }    /* <5 */
+  .rank-summary { margin-top: 0.15em; font-size: 0.7em; opacity: 0.85;
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #rank-status { padding: 0.6em 1em; background: #fef3c7; color: #92400e;
+                 border-bottom: 1px solid #fbbf24; font-size: 0.88em;
+                 display: none; }
+  #rank-status.visible { display: block; }
+  #rank-status.error { background: #fee2e2; color: #991b1b; border-color: #f87171; }
+  #rank-status.success { background: #d1fae5; color: #065f46; border-color: #34d399; }
+
+  /* Media tiles (video / audio) — not anchors, native controls inside */
+  .media-tile { display: block; cursor: default; }
+  .media-tile:hover { transform: none; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+  .media-tile .tile-media { display: block; }
+  .tile-audio-bg { width: 100%; height: 100%;
+                   background: linear-gradient(135deg, #1e293b, #0f172a);
+                   display: flex; flex-direction: column; align-items: center;
+                   justify-content: center; gap: 0.6em; padding: 0.5em; }
+  .audio-icon { color: #6366f1; font-size: 3em; line-height: 1; }
+  .tile-open { position: absolute; bottom: 0.4em; right: 0.4em;
+               background: rgba(99,102,241,0.95); color: white;
+               width: 28px; height: 28px; border-radius: 50%;
+               display: flex; align-items: center; justify-content: center;
+               text-decoration: none; font-weight: 600; font-size: 0.95em;
+               z-index: 5; box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+               transition: background 0.15s; }
+  .tile-open:hover { background: rgba(79,70,229,1); }
 </style>
 </head>
 <body>
@@ -107,9 +164,57 @@
        data-tooltip-pos="below" data-tooltip="Pending downloads from your watcher — pick a destination per file and ingest into the audit pipeline.">inbox</a>
     <a href="/audit{% if session_id %}?session_id={{ session_id }}{% endif %}"
        data-tooltip-pos="below" data-tooltip="Serial view — one render at a time, with verdict + consult + flag controls.">serial view</a>
-    <a href="/" data-tooltip-pos="below" data-tooltip="Back to prompt drafting (concept → prompt → dispatch).">← prompt drafting</a>
+    <a href="/" data-tooltip-pos="below" data-tooltip="Back to home / project picker.">← home</a>
   </span>
 </header>
+
+<div class="media-tabs">
+  {% set qs_base = [] %}
+  {% if session_id %}{% set _ = qs_base.append('session_id=' + session_id) %}{% endif %}
+  {% if filters.only_unverdicted %}{% set _ = qs_base.append('only_unverdicted=1') %}{% endif %}
+  {% if filters.flagged_only %}{% set _ = qs_base.append('flagged_only=1') %}{% endif %}
+  {% if filters.tool %}{% set _ = qs_base.append('tool=' + filters.tool) %}{% endif %}
+  {% if filters.section %}{% set _ = qs_base.append('section=' + filters.section) %}{% endif %}
+  {% if filters.sort_by and filters.sort_by != 'created' %}{% set _ = qs_base.append('sort_by=' + filters.sort_by) %}{% endif %}
+  {% set qs = qs_base|join('&') %}
+
+  <span style="font-weight:600; color:#1f2937; margin-right:0.5em;">Media:</span>
+  <a class="media-tab {% if not filters.media_type %}active{% endif %}"
+     href="?{{ qs }}" data-tooltip-pos="below"
+     data-tooltip="Show all media types together.">All</a>
+  <a class="media-tab {% if filters.media_type == 'image' %}active{% endif %}"
+     href="?{{ qs }}{% if qs %}&{% endif %}media_type=image"
+     data-tooltip-pos="below" data-tooltip="Stills only — png/jpg/webp/gif/tif.">Stills</a>
+  <a class="media-tab {% if filters.media_type == 'video' %}active{% endif %}"
+     href="?{{ qs }}{% if qs %}&{% endif %}media_type=video"
+     data-tooltip-pos="below" data-tooltip="Video clips only — mp4/mov/webm/etc.">Video</a>
+  <a class="media-tab {% if filters.media_type == 'audio' %}active{% endif %}"
+     href="?{{ qs }}{% if qs %}&{% endif %}media_type=audio"
+     data-tooltip-pos="below" data-tooltip="Audio only — mp3/wav/m4a/etc.">Audio</a>
+
+  {% set qs_no_sort_parts = [] %}
+  {% if session_id %}{% set _ = qs_no_sort_parts.append('session_id=' + session_id) %}{% endif %}
+  {% if filters.only_unverdicted %}{% set _ = qs_no_sort_parts.append('only_unverdicted=1') %}{% endif %}
+  {% if filters.flagged_only %}{% set _ = qs_no_sort_parts.append('flagged_only=1') %}{% endif %}
+  {% if filters.tool %}{% set _ = qs_no_sort_parts.append('tool=' + filters.tool) %}{% endif %}
+  {% if filters.section %}{% set _ = qs_no_sort_parts.append('section=' + filters.section) %}{% endif %}
+  {% if filters.media_type %}{% set _ = qs_no_sort_parts.append('media_type=' + filters.media_type) %}{% endif %}
+  {% set qs_no_sort = qs_no_sort_parts|join('&') %}
+
+  <span style="margin-left:1.5em; color:#6b7280;">Sort:</span>
+  <a class="sort-toggle {% if filters.sort_by != 'rank' %}active{% endif %}"
+     href="?{{ qs_no_sort }}"
+     data-tooltip-pos="below" data-tooltip="Newest first (default).">Newest</a>
+  <a class="sort-toggle {% if filters.sort_by == 'rank' %}active{% endif %}"
+     href="?{{ qs_no_sort }}{% if qs_no_sort %}&{% endif %}sort_by=rank"
+     data-tooltip-pos="below" data-tooltip="Highest Claude rank first. Unranked items sink to bottom.">By rank</a>
+
+  <button class="rank-btn" id="rank-btn" onclick="rankCurrentView()"
+          data-tooltip-pos="below"
+          data-tooltip="Run Claude on the unranked stills in the current filter set. ~$0.05-0.10 per batch of 6 images. Results persist; reload-safe.">⚡ Rank with Claude</button>
+</div>
+
+<div id="rank-status"></div>
 
 <div class="filters-bar">
   <strong>Filters:</strong>
@@ -154,19 +259,75 @@
 <div class="grid">
   {% for item in items %}
     {% set v = verdicts_by_render.get(item.render_id) %}
-    <a class="tile" href="/audit?render_id={{ item.render_id }}{% if session_id %}&session_id={{ session_id }}{% endif %}{% if filters.only_unverdicted %}&only_unverdicted=1{% endif %}{% if filters.flagged_only %}&flagged_only=1{% endif %}{% if filters.tool %}&tool={{ filters.tool }}{% endif %}{% if filters.section %}&section={{ filters.section }}{% endif %}">
-      <img loading="lazy" src="/audit/thumbnail/{{ item.render_id }}" alt="{{ item.filename }}">
-      {% if v %}
-        <span class="verdict-badge {{ v.verdict }}">{{ v.verdict.replace('_', ' ') }}</span>
-      {% endif %}
-      {% if v and v.flags_needs_second_look %}
-        <span class="flag-badge">2nd look</span>
-      {% endif %}
-      <div class="tile-meta">
-        <div class="filename">{{ item.filename }}</div>
-        <div class="tool">{{ item.tool }}{% if item.variant is not none %} v{{ item.variant }}{% endif %}</div>
+    {% set serial_url = '/audit?render_id=' + item.render_id %}
+    {% set qs2 = [] %}
+    {% if session_id %}{% set _ = qs2.append('session_id=' + session_id) %}{% endif %}
+    {% if filters.only_unverdicted %}{% set _ = qs2.append('only_unverdicted=1') %}{% endif %}
+    {% if filters.flagged_only %}{% set _ = qs2.append('flagged_only=1') %}{% endif %}
+    {% if filters.tool %}{% set _ = qs2.append('tool=' + filters.tool) %}{% endif %}
+    {% if filters.section %}{% set _ = qs2.append('section=' + filters.section) %}{% endif %}
+    {% set tile_url = serial_url + ('&' + qs2|join('&') if qs2 else '') %}
+    {% set is_video = item.filename.lower().endswith(('.mp4', '.mov', '.webm', '.mkv', '.avi')) %}
+    {% set is_audio = item.filename.lower().endswith(('.mp3', '.wav', '.m4a', '.ogg', '.flac', '.aac')) %}
+
+    {% if is_video or is_audio %}
+      {# Media tile — non-link; native controls play in place; open-link overlays #}
+      <div class="tile media-tile">
+        {% if is_video %}
+          <video class="tile-media" src="/audit/render/{{ item.render_id }}/file"
+                 preload="metadata" controls
+                 style="width:100%;height:100%;object-fit:contain;background:#000;"></video>
+        {% else %}
+          <div class="tile-audio-bg">
+            <div class="audio-icon">♪</div>
+            <audio src="/audit/render/{{ item.render_id }}/file" preload="metadata" controls
+                   style="width:90%;"></audio>
+          </div>
+        {% endif %}
+        {% if v %}
+          <span class="verdict-badge {{ v.verdict }}">{{ v.verdict.replace('_', ' ') }}</span>
+        {% endif %}
+        {% if v and v.flags_needs_second_look %}
+          <span class="flag-badge">2nd look</span>
+        {% endif %}
+        {% if item.rank_score is not none %}
+          {% set rs = item.rank_score %}
+          {% if rs >= 8 %}{% set rs_cls = 'high' %}{% elif rs >= 5 %}{% set rs_cls = 'mid' %}{% else %}{% set rs_cls = 'low' %}{% endif %}
+          <span class="rank-score {{ rs_cls }}" title="{{ item.rank_summary }}">{{ '%.1f'|format(rs) }}</span>
+        {% endif %}
+        <a class="tile-open" href="{{ tile_url }}" title="Open serial view">→</a>
+        <div class="tile-meta">
+          <div class="filename">{{ item.filename }}</div>
+          <div class="tool">{{ item.tool }}{% if item.variant is not none %} v{{ item.variant }}{% endif %}</div>
+          {% if item.rank_summary %}
+            <div class="rank-summary">{{ item.rank_summary }}</div>
+          {% endif %}
+        </div>
       </div>
-    </a>
+    {% else %}
+      {# Image tile — entire tile is the link to serial view #}
+      <a class="tile" href="{{ tile_url }}">
+        <img loading="lazy" src="/audit/thumbnail/{{ item.render_id }}" alt="{{ item.filename }}">
+        {% if v %}
+          <span class="verdict-badge {{ v.verdict }}">{{ v.verdict.replace('_', ' ') }}</span>
+        {% endif %}
+        {% if v and v.flags_needs_second_look %}
+          <span class="flag-badge">2nd look</span>
+        {% endif %}
+        {% if item.rank_score is not none %}
+          {% set rs = item.rank_score %}
+          {% if rs >= 8 %}{% set rs_cls = 'high' %}{% elif rs >= 5 %}{% set rs_cls = 'mid' %}{% else %}{% set rs_cls = 'low' %}{% endif %}
+          <span class="rank-score {{ rs_cls }}" title="{{ item.rank_summary }}">{{ '%.1f'|format(rs) }}</span>
+        {% endif %}
+        <div class="tile-meta">
+          <div class="filename">{{ item.filename }}</div>
+          <div class="tool">{{ item.tool }}{% if item.variant is not none %} v{{ item.variant }}{% endif %}</div>
+          {% if item.rank_summary %}
+            <div class="rank-summary">{{ item.rank_summary }}</div>
+          {% endif %}
+        </div>
+      </a>
+    {% endif %}
   {% endfor %}
 </div>
 
@@ -235,6 +396,72 @@ const endLink = document.getElementById('end-session-link');
 if (startQuick) startQuick.addEventListener('click', (ev) => { ev.preventDefault(); startSession('quick_pass'); });
 if (startDeep) startDeep.addEventListener('click', (ev) => { ev.preventDefault(); startSession('deep_eval'); });
 if (endLink) endLink.addEventListener('click', (ev) => { ev.preventDefault(); endCurrentSession(); });
+
+const FILTERS = {
+  section: {{ filters.section|tojson if filters.section else 'null' }},
+  media_type: {{ filters.media_type|tojson if filters.media_type else 'null' }},
+  only_unverdicted: {{ 'true' if filters.only_unverdicted else 'false' }},
+};
+
+async function rankCurrentView() {
+  const btn = document.getElementById('rank-btn');
+  const status = document.getElementById('rank-status');
+  if (FILTERS.media_type && FILTERS.media_type !== 'image') {
+    status.className = 'visible error';
+    status.textContent = 'Pre-ranking is image-only for v1. Switch to Stills or All.';
+    return;
+  }
+  const ok = confirm(
+    `Rank up to 60 unranked stills with Claude vision?\n\n` +
+    `Filters: section=${FILTERS.section || 'all'}, ` +
+    `unverdicted=${FILTERS.only_unverdicted}\n\n` +
+    `Cost estimate: ~$0.50 for 60 images. Results persist; reload-safe.`
+  );
+  if (!ok) return;
+
+  btn.disabled = true;
+  btn.textContent = '⚡ Ranking…';
+  status.className = 'visible';
+  status.textContent = 'Ranking in progress — this can take 30-60s for a full batch run…';
+
+  try {
+    const r = await fetch('/audit/rank-batch', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        section: FILTERS.section,
+        media_type: 'image',
+        only_unverdicted: FILTERS.only_unverdicted,
+        only_unranked: true,
+        max_renders: 60,
+        batch_size: 6,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      status.className = 'visible error';
+      status.textContent = `Rank failed: ${JSON.stringify(data.detail || data)}`;
+      btn.disabled = false;
+      btn.textContent = '⚡ Rank with Claude';
+      return;
+    }
+    status.className = 'visible success';
+    status.textContent = `Ranked ${data.ranked} renders in ${data.batches} batches. Cost $${data.cost_usd.toFixed(4)}. Reload to see ranks (or click "By rank" to sort).`;
+    btn.disabled = false;
+    btn.textContent = '⚡ Rank with Claude';
+    // Auto-reload after 2s, sorted by rank
+    setTimeout(() => {
+      const url = new URL(window.location);
+      url.searchParams.set('sort_by', 'rank');
+      window.location = url.toString();
+    }, 2000);
+  } catch (e) {
+    status.className = 'visible error';
+    status.textContent = `Rank error: ${e.message}`;
+    btn.disabled = false;
+    btn.textContent = '⚡ Rank with Claude';
+  }
+}
 </script>
 
 </body>

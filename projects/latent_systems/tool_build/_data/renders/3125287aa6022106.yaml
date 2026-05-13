@@ -1,0 +1,10 @@
+id: 3125287aa6022106
+discipline_version: pre_v1
+filename: rat_master.png
+filepath: projects/latent_systems/ep1/h5_slot_machine/sources/rat_master.png
+canonical_hash: 9535c9624759772cf09e9cdd65b086df8ee6fdd082ad6340f310349a17de9952
+tool: unknown_image
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:45.057665+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

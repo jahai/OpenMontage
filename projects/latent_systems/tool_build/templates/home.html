@@ -1,0 +1,116 @@
+{% extends "_base.html" %}
+{% block title %}Home · tool_build{% endblock %}
+{% block content %}
+
+<div id="status-banner" style="display:none;" class="banner banner-warn"></div>
+
+<h1>What do you want to do?</h1>
+<p class="page-subtitle">Pick a project, start a new video, or jump straight into the audit grid.</p>
+
+<div class="card-grid" style="margin-top: 1.5em;">
+  <a href="/video/new" class="card">
+    <div class="card-icon">＋</div>
+    <div class="card-title">Start a new video</div>
+    <div class="card-desc">Create a new project from a brief. Plan sections, draft prompts, audit renders, ship.</div>
+    <div class="card-cta">Start →</div>
+  </a>
+
+  <a href="/video/ep1" class="card">
+    <div class="card-icon">▶</div>
+    <div class="card-title">Continue EP1 — Addiction</div>
+    <div class="card-desc">Behavioral psychology + attention economy. Currently in audit + hero-selection phase.</div>
+    <div class="card-meta" id="ep1-meta">
+      <span class="skeleton">loading…</span>
+    </div>
+    <div class="card-cta">Open dashboard →</div>
+  </a>
+
+  <a href="/settings/keys" class="card">
+    <div class="card-icon">⚙</div>
+    <div class="card-title">Manage API keys</div>
+    <div class="card-desc">Configure the AI tools the workspace can call — Anthropic, ElevenLabs, OpenAI, etc.</div>
+    <div class="card-cta">Open settings →</div>
+  </a>
+</div>
+
+<h2 class="section-title">At a glance</h2>
+<div class="panel">
+  <div id="glance-row" class="stats-row">
+    <div class="stat"><div class="stat-num skeleton">·</div><div class="stat-label">Loading</div></div>
+  </div>
+</div>
+
+<h2 class="section-title">Recent activity</h2>
+<div class="panel" id="recent-activity">Loading…</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadHome() {
+  const [statsR, apiR] = await Promise.all([
+    fetch('/homepage_stats').then(r => r.json()),
+    fetch('/api_status').then(r => r.json()),
+  ]);
+  const s = statsR.stats || {};
+
+  // EP1 card meta
+  const meta = document.getElementById('ep1-meta');
+  meta.innerHTML = `
+    <span>${s.verdicts_total} verdicts</span>
+    <span>${s.consults_completed} consults</span>
+    <span>${(s.renders_unverdicted ?? 0).toLocaleString()} unverdicted</span>
+    <span>${s.renders_pre_v1_hero} pre-v1 heroes</span>
+  `;
+
+  // Banner from api_status
+  const banner = document.getElementById('status-banner');
+  if (apiR.banner) { banner.textContent = apiR.banner; banner.style.display = 'block'; }
+
+  // At-a-glance stats row
+  const cb = apiR.cost_breakdown || {};
+  const cells = [
+    ['Verdicts', s.verdicts_total],
+    ['Consults', `${s.consults_completed} / ${s.consults_total}`],
+    ['Unverdicted', (s.renders_unverdicted ?? 0).toLocaleString()],
+    ['Hero candidates', s.renders_pre_v1_hero],
+    ['Concepts', s.concepts_active],
+    ['Prompts', s.prompts_total],
+    ['Cost today', fmtMoney(cb.today_usd)],
+    ['Cost 30d', fmtMoney(cb.past_30d_usd)],
+  ];
+  document.getElementById('glance-row').innerHTML = cells.map(([l, v]) => `
+    <div class="stat">
+      <div class="stat-num">${escapeHtml(v)}</div>
+      <div class="stat-label">${escapeHtml(l)}</div>
+    </div>
+  `).join('');
+
+  // Recent activity
+  const lv = statsR.last_verdict;
+  const lc = statsR.last_consult;
+  let html = '';
+  if (lv) {
+    html += `
+      <div style="display:flex;align-items:center;gap:1em;padding:0.6em 0;border-bottom:1px solid var(--border);">
+        <span class="muted small" style="min-width:11em;">${fmtDate(lv.created)}</span>
+        <span class="badge badge-warn">${escapeHtml(lv.verdict)}</span>
+        <span class="muted small">last verdict · by ${escapeHtml(lv.audited_by)}</span>
+        <span class="mono small" style="opacity:0.7;flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((lv.filename || '').substring(0, 80))}</span>
+      </div>`;
+  }
+  if (lc) {
+    html += `
+      <div style="display:flex;align-items:center;gap:1em;padding:0.6em 0;border-bottom:1px solid var(--border);">
+        <span class="muted small" style="min-width:11em;">${fmtDate(lc.consulted_at)}</span>
+        <span class="badge badge-success">${escapeHtml(lc.status)}</span>
+        <span class="muted small">last consult · ${escapeHtml(lc.model)} · ${fmtMoney(lc.cost_usd)}</span>
+        <span class="mono small" style="opacity:0.7;flex:1;overflow:hidden;text-overflow:ellipsis;">${escapeHtml((lc.filename || '').substring(0, 80))}</span>
+      </div>`;
+  }
+  if (!html) html = '<div class="empty">No audit activity yet.</div>';
+  document.getElementById('recent-activity').innerHTML = html;
+}
+loadHome();
+</script>
+{% endblock %}

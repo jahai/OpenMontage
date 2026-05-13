@@ -1,0 +1,10 @@
+id: 88866263a857c51c
+discipline_version: pre_v1
+filename: Phone_in_Drawer.mp4
+filepath: projects/latent_systems/ep1/_research/reference/Phone_in_Drawer.mp4
+canonical_hash: adff6be344c7aef526d8ecea6d5580c84a41937099cff59de598fdc31cf07b2f
+tool: video
+variant: null
+hero_status: null
+created: '2026-05-08T13:56:46.140400+00:00'
+notes: Enumerated by Phase 1 walker. No originating prompt_id (AD-3 forward-only).

@@ -1,0 +1,416 @@
+{% extends "_base.html" %}
+{% block title %}{{ ep_title }} · tool_build{% endblock %}
+
+{% block extra_css %}
+  .chat-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 1.5em;
+    margin-bottom: 2em;
+  }
+  @media (max-width: 1000px) { .chat-shell { grid-template-columns: 1fr; } }
+
+  .chat-panel {
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+    overflow: hidden;
+  }
+  .chat-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.6em 1.8em;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4em;
+  }
+  .chat-empty {
+    margin: auto;
+    text-align: center;
+    color: var(--text-muted);
+    max-width: 380px;
+    padding: 2em 1em;
+  }
+  .chat-empty h3 { margin: 0 0 0.5em; color: var(--text); font-weight: 500; font-size: 1.2em; }
+  .chat-starters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6em;
+    margin-top: 1.4em;
+  }
+  .chat-starter {
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.9em 1em;
+    cursor: pointer;
+    font-size: 0.95em;
+    color: var(--text);
+    text-align: left;
+    line-height: 1.45;
+    transition: border-color 0.12s, background 0.12s;
+    font-family: inherit;
+  }
+  .chat-starter:hover { border-color: var(--accent); background: var(--bg-elev-3); }
+
+  .chat-msg { display: flex; gap: 0.9em; align-items: flex-start; }
+  .chat-msg .avatar {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95em; font-weight: 600;
+  }
+  .chat-msg.user .avatar { background: var(--bg-elev-3); color: var(--text-muted); }
+  .chat-msg.assistant .avatar {
+    background: linear-gradient(135deg, #a78bfa, #6366f1);
+    color: white;
+  }
+  .chat-msg .body {
+    flex: 1; color: var(--text); font-size: 1.02em; line-height: 1.6;
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .chat-msg .body code {
+    background: var(--bg-elev-3); padding: 0.1em 0.4em;
+    border-radius: 3px; font-family: var(--font-mono); font-size: 0.92em;
+  }
+  .chat-msg.assistant .body a { color: var(--accent); }
+  .chat-msg .meta {
+    color: var(--text-faint); font-size: 0.75em; margin-top: 0.5em;
+  }
+
+  .chat-input-row {
+    border-top: 1px solid var(--border);
+    padding: 1em 1.2em;
+    background: var(--bg-elev-1);
+    display: flex; gap: 0.6em; align-items: flex-end;
+  }
+  .chat-input-row textarea {
+    flex: 1;
+    min-height: 2.7em; max-height: 11em;
+    padding: 0.85em 1em;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.02em;
+    resize: none;
+  }
+  .chat-input-row textarea:focus { outline: none; border-color: var(--accent); }
+  .chat-input-row button.primary {
+    height: 2.6em;
+    padding: 0 1.2em;
+  }
+  .chat-thinking {
+    color: var(--text-muted); font-size: 0.88em;
+    display: flex; gap: 0.5em; align-items: center;
+    padding: 0.5em 0;
+  }
+  .tool-call {
+    display: flex; gap: 0.7em; align-items: flex-start;
+    padding: 0.6em 0.8em;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-left: 2.7em;
+  }
+  .tool-call .tool-icon { color: var(--accent); flex-shrink: 0; }
+  .tool-call.error { border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.06); }
+  .tool-call .name { color: var(--accent); font-weight: 500; }
+  .tool-call .preview { opacity: 0.7; word-break: break-all; }
+  .chat-thinking .dots { display: inline-flex; gap: 0.2em; }
+  .chat-thinking .dots span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--text-muted); animation: pulse 1.4s infinite;
+  }
+  .chat-thinking .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .chat-thinking .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
+  }
+
+  .progress-card {
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.2em;
+  }
+  .progress-card h3 {
+    margin: 0 0 0.8em; font-size: 0.78em;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .progress-stat { padding: 0.4em 0; border-bottom: 1px solid var(--border); }
+  .progress-stat:last-child { border-bottom: none; }
+  .progress-stat .label { color: var(--text-muted); font-size: 0.85em; }
+  .progress-stat .value { font-weight: 600; font-size: 1.1em; }
+
+  .section-row {
+    display: grid;
+    grid-template-columns: 100px 1fr auto auto;
+    gap: 1.2em;
+    align-items: center;
+    padding: 0.95em 1.2em;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .section-row:last-child { border-bottom: none; }
+  .section-row:hover { background: var(--bg-elev-2); }
+  .section-row .name { font-weight: 600; font-size: 1.05em; }
+  .section-row .counts { color: var(--text-muted); font-size: 0.95em; }
+{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom:0.5em;">
+  <a href="/" class="muted small">← Home</a>
+</div>
+
+<h1>{{ ep_title }}</h1>
+<p class="page-subtitle">{{ ep_subtitle }}</p>
+
+<div class="chat-shell">
+  <!-- LEFT: Chat -->
+  <div class="chat-panel">
+    <div class="chat-thread" id="chat-thread">
+      <div class="chat-empty" id="chat-empty">
+        <h3>Ask the assistant about EP1</h3>
+        <p class="small">It knows the section state, recent verdicts, and what tools you can run. Use it to decide what to work on next.</p>
+        <div class="chat-starters" id="chat-starters">
+          <button class="chat-starter" onclick="useStarter(this)">What should I work on next?</button>
+          <button class="chat-starter" onclick="useStarter(this)">Which sections are furthest behind?</button>
+          <button class="chat-starter" onclick="useStarter(this)">Summarize H4 and H5 status</button>
+          <button class="chat-starter" onclick="useStarter(this)">What's the fastest path to launch?</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea id="chat-input" placeholder="Ask anything about EP1 production…" rows="1"
+                onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="primary" id="chat-send" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: Progress + sections -->
+  <div>
+    <div class="progress-card" id="progress-card">
+      <h3>Progress</h3>
+      <div id="progress-stats" class="small muted">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<h2 class="section-title">Sections</h2>
+<div class="panel" id="sections-list">Loading sections…</div>
+
+<h2 class="section-title">Quick actions</h2>
+<div class="card-grid">
+  <a href="/audit/grid?only_unverdicted=true" class="card">
+    <div class="card-icon">▦</div>
+    <div class="card-title">Audit unverdicted</div>
+    <div class="card-desc">Open the audit grid filtered to renders without a verdict.</div>
+  </a>
+  <a href="/audit/inbox" class="card">
+    <div class="card-icon">⇩</div>
+    <div class="card-title">Process inbox</div>
+    <div class="card-desc">Review pending downloads and route them to canonical destinations.</div>
+  </a>
+  <a href="/tools" class="card">
+    <div class="card-icon">⚒</div>
+    <div class="card-title">Power-user tools</div>
+    <div class="card-desc">Concepts, draft prompts, dispatch, awaiting return — the full mechanic shell.</div>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EP_ID = "{{ ep_id }}";
+
+const STATUS_LABELS = {
+  unstarted: ['Unstarted', 'badge-muted'],
+  concept_stage: ['Concept stage', 'badge-accent'],
+  prompt_dispatched: ['Prompt dispatched', 'badge-accent'],
+  audit_pending: ['Audit pending', 'badge-warn'],
+  verdict_stage: ['Has verdicts', 'badge-warn'],
+  hero_locked: ['Hero locked', 'badge-success'],
+};
+
+let chatHistory = [];
+
+async function loadDashboard() {
+  const r = await fetch(`/video/${EP_ID}/sections`);
+  const data = await r.json();
+  const sections = data.sections || [];
+  const totals = data.totals || {};
+
+  // Right-side progress card
+  const stats = [
+    ['Sections', sections.length],
+    ['Hero-locked', totals.hero_locked || 0],
+    ['Audit pending', totals.audit_pending || 0],
+    ['Verdicts', totals.verdicts || 0],
+    ['Total renders', (totals.renders || 0).toLocaleString()],
+  ];
+  document.getElementById('progress-stats').innerHTML = stats.map(([l, v]) => `
+    <div class="progress-stat" style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="label">${escapeHtml(l)}</span>
+      <span class="value">${escapeHtml(v)}</span>
+    </div>
+  `).join('');
+
+  // Sections table
+  const list = document.getElementById('sections-list');
+  if (sections.length === 0) {
+    list.innerHTML = `<div class="empty">No sections detected for ${EP_ID} yet.</div>`;
+    return;
+  }
+  let html = '';
+  for (const s of sections) {
+    const [label, cls] = STATUS_LABELS[s.status] || [s.status, 'badge-muted'];
+    const filt = encodeURIComponent(s.section);
+    const wsUrl = `/video/${EP_ID}/section/${filt}`;
+    html += `
+      <div class="section-row" onclick="window.location.href='${wsUrl}'" style="cursor:pointer;">
+        <div class="name">${escapeHtml(s.section)}</div>
+        <div class="counts">${s.counts.renders} renders · ${s.counts.verdicts} verdicts · ${s.counts.heroes || 0} heroes</div>
+        <span class="badge ${cls}">${label}</span>
+        <a href="${wsUrl}" class="btn" onclick="event.stopPropagation()">Open assets →</a>
+      </div>`;
+  }
+  list.innerHTML = html;
+}
+
+function useStarter(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+}
+
+function appendMessage(role, content, meta) {
+  const empty = document.getElementById('chat-empty');
+  if (empty) empty.remove();
+  const thread = document.getElementById('chat-thread');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  const avatarText = role === 'user' ? 'You' : '◐';
+  // Render very simple markdown: backticks → <code>, links stay as text but autolink http(s)
+  let body = escapeHtml(content);
+  body = body.replace(/`([^`]+)`/g, '<code>$1</code>');
+  body = body.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1">$1</a>');
+  body = body.replace(/(\/[a-zA-Z][a-zA-Z0-9_\/\?=&\.\-]*)/g, '<a href="$1">$1</a>');
+  div.innerHTML = `
+    <div class="avatar">${avatarText}</div>
+    <div class="body">${body}${meta ? `<div class="meta">${escapeHtml(meta)}</div>` : ''}</div>`;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+  return div;
+}
+
+function appendThinking() {
+  const thread = document.getElementById('chat-thread');
+  const div = document.createElement('div');
+  div.className = 'chat-msg assistant';
+  div.id = 'chat-thinking';
+  div.innerHTML = `
+    <div class="avatar">◐</div>
+    <div class="body">
+      <div class="chat-thinking">
+        <span>Working</span>
+        <span class="dots"><span></span><span></span><span></span></span>
+      </div>
+    </div>`;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function removeThinking() {
+  const t = document.getElementById('chat-thinking');
+  if (t) t.remove();
+}
+
+function appendToolTrace(trace) {
+  if (!trace || !trace.length) return;
+  const thread = document.getElementById('chat-thread');
+  for (const t of trace) {
+    const inputSummary = Object.entries(t.input || {})
+      .map(([k, v]) => `${k}=${JSON.stringify(v).slice(0, 80)}`)
+      .join(', ');
+    const div = document.createElement('div');
+    div.className = `tool-call ${t.ok ? '' : 'error'}`;
+    div.innerHTML = `
+      <span class="tool-icon">${t.ok ? '⚙' : '⊠'}</span>
+      <div style="flex:1;min-width:0;">
+        <div><span class="name">${escapeHtml(t.name)}</span>(${escapeHtml(inputSummary)})</div>
+        <div class="preview">${escapeHtml((t.preview || '').slice(0, 200))}</div>
+      </div>`;
+    thread.appendChild(div);
+  }
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const message = input.value.trim();
+  if (!message) return;
+  const sendBtn = document.getElementById('chat-send');
+
+  appendMessage('user', message);
+  chatHistory.push({ role: 'user', content: message });
+  input.value = '';
+  autoResize(input);
+  sendBtn.disabled = true;
+  appendThinking();
+
+  try {
+    const r = await fetch(`/video/${EP_ID}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, history: chatHistory.slice(0, -1) }),
+    });
+    removeThinking();
+    if (!r.ok) {
+      const err = await r.json();
+      const detail = typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail);
+      appendMessage('assistant', `Error: ${detail}`);
+      return;
+    }
+    const data = await r.json();
+    appendToolTrace(data.tool_trace || []);
+    const toolCount = (data.tool_trace || []).length;
+    const cacheNote = data.cache_read_tokens ? ` · cache_read ${data.cache_read_tokens}` : '';
+    const meta = `${data.model} · ${fmtMoney(data.cost_usd)} · ${data.latency_s}s · ${data.tokens_in} in / ${data.tokens_out} out${cacheNote}` +
+                 (toolCount ? ` · ${toolCount} tool call${toolCount === 1 ? '' : 's'}` : '');
+    appendMessage('assistant', data.response, meta);
+    chatHistory.push({ role: 'assistant', content: data.response });
+  } catch (e) {
+    removeThinking();
+    appendMessage('assistant', `Network error: ${e.message}`);
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+loadDashboard();
+document.getElementById('chat-input').focus();
+</script>
+{% endblock %}

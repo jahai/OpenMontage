@@ -1,0 +1,16 @@
+id: d76da333951d918d
+render_id: 72d8b69215f9b362
+discipline_version: '1.0'
+verdict: reject
+verdict_reasoning: null
+rubric_version: null
+rubric_used: null
+rubric_criteria_match: null
+audit_session_id: null
+audited_by: human
+flags:
+  needs_second_look: false
+supersedes_verdict_id: null
+ai_consultation_ids: []
+yaml_path: projects/latent_systems/tool_build/_data/verdicts/d76da333951d918d.yaml
+created: '2026-05-11T09:10:04.112078+00:00'
