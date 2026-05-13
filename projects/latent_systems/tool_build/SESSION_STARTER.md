@@ -178,14 +178,37 @@ integrity).
   Should land before any new audits run with the sharpened rubric;
   F6 NOTES.md drafts on Day 3 will auto-draft from verdict state
   graded under whichever rubric is active at draft time.
-- **Day 3:** F6 NOTES.md authorship via Claude API.
-- **Day 4:** Rough-cut player v1 — narration audio playback + sequenced
-  asset display + scrub controls. Sequencing metadata: hybrid (auto from
-  `EP1_STRUCTURAL_ARCHITECTURE_v1_4.md` + manual overrides). Asset
-  timing: narration timing primary + hardcoded defaults fallback. Gap
-  handling: honest partial state.
-- **Day 5:** Rough-cut player polish — timeline visualization, asset
-  highlight, partial-state surfacing, manual sequence override UI.
+- **Day 3 (2026-05-14):** Rough-cut player v1 — narration audio
+  playback + sequenced asset display + scrub controls. **PULLED
+  FORWARD from Day 4 per Joseph's call 2026-05-14:** rough-cut player
+  is load-bearing for the "see in context to inform creative decisions"
+  loop; one day earlier means Joseph gets the context-view tool one
+  day sooner. F6's "deferred F6 fire" placeholder on F5 hero promotion
+  absorbs the cost of F6 shipping later. Net zero risk; meaningful
+  gain on creative-tooling-in-Joseph's-hands. Sequencing metadata:
+  hybrid (auto from `EP1_STRUCTURAL_ARCHITECTURE_v1_4.md` + manual
+  overrides — Day 3 v1 ships fallback only [hero_zone+strong renders
+  ordered by verdicts.created ASC]; architecture parsing deferred to
+  Day 4 polish). Asset timing: narration timing primary (query by
+  MAX(discipline_version) per section since audio_assets.discipline_version
+  is the audio archival namespace, NOT code/spec
+  CURRENT_DISCIPLINE_VERSION) + hardcoded defaults fallback (3s/image,
+  natural duration for video). Gap handling: explicit banners for
+  partial state.
+- **Day 4 (2026-05-15):** Rough-cut player polish — timeline
+  visualization, asset highlight, partial-state surfacing, manual
+  sequence override UI. Adds: scrub bar with timeline, click-to-jump,
+  asset thumbnail strip with current-position highlight, drag/reorder
+  for manual sequence override (rough_cut_overrides table if needs
+  persistence), per-asset duration override, playback speed control,
+  side-by-side comparison view. Server-side audio duration probing
+  via mutagen at this point (Day 3 uses client-side HTML5
+  audio.duration on load).
+- **Day 5 (2026-05-16):** F6 NOTES.md authorship via Claude API.
+  **MOVED from Day 3 per day-order swap 2026-05-14.** F5's deferred
+  F6 fire placeholder on `dispatcher.hero_promote()` (currently
+  `f6_prompt_status='deferred_f6_not_shipped'`) becomes
+  actually-fired once F6 ships.
 - **Day 6:** F8 OpenMontage serialization (asset_manifest only per v0.4
   amendment) + WIP multi-page UI finishing.
 - **Day 7 (2026-05-19):** F7 cross-AI capture surface (M3 pattern) +
