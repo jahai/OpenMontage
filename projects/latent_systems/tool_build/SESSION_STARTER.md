@@ -151,15 +151,16 @@ integrity).
 
 **Day-by-day plan:**
 
-- **Day 1 (2026-05-13):** Phase 2.5 conftest.py + tmp_path-isolated DB
-  migration across the 15-test script suite. Single-workstream (code).
-  Operational discipline: run the full 15-test suite after every 3-4
-  file migration batch to localize isolation regressions — don't
-  migrate all 15 then run tests. **Workstream 1B (parallel doc-draft,
-  non-blocking):** draft proposed apparatus-accuracy + period-
-  authenticity criterion language as scratch file in `tool_build/` for
-  Joseph review before integration into `docs/AUDIT_RUBRICS_v1_0.md`
-  on Day 2 morning.
+- **Day 1 (2026-05-13) — ✅ COMPLETE.** Phase 2.5 conftest.py +
+  tmp_path-isolated DB migration across the 15-test script suite
+  LANDED commit `8be45e3`; full suite 94 passed + 1 documented skip;
+  production state.db row counts byte-identical pre/post. Pattern #8
+  reinforcement #3 / Banking principle #7 structurally satisfied.
+  Workstream 1B rubric calibration scratch authored commit `2729160`
+  at `tool_build/RUBRIC_CALIBRATION_SCRATCH_2026_05_13.md` — Documentary
+  integrity sharpening draft (apparatus accuracy + period authenticity
+  dimensions) pending Joseph review + integration into
+  `docs/AUDIT_RUBRICS_v1_0.md` before Day 2 morning F5 work begins.
 - **Day 2:** Rubric calibration morning — integrate apparatus accuracy
   + period authenticity criteria into Documentary integrity criterion
   in `docs/AUDIT_RUBRICS_v1_0.md` (per Day 1 Workstream 1B scratch).
