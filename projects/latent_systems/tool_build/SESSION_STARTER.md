@@ -206,6 +206,44 @@ integrity).
   side-by-side comparison view. Server-side audio duration probing
   via mutagen at this point (Day 3 uses client-side HTML5
   audio.duration on load).
+
+  **Day 4 open questions banked from Day 3 EOD (need decisions before
+  the relevant Day 4 sub-task starts; not all blocking, but Joseph's
+  call shapes scope):**
+    1. **EP1_STRUCTURAL_ARCHITECTURE_v1_4.md parser surface.** What
+       shape does the beat-structure take in the doc — tables,
+       H3/H4 hierarchies, free-prose? Decide parser approach by
+       reading the doc first. If structure isn't parser-friendly,
+       scope-back to "structural metadata sidecar YAML" instead of
+       parsing the canonical doc.
+    2. **Manual sequence override persistence.** Options:
+       (a) `rough_cut_overrides` table (Migration 0005) — full audit
+       trail discipline; (b) per-section YAML sidecar at
+       `_data/rough_cut_overrides/<section>.yaml` parallel to other
+       artifacts — fits AD-5 filesystem-canonical pattern;
+       (c) client-side localStorage — fastest to ship, no
+       cross-machine persistence. Tentative: (b) per AD-5
+       discipline; confirm before Day 4 starts.
+    3. **mutagen ingest cadence.** Bulk backfill at
+       `audio_assets.rebuild_audio_cache()` (slow first run, fast
+       thereafter), lazy probe-on-first-query (server caches in
+       `audio_assets.duration_seconds` after first miss), or explicit
+       `/audio_assets/refresh_durations` endpoint? Tentative: bulk
+       backfill, simplest to reason about; scrub bar UI depends on
+       server-known total duration so this is a hard prereq.
+    4. **Inter-paragraph gap.** Silence between paragraphs
+       (matches Daniel's natural narration pacing per Style
+       Exaggeration delivery) or seamless transition? Tentative:
+       configurable per-section via overrides YAML, default
+       ~0.3-0.7s silence; confirm before Day 4 implements.
+    5. **Side-by-side comparison view scope.** v2 vs v3 alternative
+       renders side-by-side within one section's player, OR
+       two-section comparison (`h3_skinner` vs `h3_skinner_v2`)?
+       Spec doesn't disambiguate. Joseph's call required before
+       Day 4 designs the UI.
+    6. **Scrub bar sequencing.** Pixel-math requires server-known
+       total duration → mutagen backfill must land before scrub-bar
+       UI. Day 4 morning starts with mutagen ingest; UI follows.
 - **Day 5 (2026-05-16):** F6 NOTES.md authorship via Claude API.
   **MOVED from Day 3 per day-order swap 2026-05-14.** F5's deferred
   F6 fire placeholder on `dispatcher.hero_promote()` (currently
