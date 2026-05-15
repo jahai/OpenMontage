@@ -64,6 +64,92 @@
     border-top: 1px solid var(--border);
     display: flex; justify-content: space-between;
   }
+
+  /* Day 4 polish: scrub bar */
+  .scrub-bar {
+    width: 100%; height: 8px;
+    background: var(--bg-elev-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    margin: 0.5em 0 0.7em;
+    overflow: hidden;
+  }
+  .scrub-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.05s linear;
+  }
+  .scrub-bar.disabled { cursor: not-allowed; opacity: 0.5; }
+
+  /* Day 4 polish: asset thumbnail strip */
+  .thumb-strip {
+    display: flex; flex-wrap: wrap; gap: 0.4em;
+    margin: 0.5em 0 1em;
+  }
+  .thumb {
+    flex: 0 0 auto;
+    width: 96px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-elev-1);
+    cursor: grab;
+    user-select: none;
+    overflow: hidden;
+    position: relative;
+  }
+  .thumb.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .thumb.dragging { opacity: 0.4; }
+  .thumb.drag-over { border-style: dashed; }
+  .thumb-image {
+    width: 100%; height: 54px;
+    background: #111;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7em; color: var(--text-faint);
+  }
+  .thumb-image img {
+    width: 100%; height: 100%; object-fit: cover;
+    pointer-events: none;
+  }
+  .thumb-meta {
+    padding: 0.2em 0.3em;
+    font-size: 0.7em;
+    color: var(--text-muted);
+    line-height: 1.2;
+  }
+  .thumb-meta input {
+    width: 3.5em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95em;
+    padding: 0 0.2em;
+  }
+  .thumb-meta .thumb-idx { font-weight: 600; color: var(--text); }
+
+  /* Day 4 polish: overrides save row */
+  .overrides-row {
+    display: flex; gap: 0.7em; align-items: center;
+    margin-bottom: 1em; font-size: 0.87em;
+  }
+  .overrides-row button {
+    padding: 0.4em 0.9em;
+    background: var(--bg-elev-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9em;
+  }
+  .overrides-row button:hover { border-color: var(--accent); }
+  .overrides-row .overrides-status { color: var(--text-muted); }
+  .overrides-row .overrides-status.saved { color: var(--accent); }
+  .overrides-row .overrides-status.error { color: #ef4444; }
 {% endblock %}
 
 {% block content %}
@@ -91,12 +177,51 @@
   <button id="restart-btn"{% if not assets %} disabled{% endif %}>↻ Restart</button>
 </div>
 
+<div class="scrub-bar{% if not assets %} disabled{% endif %}" id="scrub-bar"
+     title="Click to jump">
+  <div class="scrub-bar-fill" id="scrub-bar-fill"></div>
+</div>
+
 <div class="player-status">
   {{ asset_count }} asset{{ '' if asset_count == 1 else 's' }};
   timing: {{ timing_strategy | replace('_', ' ') }};
   {% if audio_discipline_version %}audio v{{ audio_discipline_version }};{% endif %}
   {% if has_narration %}{{ narration_count }} narration paragraph{{ '' if narration_count == 1 else 's' }}{% endif %}
+  · gap {{ '%.2f' | format(inter_paragraph_gap_seconds) }}s
+  {% if overrides_present %}· <strong>overrides applied</strong>{% endif %}
 </div>
+
+{% if assets %}
+<div class="thumb-strip" id="thumb-strip">
+  {% for asset in assets %}
+  <div class="thumb" draggable="true"
+       data-asset-id="{{ asset.id }}" data-idx="{{ loop.index0 }}">
+    <div class="thumb-image">
+      {% if asset.asset_type == 'video' %}
+        <span>▶ video</span>
+      {% else %}
+        <img src="/audit/render/{{ asset.id }}/file" alt="{{ asset.filename }}" loading="lazy">
+      {% endif %}
+    </div>
+    <div class="thumb-meta">
+      <span class="thumb-idx">{{ loop.index }}.</span>
+      <input type="number" min="0" step="0.1"
+             class="thumb-duration-override"
+             placeholder="auto"
+             value="{{ asset.override_duration_seconds if asset.override_duration_seconds is defined else '' }}"
+             title="Per-asset duration override (seconds; blank = auto)">
+      s
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="overrides-row">
+  <button id="save-overrides-btn">Save overrides</button>
+  <button id="clear-overrides-btn" title="Resets sequence + duration overrides for this section (does not touch inter-paragraph gap)">Clear sequence + durations</button>
+  <span class="overrides-status" id="overrides-status">drag thumbnails to reorder; edit duration to override</span>
+</div>
+{% endif %}
 
 <audio id="narration-audio" preload="metadata" style="display:none"></audio>
 
@@ -107,11 +232,14 @@
 
 <script>
 (function () {
-  // Server-rendered payload (Day 3 v1 — see roughcut.py).
+  // Server-rendered payload (Day 3 v1 + Day 4 polish — see roughcut.py).
   const ASSETS = {{ assets | tojson }};
   const NARRATIONS = {{ narration_audios | tojson }};
   const TIMING_STRATEGY = {{ timing_strategy | tojson }};
   const DEFAULT_IMAGE_DURATION = {{ default_image_duration }};
+  // Q4 confirmed (2026-05-14): silence between paragraphs, default 0.5s,
+  // overrideable per-section via _data/rough_cut_overrides/<section>.yaml.
+  const INTER_PARAGRAPH_GAP_SECONDS = {{ inter_paragraph_gap_seconds }};
 
   const stage = document.getElementById('player-stage');
   const audio = document.getElementById('narration-audio');
@@ -129,7 +257,43 @@
   let currentAssetIdx = -1;
   let cumulativePriorSeconds = 0;
   let totalDuration = null;
-  const narrationDurations = NARRATIONS.map(() => null);
+  // Pre-populate from server-known durations (mutagen probe — Day 4).
+  // null entries fall back to client-side audio.duration on loadedmetadata.
+  const narrationDurations = NARRATIONS.map(
+    n => (typeof n.duration_seconds === 'number') ? n.duration_seconds : null
+  );
+  // Inter-paragraph gap state — masterClock plateaus during silence so the
+  // elapsed counter doesn't double-count audio.currentTime against an
+  // already-banked narration duration.
+  let isInGap = false;
+  let gapTimeout = null;
+  // Day 4 overrides — mutated as user drags thumbs / edits durations.
+  let manualSequence = ASSETS.map(a => a.id);
+  const perAssetDurationOverrides = {};
+  ASSETS.forEach(a => {
+    if (typeof a.override_duration_seconds === 'number') {
+      perAssetDurationOverrides[a.id] = a.override_duration_seconds;
+    }
+  });
+
+  // Seed totalDuration from server values when all narrations are
+  // server-known. Lets the scrub bar render meaningful pixels before any
+  // audio has been loaded client-side.
+  if (NARRATIONS.length > 0 && narrationDurations.every(d => d !== null)) {
+    const narrationSum = narrationDurations.reduce((a, b) => a + b, 0);
+    const gapsTotal =
+      INTER_PARAGRAPH_GAP_SECONDS * Math.max(0, NARRATIONS.length - 1);
+    totalDuration = narrationSum + gapsTotal;
+  } else if (NARRATIONS.length === 0 && ASSETS.length > 0) {
+    totalDuration = DEFAULT_IMAGE_DURATION * ASSETS.length;
+  }
+
+  const scrubBar = document.getElementById('scrub-bar');
+  const scrubBarFill = document.getElementById('scrub-bar-fill');
+  const thumbStrip = document.getElementById('thumb-strip');
+  const saveOverridesBtn = document.getElementById('save-overrides-btn');
+  const clearOverridesBtn = document.getElementById('clear-overrides-btn');
+  const overridesStatus = document.getElementById('overrides-status');
 
   function formatTime(seconds) {
     if (seconds === null || !isFinite(seconds)) return '—:—';
@@ -152,9 +316,24 @@
     }
     assetLabel.textContent =
       'Asset ' + (idx + 1) + ' of ' + ASSETS.length + ' — ' + asset.filename;
+    // Highlight the corresponding thumbnail.
+    if (thumbStrip) {
+      thumbStrip.querySelectorAll('.thumb').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+    }
+  }
+
+  function updateScrubBar() {
+    if (!scrubBarFill || !totalDuration || totalDuration <= 0) return;
+    const fraction = Math.max(
+      0, Math.min(1, masterClockSeconds() / totalDuration)
+    );
+    scrubBarFill.style.width = (fraction * 100).toFixed(2) + '%';
   }
 
   function masterClockSeconds() {
+    if (isInGap) return cumulativePriorSeconds;
     return cumulativePriorSeconds + (audio.currentTime || 0);
   }
 
@@ -185,12 +364,16 @@
   function onAudioMetadata() {
     narrationDurations[currentNarrationIdx] = audio.duration;
     if (narrationDurations.every(d => d !== null)) {
-      totalDuration = narrationDurations.reduce((a, b) => a + b, 0);
+      const narrationSum = narrationDurations.reduce((a, b) => a + b, 0);
+      const gapsTotal =
+        INTER_PARAGRAPH_GAP_SECONDS * Math.max(0, NARRATIONS.length - 1);
+      totalDuration = narrationSum + gapsTotal;
     }
   }
 
   function onAudioTimeUpdate() {
     updateAssetByClock();
+    updateScrubBar();
     elapsedLabel.textContent =
       formatTime(masterClockSeconds()) + ' / ' + formatTime(totalDuration);
   }
@@ -199,8 +382,22 @@
     cumulativePriorSeconds +=
       (narrationDurations[currentNarrationIdx] || audio.duration || 0);
     if (currentNarrationIdx + 1 < NARRATIONS.length) {
-      loadNarration(currentNarrationIdx + 1);
-      audio.play();
+      // Inter-paragraph silence (Q4 — default 0.5s, configurable per-section).
+      // Skip the timeout entirely when the gap is 0 so back-to-back paragraphs
+      // chain with zero perceptible delay.
+      if (INTER_PARAGRAPH_GAP_SECONDS <= 0) {
+        loadNarration(currentNarrationIdx + 1);
+        audio.play();
+        return;
+      }
+      isInGap = true;
+      gapTimeout = setTimeout(() => {
+        cumulativePriorSeconds += INTER_PARAGRAPH_GAP_SECONDS;
+        isInGap = false;
+        gapTimeout = null;
+        loadNarration(currentNarrationIdx + 1);
+        audio.play();
+      }, INTER_PARAGRAPH_GAP_SECONDS * 1000);
     } else {
       // All narrations done.
       showAsset(ASSETS.length - 1);
@@ -221,6 +418,7 @@
       cumulativePriorSeconds = timerAccumulated + elapsed;
       const total = DEFAULT_IMAGE_DURATION * ASSETS.length;
       updateAssetByClock();
+      updateScrubBar();
       elapsedLabel.textContent =
         formatTime(cumulativePriorSeconds) + ' / ' + formatTime(total);
       if (cumulativePriorSeconds >= total) {
@@ -254,6 +452,13 @@
   function pause() {
     playBtn.disabled = false;
     pauseBtn.disabled = true;
+    // Cancel any in-flight inter-paragraph gap so resume doesn't fire
+    // the next narration mid-pause.
+    if (gapTimeout !== null) {
+      clearTimeout(gapTimeout);
+      gapTimeout = null;
+      isInGap = false;
+    }
     if (NARRATIONS.length > 0) {
       audio.pause();
     } else {
@@ -282,6 +487,200 @@
   pauseBtn.addEventListener('click', pause);
   restartBtn.addEventListener('click', restart);
 
+  // ===== Day 4 polish: scrub bar click-to-jump =====
+
+  function seekToFraction(fraction) {
+    if (!totalDuration || totalDuration <= 0) return;
+    const target = Math.max(0, Math.min(1, fraction)) * totalDuration;
+    if (NARRATIONS.length === 0) {
+      // No-narration synthetic timer mode.
+      const wasPlaying = timerHandle !== null;
+      if (wasPlaying) stopNoNarrationTimer();
+      timerAccumulated = target;
+      cumulativePriorSeconds = target;
+      updateAssetByClock();
+      updateScrubBar();
+      if (wasPlaying) startNoNarrationTimer();
+      return;
+    }
+    // Narration mode: walk paragraphs to find target's bucket.
+    let elapsed = 0;
+    for (let i = 0; i < NARRATIONS.length; i++) {
+      const dur = narrationDurations[i] || 0;
+      if (target < elapsed + dur || i === NARRATIONS.length - 1) {
+        const offset = Math.max(0, target - elapsed);
+        const wasPlaying = !audio.paused;
+        currentNarrationIdx = i;
+        cumulativePriorSeconds = elapsed;
+        if (gapTimeout !== null) {
+          clearTimeout(gapTimeout); gapTimeout = null; isInGap = false;
+        }
+        const onLoadedSetTime = () => {
+          audio.removeEventListener('loadedmetadata', onLoadedSetTime);
+          try { audio.currentTime = offset; } catch (e) {}
+          if (wasPlaying) audio.play();
+        };
+        audio.addEventListener('loadedmetadata', onLoadedSetTime);
+        loadNarration(i);
+        return;
+      }
+      elapsed += dur + INTER_PARAGRAPH_GAP_SECONDS;
+    }
+  }
+
+  if (scrubBar) {
+    scrubBar.addEventListener('click', (e) => {
+      if (scrubBar.classList.contains('disabled')) return;
+      const rect = scrubBar.getBoundingClientRect();
+      const fraction = (e.clientX - rect.left) / rect.width;
+      seekToFraction(fraction);
+    });
+  }
+
+  // ===== Day 4 polish: thumbnail drag-reorder + duration override =====
+
+  let dragSrcEl = null;
+
+  function rebuildManualSequenceFromDOM() {
+    if (!thumbStrip) return;
+    manualSequence = Array.from(thumbStrip.querySelectorAll('.thumb'))
+      .map(el => el.dataset.assetId);
+    // Renumber indices visible to user.
+    thumbStrip.querySelectorAll('.thumb').forEach((el, i) => {
+      const idxLabel = el.querySelector('.thumb-idx');
+      if (idxLabel) idxLabel.textContent = (i + 1) + '.';
+    });
+    setOverridesStatus('unsaved sequence change', 'pending');
+  }
+
+  function setOverridesStatus(text, kind) {
+    if (!overridesStatus) return;
+    overridesStatus.textContent = text;
+    overridesStatus.classList.remove('saved', 'error');
+    if (kind === 'saved') overridesStatus.classList.add('saved');
+    else if (kind === 'error') overridesStatus.classList.add('error');
+  }
+
+  if (thumbStrip) {
+    thumbStrip.querySelectorAll('.thumb').forEach((thumb) => {
+      thumb.addEventListener('click', (e) => {
+        // Avoid triggering jump when clicking the duration input.
+        if (e.target.tagName === 'INPUT') return;
+        const idx = Array.from(thumbStrip.children).indexOf(thumb);
+        if (idx >= 0) {
+          // Jump to the fraction matching this asset's start.
+          if (totalDuration && totalDuration > 0) {
+            seekToFraction(idx / ASSETS.length);
+          }
+        }
+      });
+      thumb.addEventListener('dragstart', (e) => {
+        dragSrcEl = thumb;
+        thumb.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      thumb.addEventListener('dragend', () => {
+        thumb.classList.remove('dragging');
+        thumbStrip.querySelectorAll('.thumb').forEach(
+          el => el.classList.remove('drag-over')
+        );
+        dragSrcEl = null;
+      });
+      thumb.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        thumb.classList.add('drag-over');
+      });
+      thumb.addEventListener('dragleave', () => {
+        thumb.classList.remove('drag-over');
+      });
+      thumb.addEventListener('drop', (e) => {
+        e.preventDefault();
+        thumb.classList.remove('drag-over');
+        if (!dragSrcEl || dragSrcEl === thumb) return;
+        // Insert dragSrcEl before `thumb` (or after, if dragSrcEl was earlier).
+        const all = Array.from(thumbStrip.children);
+        const srcIdx = all.indexOf(dragSrcEl);
+        const dstIdx = all.indexOf(thumb);
+        if (srcIdx < dstIdx) {
+          thumb.parentNode.insertBefore(dragSrcEl, thumb.nextSibling);
+        } else {
+          thumb.parentNode.insertBefore(dragSrcEl, thumb);
+        }
+        rebuildManualSequenceFromDOM();
+      });
+      const input = thumb.querySelector('.thumb-duration-override');
+      if (input) {
+        input.addEventListener('change', () => {
+          const assetId = thumb.dataset.assetId;
+          const v = input.value.trim();
+          if (v === '' || isNaN(parseFloat(v))) {
+            delete perAssetDurationOverrides[assetId];
+          } else {
+            perAssetDurationOverrides[assetId] = parseFloat(v);
+          }
+          setOverridesStatus('unsaved duration change', 'pending');
+        });
+      }
+    });
+  }
+
+  // ===== Day 4 polish: save / clear overrides =====
+
+  async function postOverrides(payload) {
+    const url = window.location.pathname.replace(
+      /\/roughcut$/, '/roughcut/overrides'
+    );
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  }
+
+  if (saveOverridesBtn) {
+    saveOverridesBtn.addEventListener('click', async () => {
+      saveOverridesBtn.disabled = true;
+      try {
+        await postOverrides({
+          manual_sequence: manualSequence,
+          per_asset_duration_seconds: perAssetDurationOverrides,
+        });
+        setOverridesStatus(
+          'saved at ' + new Date().toLocaleTimeString() +
+          ' — reload page to see asset re-sequencing in player',
+          'saved'
+        );
+      } catch (err) {
+        setOverridesStatus('save failed: ' + err.message, 'error');
+      } finally {
+        saveOverridesBtn.disabled = false;
+      }
+    });
+  }
+
+  if (clearOverridesBtn) {
+    clearOverridesBtn.addEventListener('click', async () => {
+      clearOverridesBtn.disabled = true;
+      try {
+        await postOverrides({
+          manual_sequence: [],
+          per_asset_duration_seconds: {},
+        });
+        setOverridesStatus(
+          'sequence + durations cleared — reload page to see fallback ordering',
+          'saved'
+        );
+      } catch (err) {
+        setOverridesStatus('clear failed: ' + err.message, 'error');
+      } finally {
+        clearOverridesBtn.disabled = false;
+      }
+    });
+  }
+
   // Initial: show first asset; prep first narration if any; otherwise
   // set elapsed label to total fallback duration.
   if (ASSETS.length > 0) {
@@ -289,10 +688,15 @@
   }
   if (NARRATIONS.length > 0) {
     loadNarration(0);
+    // Update elapsed label with server-known total when available.
+    if (totalDuration) {
+      elapsedLabel.textContent = '0:00 / ' + formatTime(totalDuration);
+    }
   } else if (ASSETS.length > 0) {
     elapsedLabel.textContent =
       '0:00 / ' + formatTime(DEFAULT_IMAGE_DURATION * ASSETS.length);
   }
+  updateScrubBar();
 })();
 </script>
 {% endblock %}

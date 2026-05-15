@@ -135,9 +135,12 @@ Code's).**
 
 # Active task
 
-**Last updated 2026-05-13 (second pivot, same-day).** Phase 3
+**Last updated 2026-05-15 (Day 4 close, reboot prep).** Phase 3
 complete-the-app sprint IN PROGRESS — target 2026-05-23 EP1 launch
-(pushed +7 days from 2026-05-16).
+(pushed +7 days from 2026-05-16). Day 4 polish 5/5 ✅ +1 Day-3
+regression fix; UNCOMMITTED at reboot — run `git status` from
+`tool_build/` after reboot. Day 5 (F6 NOTES.md authorship)
+unblocked once H#4 sidecar call + rubric integration land.
 
 ## ACTIVE: Phase 3 complete-the-app sprint — target 2026-05-23 EP1 launch
 
@@ -197,53 +200,104 @@ integrity).
   Architecture parsing + manual override UI + scrub bar + thumbnail
   strip + server-side duration probing (mutagen) all deferred to Day 4
   polish.
-- **Day 4 (2026-05-15):** Rough-cut player polish — timeline
-  visualization, asset highlight, partial-state surfacing, manual
-  sequence override UI. Adds: scrub bar with timeline, click-to-jump,
-  asset thumbnail strip with current-position highlight, drag/reorder
-  for manual sequence override (rough_cut_overrides table if needs
-  persistence), per-asset duration override, playback speed control,
-  side-by-side comparison view. Server-side audio duration probing
-  via mutagen at this point (Day 3 uses client-side HTML5
-  audio.duration on load).
+- **Day 4 (2026-05-15) — ✅ COMPLETE (5/5 polish features + 1 Day-3
+  regression fix; UNCOMMITTED at reboot prep, see `git status`).**
+  Decisions resolved during the day: Q2 per-section YAML sidecar
+  (`_data/rough_cut_overrides/<section>.yaml`), Q3 bulk mutagen
+  backfill, Q4 0.5s inter-paragraph gap default (configurable
+  per-section), Q6 scrub-bar follows mutagen. Q1 reframed mid-session
+  to author `ep1/section_structure.yaml` sidecar (Joseph commits per
+  AD-5) over architecture-doc parsing; Option A editorial-section
+  shape chosen; H#4 hero-shot mapping editorial call PENDING before
+  redraft — sidecar paused at that gate. Q5 side-by-side comparison
+  view scope (anchor-vs-derivative vs version-vs-version) PENDING.
 
-  **Day 4 open questions banked from Day 3 EOD (need decisions before
-  the relevant Day 4 sub-task starts; not all blocking, but Joseph's
-  call shapes scope):**
-    1. **EP1_STRUCTURAL_ARCHITECTURE_v1_4.md parser surface.** What
-       shape does the beat-structure take in the doc — tables,
-       H3/H4 hierarchies, free-prose? Decide parser approach by
-       reading the doc first. If structure isn't parser-friendly,
-       scope-back to "structural metadata sidecar YAML" instead of
-       parsing the canonical doc.
-    2. **Manual sequence override persistence.** Options:
-       (a) `rough_cut_overrides` table (Migration 0005) — full audit
-       trail discipline; (b) per-section YAML sidecar at
-       `_data/rough_cut_overrides/<section>.yaml` parallel to other
-       artifacts — fits AD-5 filesystem-canonical pattern;
-       (c) client-side localStorage — fastest to ship, no
-       cross-machine persistence. Tentative: (b) per AD-5
-       discipline; confirm before Day 4 starts.
-    3. **mutagen ingest cadence.** Bulk backfill at
-       `audio_assets.rebuild_audio_cache()` (slow first run, fast
-       thereafter), lazy probe-on-first-query (server caches in
-       `audio_assets.duration_seconds` after first miss), or explicit
-       `/audio_assets/refresh_durations` endpoint? Tentative: bulk
-       backfill, simplest to reason about; scrub bar UI depends on
-       server-known total duration so this is a hard prereq.
-    4. **Inter-paragraph gap.** Silence between paragraphs
-       (matches Daniel's natural narration pacing per Style
-       Exaggeration delivery) or seamless transition? Tentative:
-       configurable per-section via overrides YAML, default
-       ~0.3-0.7s silence; confirm before Day 4 implements.
-    5. **Side-by-side comparison view scope.** v2 vs v3 alternative
-       renders side-by-side within one section's player, OR
-       two-section comparison (`h3_skinner` vs `h3_skinner_v2`)?
-       Spec doesn't disambiguate. Joseph's call required before
-       Day 4 designs the UI.
-    6. **Scrub bar sequencing.** Pixel-math requires server-known
-       total duration → mutagen backfill must land before scrub-bar
-       UI. Day 4 morning starts with mutagen ingest; UI follows.
+  Polish features shipped:
+    1. **Mutagen probe + bulk backfill** — `_probe_duration_seconds()`
+       in audio_assets.py (graceful-None on bad bytes);
+       `backfill_durations()` fills NULL rows + updates YAML sidecar;
+       `rebuild_audio_cache()` calls backfill at end. New dep:
+       `mutagen 1.47.0` (pip-installed; no requirements.txt updated).
+    2. **rough_cut_overrides module** — NEW
+       `rough_cut_overrides.py`. Per-section YAML at
+       `_data/rough_cut_overrides/<section>.yaml`; episode-level at
+       `_episode_<ep_id>.yaml`. Schema: `manual_sequence`,
+       `per_asset_duration_seconds`, `inter_paragraph_gap_seconds`.
+       `apply_overrides()` reorders + stamps override durations +
+       returns resolved gap; leftover assets append-at-end so stale
+       sequences don't hide newly-promoted renders.
+    3. **Inter-paragraph gap** — 0.5s default, configurable per-section.
+       Template `roughcut_player.html` plateaus masterClock during
+       silence (`isInGap` flag); pause cancels in-flight gap timeout.
+    4. **Timeline + scrub bar UI** — Scrub bar with click-to-jump
+       cross-paragraph seek (one-shot `loadedmetadata` listener for
+       currentTime set on resume); HTML5 drag-and-drop reorder on
+       thumb strip; per-asset duration override number inputs;
+       save/clear overrides buttons. GET/POST endpoints at
+       `/video/<ep>/section/<sec>/roughcut/overrides`.
+       NOT shipped: playback speed control, side-by-side compare.
+       Manual reorder is save-then-reload (player JS doesn't hot-reload
+       its ASSETS array post-save — future polish).
+    5. **Cross-section endpoint** `/video/<ep>/roughcut_full` —
+       `build_roughcut_full_data()` chains sections,
+       `_discover_sections()` = DISTINCT `concepts.section` ASC
+       default. Episode-override `section_order` honored. NEW template
+       `roughcut_full_player.html` with section-boundary divider markers
+       on scrub bar (skipped when ≤1 section in chain). Section divider
+       precision uses `asset_idx / asset_count` fraction (approximate;
+       refine to cumulative-narration-seconds when sections actually
+       carry narration).
+
+  **Day-3 regression fix that surfaced during Day 4 smoke-test:**
+  `_query_renders_for_section` in roughcut.py used a naive
+  `JOIN verdicts → renders` that multiplied a render once per
+  positive verdict. Production render `a1e9b7a81079e6d2` had 5
+  hero_zone/strong verdicts (re-grading over time, `supersedes`
+  link not set) → surfaced as 5 duplicate asset entries.
+  Window-function CTE (`ROW_NUMBER() OVER (PARTITION BY render_id
+  ORDER BY created DESC)`) collapses to 1 row per render with latest
+  verdict surfacing. Test 15 regression in test_roughcut.py covers.
+
+  Test growth: test_audio_assets.py 12→18 scenarios (+6 mutagen
+  probe/backfill); test_roughcut.py 10→15 scenarios (+5: overrides
+  GET/POST integration, build_roughcut_full_data chain,
+  episode_overrides ordering, /roughcut_full HTTP, dedup regression);
+  NEW test_rough_cut_overrides.py 10 scenarios. Full suite **98
+  passed + 1 skipped** (was 97+1 at Day 3 close; +1 net pytest file).
+  Production `_data/state.db` row counts byte-identical pre/post
+  pytest — fixture isolation holds.
+
+  Files touched (UNCOMMITTED): audio_assets.py, rough_cut_overrides.py
+  [NEW], roughcut.py, app.py, templates/roughcut_player.html,
+  templates/roughcut_full_player.html [NEW], tests/test_audio_assets.py,
+  tests/test_rough_cut_overrides.py [NEW], tests/test_roughcut.py.
+  All inside tool_build/ (AD-5 write zone). Plus
+  SESSION_STARTER.md + banked_items.md updates at reboot-prep.
+
+  Open paths to verify post-reboot: per-section player at
+  `http://localhost:7890/video/ep1/section/<section>/roughcut`;
+  full-episode chained at
+  `http://localhost:7890/video/ep1/roughcut_full`.
+
+  **Pending decisions for next-session pickup (in priority order):**
+    1. **H#4 hero-shot mapping editorial call** — blocks
+       `ep1/section_structure.yaml` sidecar redraft (Option A
+       editorial-section shape). Earlier draft + 5-of-9 confirmed
+       hero-shot mappings preserved in conversation context;
+       restate at session resume from the chat log.
+    2. **Q5 side-by-side comparison view scope** — anchor-vs-derivative
+       (alternative renders within one section) vs version-vs-version
+       (h3_skinner vs h3_skinner_v2 across sections)? Joseph's call
+       required before designing the UI.
+    3. **Rubric calibration integration** — apparatus accuracy +
+       period authenticity dimensions from
+       `RUBRIC_CALIBRATION_SCRATCH_2026_05_13.md` →
+       `docs/AUDIT_RUBRICS_v1_0.md`. STILL pending Joseph; F6
+       Day 5 auto-drafts will use whichever rubric is active.
+    4. **Day 5 F6 NOTES.md authorship** scheduled 2026-05-16 — F5's
+       `deferred_f6_not_shipped` placeholder on
+       `dispatcher.hero_promote()` becomes actually-fired once F6
+       ships.
 - **Day 5 (2026-05-16):** F6 NOTES.md authorship via Claude API.
   **MOVED from Day 3 per day-order swap 2026-05-14.** F5's deferred
   F6 fire placeholder on `dispatcher.hero_promote()` (currently

@@ -39,6 +39,7 @@ import sqlite3
 from typing import Any, Optional
 
 import db
+import rough_cut_overrides
 
 
 # Asset timing fallback when no narration audio available.
@@ -133,22 +134,37 @@ def _query_renders_for_section(
     # complex WHERE clause that would need to OR concept-section against
     # filename-LIKE patterns. Render count is ~1700 in production; the
     # in-Python pass is cheap enough at that scale.
+    #
+    # Day 4 dedup fix: a render can carry multiple hero_zone/strong
+    # verdicts (re-grading over time, with `supersedes_verdict_id` not
+    # always set). Naive JOIN multiplied one render into N entries — see
+    # render a1e9b7a81079e6d2 with 5 positive verdicts surfacing as 5
+    # duplicate assets in the chained view. Window-function CTE collapses
+    # to the latest positive verdict per render.
     rows = conn.execute(
         """
+        WITH latest_positive_verdict_per_render AS (
+            SELECT v.*,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY v.render_id ORDER BY v.created DESC
+                   ) AS rn
+            FROM verdicts v
+            WHERE v.verdict IN ('hero_zone', 'strong')
+              AND v.id NOT IN (
+                  SELECT supersedes_verdict_id FROM verdicts
+                  WHERE supersedes_verdict_id IS NOT NULL
+              )
+        )
         SELECT r.id, r.filename, r.filepath, r.tool, r.canonical_hash,
                r.hero_status, r.created AS render_created,
                v.id AS verdict_id, v.verdict,
                v.created AS verdict_created,
                c.section AS concept_section
-        FROM verdicts v
+        FROM latest_positive_verdict_per_render v
         JOIN renders r ON r.id = v.render_id
         LEFT JOIN prompts p ON p.id = r.prompt_id
         LEFT JOIN concepts c ON c.id = p.concept_id
-        WHERE v.verdict IN ('hero_zone', 'strong')
-          AND v.id NOT IN (
-              SELECT supersedes_verdict_id FROM verdicts
-              WHERE supersedes_verdict_id IS NOT NULL
-          )
+        WHERE v.rn = 1
         ORDER BY v.created ASC
         """
     ).fetchall()
@@ -299,6 +315,11 @@ def build_roughcut_data(ep_id: str, section: str) -> dict[str, Any]:
     finally:
         conn.close()
 
+    overrides = rough_cut_overrides.load_overrides(section)
+    renders, inter_paragraph_gap = rough_cut_overrides.apply_overrides(
+        renders, overrides,
+    )
+
     has_assets = len(renders) > 0
     has_narration = len(audios) > 0
 
@@ -340,6 +361,133 @@ def build_roughcut_data(ep_id: str, section: str) -> dict[str, Any]:
         "narration_count": len(audios),
         "timing_strategy": timing_strategy,
         "default_image_duration": DEFAULT_IMAGE_DURATION_SECONDS,
+        "inter_paragraph_gap_seconds": inter_paragraph_gap,
+        "overrides_present": bool(overrides),
+        "banners": banners,
+    }
+
+
+def _discover_sections(conn: sqlite3.Connection) -> list[str]:
+    """Return all DISTINCT non-null concepts.section values, sorted.
+
+    Used by build_roughcut_full_data() as the default section order when
+    no _episode.yaml override exists. Sort is alphabetical — the only
+    stable order without an explicit canonical sequence; episode-level
+    overrides handle authored ordering.
+    """
+    rows = conn.execute(
+        "SELECT DISTINCT section FROM concepts "
+        "WHERE section IS NOT NULL AND section != '' "
+        "ORDER BY section ASC"
+    ).fetchall()
+    return [r[0] for r in rows]
+
+
+def build_roughcut_full_data(ep_id: str) -> dict[str, Any]:
+    """Cross-section flow-evaluation payload for /video/{ep_id}/roughcut_full.
+
+    Day 4 of Phase 3 sprint — added per PJ Ace workflow gap analysis. The
+    per-section player is for refining one section's edit; this combined
+    view chains every section in episode order so Joseph can FEEL the
+    flow rather than tabulate it section-by-section.
+
+    Section order resolution:
+      1. _data/rough_cut_overrides/_episode_<ep_id>.yaml `section_order`
+      2. Default — DISTINCT concepts.section ASC
+
+    Each section's per-section overrides (manual sequence, per-asset
+    durations) are applied via build_roughcut_data; the combined payload
+    concatenates the post-override results. Section boundaries are
+    surfaced via `section_boundaries` (asset indices where a new section
+    starts) so the chained-player template can render dividers.
+
+    Empty/missing sections are silently dropped so the combined view
+    isn't littered with no-data banners — the per-section player remains
+    the place to debug missing audio/renders for one section.
+    """
+    episode_overrides = rough_cut_overrides.load_episode_overrides(ep_id)
+    section_order = episode_overrides.get("section_order")
+    if not section_order:
+        conn = db.connect()
+        try:
+            section_order = _discover_sections(conn)
+        finally:
+            conn.close()
+
+    sections_data: list[dict] = []
+    combined_assets: list[dict] = []
+    combined_narrations: list[dict] = []
+    section_boundaries: list[dict] = []  # [{"section": str, "asset_idx": int, "narration_idx": int}, ...]
+
+    for section in section_order:
+        section_data = build_roughcut_data(ep_id, section)
+        if not section_data["has_assets"] and not section_data["has_narration"]:
+            continue
+        section_boundaries.append({
+            "section": section,
+            "asset_idx": len(combined_assets),
+            "narration_idx": len(combined_narrations),
+            "asset_count": section_data["asset_count"],
+            "narration_count": section_data["narration_count"],
+        })
+        combined_assets.extend(section_data["assets"])
+        combined_narrations.extend(section_data["narration_audios"])
+        sections_data.append({
+            "section": section,
+            "asset_count": section_data["asset_count"],
+            "narration_count": section_data["narration_count"],
+            "has_assets": section_data["has_assets"],
+            "has_narration": section_data["has_narration"],
+        })
+
+    has_assets = len(combined_assets) > 0
+    has_narration = len(combined_narrations) > 0
+    timing_strategy = (
+        "narration_distributed" if has_narration else "default_3s_per_image"
+    )
+    inter_paragraph_gap = float(
+        episode_overrides.get(
+            "inter_paragraph_gap_seconds",
+            0.5,  # mirrors rough_cut_overrides.DEFAULT_INTER_PARAGRAPH_GAP_SECONDS
+        )
+    )
+
+    banners = []
+    if not section_order:
+        banners.append({
+            "kind": "no_sections",
+            "message": (
+                "No sections discovered. Add a _data/rough_cut_overrides/"
+                f"_episode_{ep_id}.yaml with section_order, or bind concepts "
+                "to sections so they're auto-discovered."
+            ),
+        })
+    elif not sections_data:
+        banners.append({
+            "kind": "all_sections_empty",
+            "message": (
+                f"{len(section_order)} section(s) declared in episode order, "
+                "but none have any hero_zone/strong renders or narration audio "
+                "yet. Use the per-section players to populate them first."
+            ),
+        })
+
+    return {
+        "ep_id": ep_id,
+        "section_order": section_order,
+        "sections": sections_data,
+        "section_boundaries": section_boundaries,
+        "assets": combined_assets,
+        "narration_audios": combined_narrations,
+        "audio_discipline_version": None,  # mixed across sections; not surfaced
+        "has_narration": has_narration,
+        "has_assets": has_assets,
+        "asset_count": len(combined_assets),
+        "narration_count": len(combined_narrations),
+        "timing_strategy": timing_strategy,
+        "default_image_duration": DEFAULT_IMAGE_DURATION_SECONDS,
+        "inter_paragraph_gap_seconds": inter_paragraph_gap,
+        "overrides_present": bool(episode_overrides),
         "banners": banners,
     }
 

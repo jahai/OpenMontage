@@ -16,6 +16,7 @@ also works but touches production paths.
 from __future__ import annotations
 
 import sys
+import wave
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -43,6 +44,22 @@ def _write_test_mp3(rel_path: str, contents: bytes = b"fake-mp3-bytes") -> Path:
     abs_path = db.REPO_ROOT / rel_path
     abs_path.parent.mkdir(parents=True, exist_ok=True)
     abs_path.write_bytes(contents)
+    return abs_path
+
+
+def _write_test_wav(rel_path: str, duration_seconds: float = 1.0) -> Path:
+    """Create a real silent WAV file. mutagen supports WAV natively, so the
+    probe path can be exercised end-to-end without needing a real MP3
+    fixture (constructing valid MP3 frame headers manually is fragile)."""
+    abs_path = db.REPO_ROOT / rel_path
+    abs_path.parent.mkdir(parents=True, exist_ok=True)
+    framerate = 8000
+    nframes = int(framerate * duration_seconds)
+    with wave.open(str(abs_path), "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(framerate)
+        wf.writeframes(b"\x00\x00" * nframes)
     return abs_path
 
 
@@ -214,6 +231,90 @@ def main() -> int:
     except ValueError as e:
         _assert("no audio_asset row" in str(e))
     print("  refused with no-row error")
+
+    # ===== Day 4: _probe_duration_seconds + backfill_durations =====
+
+    print("\nTest 13: _probe_duration_seconds returns None on bad bytes")
+    bad_path = _write_test_mp3(
+        "projects/latent_systems/ep1/audio/v1_4_radio_news_host/section_17/"
+        f"EP1_section_17_para_4_radio_news_host_X22_take1.mp3",
+        contents=b"not-a-real-mp3",
+    )
+    duration = audio_assets._probe_duration_seconds(bad_path)
+    _assert(duration is None,
+            f"synthetic bytes should probe to None, got {duration!r}")
+    print("  None on synthetic bytes (graceful)")
+
+    print("\nTest 14: _probe_duration_seconds returns float on real audio")
+    wav_path = _write_test_wav(
+        "projects/latent_systems/tool_build/_data/test_fixtures/"
+        f"{PREFIX}probe_target.wav",
+        duration_seconds=1.0,
+    )
+    duration = audio_assets._probe_duration_seconds(wav_path)
+    _assert(duration is not None,
+            "real WAV should probe to a duration")
+    _assert(0.95 <= duration <= 1.05,
+            f"expected ~1.0s, got {duration:.3f}s")
+    print(f"  probed {duration:.3f}s for 1.0s WAV (mutagen end-to-end)")
+
+    print("\nTest 15: ingest_audio_file writes NULL duration when probe fails")
+    rel_path_15 = (
+        "projects/latent_systems/ep1/audio/v1_4_radio_news_host/section_17/"
+        "EP1_section_17_para_5_radio_news_host_X22_take1.mp3"
+    )
+    abs_path_15 = _write_test_mp3(rel_path_15, contents=b"still-not-real-mp3")
+    result = audio_assets.ingest_audio_file(
+        abs_path_15, _id_override=f"{PREFIX}p5",
+    )
+    _assert(result["action"] == "inserted")
+    _assert(result["duration_seconds"] is None,
+            f"probe-failed insert should leave duration NULL, "
+            f"got {result['duration_seconds']!r}")
+    rows = audio_assets.get_audio_assets_for_section("section_17")
+    p5 = next((r for r in rows if r["paragraph_number"] == 5), None)
+    _assert(p5 is not None and p5["duration_seconds"] is None,
+            "state.db should reflect NULL duration_seconds for synthetic ingest")
+    print("  NULL duration persisted; probe failure is non-fatal")
+
+    print("\nTest 16: backfill_durations counts probe_failed for synthetic rows")
+    summary = audio_assets.backfill_durations()
+    _assert(summary["scanned"] >= 1,
+            f"expected to scan synthetic-byte rows, got {summary['scanned']}")
+    _assert(summary["probe_failed"] >= 1,
+            f"expected probe_failed for synthetic rows, got {summary}")
+    _assert(summary["backfilled"] == 0,
+            f"no real audio in fixtures, expected 0 backfilled, got {summary}")
+    print(f"  scanned={summary['scanned']} probe_failed="
+          f"{summary['probe_failed']} backfilled={summary['backfilled']}")
+
+    print("\nTest 17: backfill_durations counts file_missing when file gone")
+    # Insert a row whose file we then remove, simulating filesystem drift.
+    rel_path_17 = (
+        "projects/latent_systems/ep1/audio/v1_4_radio_news_host/section_17/"
+        "EP1_section_17_para_6_radio_news_host_X22_take1.mp3"
+    )
+    abs_path_17 = _write_test_mp3(rel_path_17, contents=b"will-be-deleted")
+    audio_assets.ingest_audio_file(
+        abs_path_17, _id_override=f"{PREFIX}p6",
+    )
+    abs_path_17.unlink()
+    summary = audio_assets.backfill_durations()
+    _assert(summary["file_missing"] >= 1,
+            f"expected file_missing for unlinked file, got {summary}")
+    print(f"  file_missing={summary['file_missing']} (filesystem drift survives)")
+
+    print("\nTest 18: rebuild_audio_cache summary includes backfill keys")
+    summary = audio_assets.rebuild_audio_cache(verbose=False)
+    for key in ("backfill_scanned", "backfill_filled",
+                "backfill_probe_failed", "backfill_file_missing"):
+        _assert(key in summary,
+                f"summary missing backfill key {key!r}: {summary}")
+    print(f"  rebuild summary surfaces backfill counts: "
+          f"scanned={summary['backfill_scanned']} "
+          f"filled={summary['backfill_filled']} "
+          f"probe_failed={summary['backfill_probe_failed']} "
+          f"file_missing={summary['backfill_file_missing']}")
 
     print("\nPASS: all audio_assets behaviors verified")
     cleanup()

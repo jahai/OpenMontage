@@ -26,6 +26,7 @@ import audit_consult
 import db
 import dispatcher
 import llm
+import rough_cut_overrides
 import roughcut
 
 
@@ -474,6 +475,67 @@ def roughcut_player_data_endpoint(ep_id: str, section: str) -> dict[str, Any]:
     without full-page reload. Day 4 may consume this for sequence-
     override UI."""
     return roughcut.build_roughcut_data(ep_id, section)
+
+
+@app.get("/video/{ep_id}/roughcut_full", response_class=HTMLResponse)
+def roughcut_full_player_page(request: Request, ep_id: str):
+    """Cross-section flow-evaluation player. Chains every section in
+    episode order so the full-episode flow can be felt rather than
+    tabulated. Day 4 of Phase 3 sprint — added per PJ Ace workflow gap
+    analysis. Section order resolves from
+    _data/rough_cut_overrides/_episode_<ep_id>.yaml `section_order`,
+    falling back to DISTINCT concepts.section ASC."""
+    data = roughcut.build_roughcut_full_data(ep_id)
+    return TEMPLATES.TemplateResponse(
+        "roughcut_full_player.html",
+        {"request": request, "active": ep_id, **data},
+    )
+
+
+@app.get("/video/{ep_id}/roughcut_full/data")
+def roughcut_full_player_data_endpoint(ep_id: str) -> dict[str, Any]:
+    """JSON mirror of the full-episode rough-cut payload."""
+    return roughcut.build_roughcut_full_data(ep_id)
+
+
+# --- Day 4 of Phase 3 sprint: rough-cut player overrides ---
+
+
+class RoughCutOverridesPayload(BaseModel):
+    """Per-section rough-cut player overrides body. All fields optional;
+    POST with only the fields you want to set/clear. None values are
+    dropped before persistence so partial updates don't blank fields the
+    caller didn't mention."""
+    manual_sequence: Optional[list[str]] = None
+    per_asset_duration_seconds: Optional[dict[str, float]] = None
+    inter_paragraph_gap_seconds: Optional[float] = None
+
+
+@app.get("/video/{ep_id}/section/{section}/roughcut/overrides")
+def roughcut_overrides_get(ep_id: str, section: str) -> dict[str, Any]:
+    """Return the current per-section overrides YAML as JSON. Empty dict
+    if no overrides file exists for this section."""
+    return rough_cut_overrides.load_overrides(section)
+
+
+@app.post("/video/{ep_id}/section/{section}/roughcut/overrides")
+def roughcut_overrides_post(
+    ep_id: str, section: str, payload: RoughCutOverridesPayload,
+) -> dict[str, Any]:
+    """Persist per-section overrides to YAML sidecar. Merges over any
+    existing file — fields the caller omits stay at whatever the previous
+    file had, fields explicitly set to None get removed.
+
+    Per Joseph's Q2 confirmation (2026-05-14): YAML sidecar persistence
+    at _data/rough_cut_overrides/<section>.yaml. AD-5 filesystem-canonical."""
+    existing = rough_cut_overrides.load_overrides(section)
+    incoming = payload.model_dump(exclude_unset=True)
+    merged = {**existing, **incoming}
+    # Strip explicit None values so the caller can null-out a field by
+    # sending it as null in the JSON body.
+    merged = {k: v for k, v in merged.items() if v is not None}
+    rough_cut_overrides.save_overrides(section, merged)
+    return {"saved": True, "section": section, "overrides": merged}
 
 
 @app.get("/audio_assets/{audio_id}/file")

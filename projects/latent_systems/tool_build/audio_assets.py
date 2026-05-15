@@ -52,6 +52,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import mutagen
 import yaml
 
 import db
@@ -100,6 +101,34 @@ def _file_canonical_hash(abs_path: Path) -> str:
         for chunk in iter(lambda: f.read(65536), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _probe_duration_seconds(abs_path: Path) -> Optional[float]:
+    """Probe an audio file's duration in seconds via mutagen.
+
+    Returns None on any probe failure (corrupt file, unsupported format,
+    synthetic test bytes, missing frames). Callers treat None as "duration
+    not yet known"; the row stays at NULL and a later backfill_durations()
+    pass can re-attempt once the file is real.
+
+    Day 4 of Phase 3 sprint — scrub bar UI requires server-known total
+    duration; relying on client-side HTML5 audio.duration on load (Day 3
+    behavior) creates a flicker before total is known and breaks
+    pixel-math for click-to-jump.
+    """
+    try:
+        f = mutagen.File(str(abs_path))
+    except Exception:
+        return None
+    if f is None or f.info is None:
+        return None
+    length = getattr(f.info, "length", None)
+    if length is None:
+        return None
+    try:
+        return float(length)
+    except (TypeError, ValueError):
+        return None
 
 
 def parse_audio_filename(filename: str) -> Optional[dict]:
@@ -197,6 +226,7 @@ def ingest_audio_file(
 
     asset_id = _id_override or _audio_asset_id_from(filepath_rel)
     canonical_hash = _file_canonical_hash(abs_path)
+    duration_seconds = _probe_duration_seconds(abs_path)
     yaml_rel = (
         f"projects/latent_systems/tool_build/_data/audio_assets/"
         f"{asset_id}.yaml"
@@ -219,12 +249,14 @@ def ingest_audio_file(
             return {"action": "unchanged", **dict(zip(col_names, row))}
         with conn:
             if existing is not None:
-                # Hash changed — update existing row.
+                # Hash changed — update existing row (re-probe duration).
                 conn.execute(
                     """UPDATE audio_assets
-                          SET canonical_hash = ?, modified = ?
+                          SET canonical_hash = ?,
+                              duration_seconds = ?,
+                              modified = ?
                         WHERE id = ?""",
-                    (canonical_hash, now, existing[0]),
+                    (canonical_hash, duration_seconds, now, existing[0]),
                 )
                 action = "updated"
                 asset_id = existing[0]
@@ -236,11 +268,11 @@ def ingest_audio_file(
                            discipline_version, duration_seconds,
                            canonical_hash, is_canonical,
                            yaml_path, created, modified
-                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, 0, ?, ?, ?)""",
+                       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)""",
                     (asset_id, filepath_rel, abs_path.name,
                      parsed["section_label"], parsed["paragraph_number"],
                      parsed["variant_label"], parsed["voice_profile"],
-                     discipline_version, canonical_hash,
+                     discipline_version, duration_seconds, canonical_hash,
                      yaml_rel, now, now),
                 )
                 action = "inserted"
@@ -256,6 +288,7 @@ def ingest_audio_file(
         "variant_label": parsed["variant_label"],
         "voice_profile": parsed["voice_profile"],
         "discipline_version": discipline_version,
+        "duration_seconds": duration_seconds,
         "canonical_hash": canonical_hash,
         "is_canonical": 0,
         "yaml_path": yaml_rel,
@@ -266,6 +299,82 @@ def ingest_audio_file(
     return {"action": action, **record}
 
 
+def backfill_durations(
+    *, repo_root: Optional[Path] = None, verbose: bool = False,
+) -> dict:
+    """Probe duration_seconds for any audio_assets row where it's NULL.
+
+    Day 4 of Phase 3 sprint — covers two cases the per-ingest probe can't:
+      - Pre-mutagen rows ingested before _probe_duration_seconds existed
+      - Rows where the original ingest probe failed (transient I/O, file
+        replaced after first ingest, etc.) and the file is now valid
+
+    Idempotent: probes only NULL-duration rows; rows already populated
+    are skipped. Updates state.db column + rewrites YAML sidecar so the
+    reproducibility artifact stays in lockstep.
+
+    Returns summary {scanned, backfilled, probe_failed, file_missing}.
+    """
+    if repo_root is None:
+        repo_root = db.REPO_ROOT
+    summary = {
+        "scanned": 0, "backfilled": 0,
+        "probe_failed": 0, "file_missing": 0,
+    }
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            """SELECT id, filepath, filename, section_label,
+                      paragraph_number, variant_label, voice_profile,
+                      discipline_version, canonical_hash, is_canonical,
+                      yaml_path, created
+               FROM audio_assets
+               WHERE duration_seconds IS NULL"""
+        ).fetchall()
+        col_names = (
+            "id", "filepath", "filename", "section_label",
+            "paragraph_number", "variant_label", "voice_profile",
+            "discipline_version", "canonical_hash", "is_canonical",
+            "yaml_path", "created",
+        )
+        for row in rows:
+            summary["scanned"] += 1
+            r = dict(zip(col_names, row))
+            abs_path = repo_root / r["filepath"]
+            if not abs_path.exists():
+                summary["file_missing"] += 1
+                if verbose:
+                    print(f"[audio backfill] missing file: {r['filepath']}")
+                continue
+            duration = _probe_duration_seconds(abs_path)
+            if duration is None:
+                summary["probe_failed"] += 1
+                if verbose:
+                    print(f"[audio backfill] probe failed: {r['filepath']}")
+                continue
+            now = _iso_now()
+            with conn:
+                conn.execute(
+                    "UPDATE audio_assets SET duration_seconds = ?, "
+                    "modified = ? WHERE id = ?",
+                    (duration, now, r["id"]),
+                )
+            record = {**r, "duration_seconds": duration,
+                      "is_canonical": bool(r["is_canonical"]),
+                      "modified": now}
+            _write_audio_asset_yaml(record)
+            summary["backfilled"] += 1
+            if verbose:
+                print(
+                    f"[audio backfill] {r['section_label']}/p"
+                    f"{r['paragraph_number']}/{r['variant_label']}: "
+                    f"{duration:.3f}s"
+                )
+    finally:
+        conn.close()
+    return summary
+
+
 def rebuild_audio_cache(
     *, repo_root: Optional[Path] = None, verbose: bool = False,
 ) -> dict:
@@ -274,6 +383,9 @@ def rebuild_audio_cache(
     Idempotent. Skips non-matching filenames (load-bearing validation
     files, archived files, future variant schemes). Skips files under
     `archive/` or `_DEPRECATED_*/` path fragments.
+
+    Day 4 of Phase 3 sprint: calls backfill_durations() at end so any
+    pre-mutagen NULL-duration rows get populated in the same pass.
 
     Returns a summary dict for caller reporting.
     """
@@ -329,6 +441,11 @@ def rebuild_audio_cache(
                 if verbose:
                     print(f"[audio] ERROR ingesting {mp3_path.name}: {e}")
 
+    backfill = backfill_durations(repo_root=repo_root, verbose=verbose)
+    summary["backfill_scanned"] = backfill["scanned"]
+    summary["backfill_filled"] = backfill["backfilled"]
+    summary["backfill_probe_failed"] = backfill["probe_failed"]
+    summary["backfill_file_missing"] = backfill["file_missing"]
     return summary
 
 

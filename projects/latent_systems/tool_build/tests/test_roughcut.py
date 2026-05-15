@@ -384,6 +384,205 @@ def main() -> int:
     missing_resp = client.get("/audio_assets/does_not_exist/file")
     _assert(missing_resp.status_code == 404)
     print("  endpoint renders 200; data endpoint mirrors; 404 on missing audio")
+
+    # Day 4 polish: template carries scrub-bar + thumb-strip + overrides row.
+    _assert('id="scrub-bar"' in body, "expected scrub bar element")
+    _assert('id="thumb-strip"' in body, "expected thumb strip element")
+    _assert('save-overrides-btn' in body, "expected save overrides button")
+    _assert('INTER_PARAGRAPH_GAP_SECONDS = 0.5' in body,
+            "expected default gap constant injected (Q4 default)")
+    print("  Day 4 polish elements present: scrub-bar, thumb-strip, save button, gap=0.5")
+    cleanup()
+
+    # ---- Test 11: overrides GET/POST + apply_overrides integration ----
+    print("\nTest 11: overrides GET/POST endpoints + payload integration")
+    import rough_cut_overrides
+    OVERRIDE_SECTION = "section_overrides_test"
+    # Wipe any leftover sidecar from prior runs.
+    sidecar_path = rough_cut_overrides._overrides_path(OVERRIDE_SECTION)
+    if sidecar_path.exists():
+        sidecar_path.unlink()
+
+    # Seed two renders so we can reorder + duration-override.
+    c11 = _seed_concept(suffix="ovr", section=OVERRIDE_SECTION)
+    r11a = _seed_render_with_verdict(
+        suffix="ovr_a", concept_id=c11, verdict_value="hero_zone",
+    )
+    r11b = _seed_render_with_verdict(
+        suffix="ovr_b", concept_id=c11, verdict_value="strong",
+    )
+
+    # GET on no-overrides section returns {} and default gap surfaces in player.
+    resp = client.get(
+        f"/video/ep1/section/{OVERRIDE_SECTION}/roughcut/overrides"
+    )
+    _assert(resp.status_code == 200)
+    _assert(resp.json() == {}, f"expected empty dict, got {resp.json()}")
+    data = client.get(
+        f"/video/ep1/section/{OVERRIDE_SECTION}/roughcut/data"
+    ).json()
+    _assert(data["inter_paragraph_gap_seconds"] == 0.5,
+            f"expected default 0.5s gap, got {data['inter_paragraph_gap_seconds']}")
+    _assert(data["overrides_present"] is False)
+    natural_order = [a["id"] for a in data["assets"]]
+    _assert(len(natural_order) == 2, f"expected 2 assets, got {natural_order}")
+
+    # POST overrides — reverse the asset order + custom gap + per-asset duration.
+    reversed_order = list(reversed(natural_order))
+    post_resp = client.post(
+        f"/video/ep1/section/{OVERRIDE_SECTION}/roughcut/overrides",
+        json={
+            "manual_sequence": reversed_order,
+            "per_asset_duration_seconds": {natural_order[0]: 7.5},
+            "inter_paragraph_gap_seconds": 0.3,
+        },
+    )
+    _assert(post_resp.status_code == 200)
+    saved = post_resp.json()
+    _assert(saved["saved"] is True)
+    _assert(saved["overrides"]["manual_sequence"] == reversed_order)
+
+    # Re-fetch player data — overrides must be reflected.
+    data2 = client.get(
+        f"/video/ep1/section/{OVERRIDE_SECTION}/roughcut/data"
+    ).json()
+    applied_order = [a["id"] for a in data2["assets"]]
+    _assert(applied_order == reversed_order,
+            f"expected applied order {reversed_order}, got {applied_order}")
+    _assert(data2["inter_paragraph_gap_seconds"] == 0.3,
+            f"expected 0.3s, got {data2['inter_paragraph_gap_seconds']}")
+    _assert(data2["overrides_present"] is True)
+    overridden_asset = next(
+        a for a in data2["assets"] if a["id"] == natural_order[0]
+    )
+    _assert(overridden_asset.get("override_duration_seconds") == 7.5,
+            f"expected 7.5s override, got {overridden_asset.get('override_duration_seconds')}")
+
+    # Cleanup the test sidecar so production directory stays clean.
+    if sidecar_path.exists():
+        sidecar_path.unlink()
+    print("  GET empty -> default gap; POST persists; data endpoint reflects overrides")
+    cleanup()
+
+    # ---- Test 12: build_roughcut_full_data chains sections ----
+    print("\nTest 12: build_roughcut_full_data concatenates sections")
+    cleanup()
+    # Seed two sections, each with a render + verdict.
+    s1 = "section_full_a"
+    s2 = "section_full_b"
+    c12a = _seed_concept(suffix="full_a", section=s1)
+    c12b = _seed_concept(suffix="full_b", section=s2)
+    _seed_render_with_verdict(
+        suffix="full_a_r", concept_id=c12a, verdict_value="hero_zone",
+    )
+    _seed_render_with_verdict(
+        suffix="full_b_r", concept_id=c12b, verdict_value="strong",
+    )
+    full = roughcut.build_roughcut_full_data("ep1")
+    section_ids = [s["section"] for s in full["sections"]]
+    _assert(s1 in section_ids and s2 in section_ids,
+            f"both seeded sections should appear, got {section_ids}")
+    _assert(full["asset_count"] >= 2,
+            f"expected >=2 chained assets, got {full['asset_count']}")
+    boundaries = full["section_boundaries"]
+    _assert(len(boundaries) >= 2,
+            f"expected boundaries for both sections, got {boundaries}")
+    # Boundary asset_idx is monotonically nondecreasing.
+    asset_idxs = [b["asset_idx"] for b in boundaries]
+    _assert(asset_idxs == sorted(asset_idxs),
+            f"boundaries must be in order, got {asset_idxs}")
+    print(f"  chained {len(full['sections'])} sections, "
+          f"{full['asset_count']} combined assets, "
+          f"{len(boundaries)} boundary markers")
+
+    # ---- Test 13: episode_overrides section_order honored ----
+    print("\nTest 13: episode_overrides section_order overrides discovery default")
+    import rough_cut_overrides
+    EP_TEST = "ep_full_order_test"
+    # Seed concepts for this fake episode so discovery has something — but
+    # use the SAME sections to control test scope cleanly.
+    rough_cut_overrides.save_episode_overrides(
+        EP_TEST, {"section_order": [s2, s1]},
+    )
+    full_ordered = roughcut.build_roughcut_full_data(EP_TEST)
+    _assert(full_ordered["section_order"] == [s2, s1],
+            f"expected explicit order [{s2}, {s1}], got {full_ordered['section_order']}")
+    # Sections list reflects that order.
+    ordered_ids = [s["section"] for s in full_ordered["sections"]]
+    _assert(ordered_ids == [s2, s1],
+            f"expected sections in [{s2}, {s1}] order, got {ordered_ids}")
+    # Cleanup episode override file.
+    ep_path = rough_cut_overrides._episode_overrides_path(EP_TEST)
+    if ep_path.exists():
+        ep_path.unlink()
+    _assert(full_ordered["overrides_present"] is True)
+    print(f"  episode-override section_order respected: {ordered_ids}")
+
+    # ---- Test 14: HTTP endpoint /video/{ep}/roughcut_full renders ----
+    print("\nTest 14: HTTP /roughcut_full endpoint renders + lists sections")
+    full_resp = client.get("/video/ep1/roughcut_full")
+    _assert(full_resp.status_code == 200,
+            f"expected 200, got {full_resp.status_code}: {full_resp.text[:200]}")
+    body14 = full_resp.text
+    _assert("Full-episode rough cut" in body14)
+    _assert(s1 in body14 or s2 in body14,
+            "expected at least one seeded section in chained view")
+    _assert("scrub-bar" in body14)
+    # Data endpoint mirror
+    data14 = client.get("/video/ep1/roughcut_full/data").json()
+    _assert("section_boundaries" in data14)
+    _assert("section_order" in data14)
+    print("  endpoint renders 200; data endpoint mirrors; section list visible")
+    cleanup()
+
+    # ---- Test 15: regression — multiple positive verdicts on one render dedupe ----
+    # Production render a1e9b7a81079e6d2 surfaced this in the Day 4 smoke test:
+    # 5 separate hero_zone/strong verdicts (re-grading over time, supersedes
+    # not always set) JOIN-multiplied into 5 duplicate asset entries. Dedup
+    # via window function keeps the latest verdict per render.
+    print("\nTest 15: render with multiple hero_zone/strong verdicts dedupes to one asset")
+    DEDUP_SECTION = "section_dedup_test"
+    c15 = _seed_concept(suffix="dedup", section=DEDUP_SECTION)
+    r15, _v15 = _seed_render_with_verdict(
+        suffix="dedup", concept_id=c15, verdict_value="hero_zone",
+        verdict_offset_seconds=-30,
+    )
+    # Stack two newer verdicts on the SAME render, distinct verdict ids.
+    # Latest one ("strong" at offset 0) should be what surfaces.
+    conn_dedup = db.connect()
+    try:
+        with conn_dedup:
+            conn_dedup.execute(
+                """INSERT INTO verdicts
+                   (id, render_id, rubric_used, verdict, audited_by,
+                    rubric_version, flags_needs_second_look,
+                    discipline_version, yaml_path, created)
+                   VALUES (?, ?, 't', ?, 'human', '1.0', 0,
+                           '1.0', '_test', ?)""",
+                (f"{PREFIX}v_dedup_mid", r15, "hero_zone", _iso(-15)),
+            )
+            conn_dedup.execute(
+                """INSERT INTO verdicts
+                   (id, render_id, rubric_used, verdict, audited_by,
+                    rubric_version, flags_needs_second_look,
+                    discipline_version, yaml_path, created)
+                   VALUES (?, ?, 't', ?, 'human', '1.0', 0,
+                           '1.0', '_test', ?)""",
+                (f"{PREFIX}v_dedup_latest", r15, "strong", _iso(0)),
+            )
+    finally:
+        conn_dedup.close()
+
+    data15 = roughcut.build_roughcut_data("ep1", DEDUP_SECTION)
+    assets15 = data15["assets"]
+    _assert(len(assets15) == 1,
+            f"expected 1 deduped asset, got {len(assets15)} "
+            f"(render {r15} has 3 positive verdicts)")
+    _assert(assets15[0]["id"] == r15)
+    # Window function picks ROW_NUMBER=1 = MAX(created) — latest verdict wins.
+    _assert(assets15[0]["verdict"] == "strong",
+            f"latest verdict should surface; got {assets15[0]['verdict']}")
+    print(f"  3 verdicts on 1 render -> 1 asset; latest verdict ({assets15[0]['verdict']}) surfaces")
     cleanup()
 
     print("\nPASS: all roughcut behaviors verified")
