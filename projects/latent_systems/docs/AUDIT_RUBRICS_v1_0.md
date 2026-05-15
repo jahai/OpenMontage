@@ -120,13 +120,15 @@ These are the 6 evaluation criteria already named in
 `docs/HANDOFF_2026-05-02.md` §"Specific next-session opening directive."
 
 ### Documentary integrity
-The render's coherence with the channel's documentary register —
-calm-observational, not movie-trailer drift, not performative-ominous.
-References hold against existing canonical content (K1 typography,
-H#3 Skinner box hero shot, L1 multi-beat composite).
-- pass: Calm-observational register throughout — single-source lighting, restrained palette without contemporary saturated grade, framing reads as observation rather than performance. Holds against H#3 Skinner box hero register.
-- partial: Register coherent overall but one element drifts — a single dramatic light source, an unmotivated saturated accent, or a camera angle that tilts toward performance. Recoverable in one prompt iteration without restarting from scratch.
-- fail: Register breaks — movie-trailer color grade (teal/orange), performative ominous lighting, decorative lens flares, or commercial-photography polish dominates. Reads as trying to sell rather than observe.
+The render's coherence with the channel's documentary register across three dimensions: register fidelity (calm-observational, not movie-trailer drift, not performative-ominous); apparatus accuracy (depicted apparatus matches the topical reality the narration references); period authenticity (era-specific elements — clothing, instrumentation, architecture, lighting style — hold to the referenced historical period without anachronism). References hold against existing canonical content (K1 typography, H#3 Skinner box hero shot, L1 multi-beat composite).
+
+Apparatus accuracy and period authenticity apply to renders depicting representational content with an identifiable historical/topical referent. For abstract concept types where apparatus/period aren't depicted, grade Documentary integrity on register fidelity alone.
+
+Apparatus-accuracy examples: a 1930s Skinner box must show food-reward conditioning apparatus (lever + food dispenser + conditioning chamber); water mechanisms, water bottles, or modern lab equipment not part of the documented experimental setup are accuracy failures even when register is otherwise correct. Period-authenticity examples: a 1930s laboratory scene must avoid post-1930s tooling, post-war architectural elements, and contemporary clothing/grooming markers.
+
+- pass: All applicable dimensions hold. Register calm-observational; apparatus accurate to the narration's topical referent (when applicable); period elements consistent across clothing, instrumentation, architecture, lighting (when applicable). Holds against H#3 Skinner box hero register.
+- partial: Register holds AND one of apparatus/period drifts in a way that's recoverable in one prompt iteration — a single anachronistic element (post-1930s clothing, a single contemporary instrument), or apparatus accurate in concept but one element wrong (right chamber and lever but wrong food dispenser shape). Tunable without regenerating from scratch.
+- fail: Register breaks (movie-trailer grade, performative lighting, commercial polish) regardless of apparatus/period accuracy; OR apparatus depicts a fundamentally different experiment than the narration references; OR period shifts decades from the referenced era; OR two or more dimensions break simultaneously.
 
 ### Shorts effectiveness
 The render reads at-a-glance in 9:16 framing for short-form
