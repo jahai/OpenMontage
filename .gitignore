@@ -48,6 +48,9 @@ projects/latent_systems/ep1/**
 !projects/latent_systems/ep1/**/
 !projects/latent_systems/ep1/**/NOTES.md
 !projects/latent_systems/ep1/**/README.md
+# Structural sidecars at top level — git-tracked.
+!projects/latent_systems/ep1/*.yaml
+!projects/latent_systems/shared/*.yaml
 projects/latent_systems/shared/**
 !projects/latent_systems/shared/**/
 !projects/latent_systems/shared/**/NOTES.md

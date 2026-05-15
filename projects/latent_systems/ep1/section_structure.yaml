@@ -1,0 +1,477 @@
+# LATENT SYSTEMS — EP1 Section Structure Sidecar
+# Path (when committed): projects/latent_systems/ep1/section_structure.yaml
+# Companion to: docs/EP1_STRUCTURAL_ARCHITECTURE_v1_4.md
+# Schema shape: Option A (editorial sections at top level, production units tagged at beat level)
+# Status: DRAFT for review — not yet committed. Phase 1 hero-shot mappings applied; §3 fully populated; all
+# other sections schema-stubbed with hero-shot/composition beats included where known.
+
+version: "1.0"
+episode: ep1
+episode_title: "THE BUSINESS OF ADDICTION"
+script_source: docs/LATENT_SYSTEMS_EP1_FINAL_SCRIPT_v3.md
+architecture_source: docs/EP1_STRUCTURAL_ARCHITECTURE_v1_4.md
+shot_list_source: docs/EP1_Shot_List_v6.md
+handoff_source: docs/EP1_PROJECT_HANDOFF_v10.md
+
+# Schema notes (for future readers):
+# - All 19 editorial sections appear at top level. Cold open is folded into §1 as the first beat
+#   with `cold_open: true`.
+# - Beat-level production-unit identifiers: `hero_shot:` or `composition:`. K1 is hero-tier but
+#   structurally distinct from the H#1-9 numbered series; tagged as hero_shot with
+#   `climax_of_climaxes: true`.
+# - Tags are flat strings.
+# - Narration paths and pinned_asset paths are repo-relative.
+# - `pinned_asset` may appear at section or beat level. Beat-level wins for narrower scope.
+
+sections:
+
+  # ============================================================
+  # ACT 1 — SETUP
+  # ============================================================
+
+  - section_id: s1_hook_cold_open
+    section_name: "§1 HOOK + COLD OPEN"
+    act: "Act 1 — Setup"
+    five_act_grouping: "Cold open + §1 + §2"
+    inciting_stage: "Stage 1 — Inciting Claim"
+    archetypal_register: "Mirror continued; statistical evidence as audience-quantification"
+    tags: [hook, cold_open, statistical_evidence, mirror_motif, ordinary_world]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s1_b01_cold_open_compound
+        cold_open: true
+        hero_shot: h1_cold_open_compound
+        timecode_in: "0:00"
+        timecode_out: "0:14.5"
+        production_unit: hero
+        production_status: PICTURE_LOCKED
+        pinned_asset: ep1/cold_open/assembled/cold_open_v3_picture.mp4
+        description: >
+          Cold open v3 compound — Shot A (phone on pillow, chime + glow) →
+          masked cut → Shot B (protag face, half-lit, eyes open) → ident card
+          "LATENT SYSTEMS / S01E01" → title card "THE BUSINESS OF ADDICTION".
+          Daniel VO ("You didn't pick up your phone this morning. Your phone
+          picked you up.") under Shot A + Shot B; ident and title in silence.
+          Signal-and-light principle: no legible text in-shot; notification
+          carried by chime + glow.
+      # Remaining §1 beats (stat T-cards "2,617" / "94 people / 5 days" /
+      # "5,000 before breakfast", B-roll bedroom POV, T-card cycle "SCREEN
+      # TIME / DOOM SCROLLING / JUST CHECKING", B-roll UI elements) deferred
+      # to later population pass.
+
+  - section_id: s2_thesis_statement
+    section_name: "§2 THESIS STATEMENT"
+    act: "Act 1 — Setup"
+    five_act_grouping: "Cold open + §1 + §2"
+    inciting_stage: "Stage 1 — Inciting Claim"
+    archetypal_register: "Mentor's first articulation; Architects (Parker, Rosenstein) as Wise Old Men whose confessions become evidence"
+    tags: [thesis, architects, parker, rosenstein, mentor_first_articulation, genre_signal]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s2_b01_we_were_never_supposed
+        hero_shot: h2_face_glow
+        timecode_in: "1:03"
+        timecode_out: "1:19"
+        production_unit: hero
+        production_status: PICTURE_COMPLETE
+        pinned_asset: ep1/h2_face_glow/sources/H2_kling_v1.mp4
+        description: >
+          Curly-haired protag, face in cold-blue phone glow, slow continuous
+          eye closure across 5s (no blink). Eye catches phone glow —
+          establishes the H#2/H#3/H#4/H#8 eye-light rhyme. Load-bearing line:
+          "We were never supposed to be able to stop."
+      # Remaining §2 beats (T-card Parker quote "exploiting a vulnerability in
+      # human psychology"; B-roll generic TED-talk silhouette; T-card "WHEN THE
+      # ARCHITECTS START BREAKING OFF THEIR OWN DOORS"; K-frame "It isn't
+      # weakness. It isn't laziness. It's architecture.") deferred.
+
+  - section_id: s3_skinner_frame_open
+    section_name: "§3 SKINNER FRAME OPEN"
+    act: "Act 1 — Setup"
+    five_act_grouping: "§3"
+    archetypal_register: "Wise Old Man (Skinner) + Trickster (variable-reward); rats prefigure Shadow"
+    tags: [mentor_introduction, skinner, parable, rats, foundational, shadow_prefiguration]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s3_b01_skinner_title_card
+        timecode_in: "2:12"
+        timecode_out: "2:21"
+        production_unit: typography
+        description: "Historical title card — '1930 / HARVARD / B.F. SKINNER'. Documentary register."
+
+      - beat_id: s3_b02_skinner_box_wide
+        timecode_in: "2:21"
+        timecode_out: "2:36"
+        production_unit: bed
+        description: >
+          Skinner box — box, lever, rat. Not period-accurate. Narration
+          carries it; visual is bed-quality. Candidate: H#3 outtake re-color
+          per sanctioned reuse pattern (shot list v6 row 106).
+
+      - beat_id: s3_b03_skinner_box_lever_closeup
+        timecode_in: "2:36"
+        timecode_out: "2:54"
+        production_unit: bed
+        description: "Same Skinner box, closer, lever in focus. Builds lever-as-icon for H#3."
+
+      - beat_id: s3_b04_rat_3state_escalation
+        hero_shot: h3_skinner
+        timecode_in: "2:54"
+        timecode_out: "3:16"
+        production_unit: hero
+        production_status: SHIPPED
+        pinned_asset: ep1/h3_skinner/assembled/EP1_H3_block_v2.mp4
+        description: >
+          3-state escalating sequence — upright alert → pitched forward →
+          collapsed crouch → prone. Hard cuts on VO sentence boundaries.
+          Load-bearing line: "The want had eaten the need." 19.875s, 1920×1080.
+          VO sync + SFX pending.
+
+      - beat_id: s3_b05_want_eaten_need_kframe
+        timecode_in: "3:16"
+        timecode_out: "3:23"
+        production_unit: black
+        description: >
+          BLACK FRAME with Daniel VO: "The want had eaten the need." Line
+          breathes. Closes the §3 rat parable before §4's audience-implication
+          beat opens with H#4 match cut.
+
+  - section_id: s4_audience_implicated
+    section_name: "§4 THE AUDIENCE IMPLICATED"
+    act: "Act 1 — Setup"
+    five_act_grouping: "§4"
+    inciting_stage: "Stage 2 — Inciting Recognition"
+    archetypal_register: "Shadow recognition (early form); audience as rats; Refusal of Call inverted — narrator names the refusal *for* the audience and dismantles it in the same beat"
+    tags: [audience_implication, you_in_the_box, wall_as_defense, match_cut, shadow_early_form]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s4_b01_match_cut
+        hero_shot: h4_match_cut
+        timecode_in: "3:32"
+        timecode_out: "3:46"
+        production_unit: hero
+        production_status: PICTURE_LOCKED
+        pinned_asset: ep1/h4_match_cut/assembled/EP1_H4_picture_v1.mp4
+        description: >
+          Match cut: rat paw on lever (State 1 frame from H#3) ↔ curly-haired
+          protag's thumb on phone pull-to-refresh. Two gestures match exactly
+          at contact moment and shape (NOT direction — rat reaches
+          up/forward, thumb moves down; the rhyme is contact, not vector).
+          This is §4's defining work as image: rat-to-self rhyme = audience
+          implication ("That's you in the box") rendered visually before the
+          line lands. 7.042s compound. Contact aligned at (1228, 625) /
+          norm (0.640, 0.579) on both halves.
+      # Remaining §4 beats (B-roll close-up scrolling; T-card "THE SYSTEM
+      # WORKS BECAUSE YOU BELIEVE YOU'RE CHOOSING" load-bearing closer)
+      # deferred.
+
+  - section_id: s5_variable_ratio_reinforcement
+    section_name: "§5 VARIABLE RATIO REINFORCEMENT"
+    act: "Act 1 — Setup"
+    five_act_grouping: "§5"
+    archetypal_register: "Mentor's gift; technical foundation; loaded-gun-in-unlocked-drawer recognition"
+    tags: [mechanism, variable_ratio, technical_foundation, loaded_gun_unlocked_drawer]
+    narration_path: null
+    pinned_asset: null
+    beats: []  # schema stub
+
+  - section_id: s6_pull_to_refresh
+    section_name: "§6 PULL-TO-REFRESH"
+    act: "Act 1 — Setup"
+    five_act_grouping: "§6"
+    archetypal_register: "Threshold crossing; Brichter as threshold guardian who lamented his own threshold"
+    tags: [threshold_crossing, brichter, slot_machine, mechanism, ordeal_of_recognition]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s6_b01_slot_machine_literalization
+        hero_shot: h5_slot_machine
+        timecode_in: "5:52"
+        timecode_out: "6:15"
+        production_unit: hero
+        description: >
+          Pull-to-refresh gesture as slot-machine lever — literalize the
+          metaphor once. Most aggressive claim in middle section: "It IS a
+          slot machine." Sora 2 Pro motion (mechanical-pivot — preferred over
+          Kling for this motion type per H#5 pipeline lesson).
+      # Other §6 beats (T-card "LOADED GUN IN AN UNLOCKED DRAWER", T-card
+      # "Loren Brichter / Tweetie / 2009", B-roll pull-to-refresh gesture
+      # variants) deferred.
+
+  # ============================================================
+  # ACT 2A — PROGRESSIVE COMPLICATIONS
+  # ============================================================
+
+  - section_id: s7_infinite_scroll
+    section_name: "§7 INFINITE SCROLL"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§7"
+    archetypal_register: "Repentant Mentor / Wise Old Man-in-regret (Aza Raskin)"
+    tags: [mechanism, aza_raskin, ally_too_late, infinite_scroll, courtroom_regret_feb_2026]
+    narration_path: null
+    pinned_asset: null
+    # Note: section canonical name is mechanism-based ("INFINITE SCROLL");
+    # Aza Raskin appears as beat-level figure description, not section name.
+    beats: []  # schema stub — Aza Raskin figure-beat to be added in later pass
+
+  - section_id: s8_nir_eyal
+    section_name: "§8 NIR EYAL"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§8"
+    archetypal_register: "Trickster's Apprentice (unrepentant teacher)"
+    tags: [enemy_instructor, hooked_book, variable_reward_chapter, eyal, 16_99]
+    narration_path: null
+    pinned_asset: null
+    beats: []  # schema stub
+
+  - section_id: s9_tristan_harris
+    section_name: "§9 TRISTAN HARRIS"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§9"
+    archetypal_register: "Absorbed Hero / Metabolized Insider — antagonist's strength revealed not via resistance but via indifference"
+    tags: [absorbed_hero, metabolized_insider, design_ethicist, 141_slides, system_didnt_blink]
+    narration_path: null
+    pinned_asset: null
+    note: "Compressed 40s → 17s per script v2/v3 — reads as passage rather than station; consolidates Tests/Allies/Enemies into a single rapid-fire movement."
+    beats: []  # schema stub
+
+  - section_id: s10_duolingo
+    section_name: "§10 DUOLINGO"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§10"
+    archetypal_register: "Trickster's Most Sophisticated Form; friendly Mentor mask over Trickster operations"
+    tags: [duolingo, level_2_3_controlling_idea, loss_aversion, streak, spacing_effect_counter_reference]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s10_b01_streak_escalation
+        hero_shot: h6_streak
+        timecode_in: "8:55"
+        timecode_out: "9:27"
+        production_unit: hero
+        production_status: PICTURE_LOCKED
+        pinned_asset: ep1/h6_streak/assembled/EP1_H6_picture_v1.mp4
+        description: >
+          Streak counter escalating: Day 12 → Day 31 → Day 47 → Day 100+.
+          Obsessive, accelerating. Emotional crux of the section. New
+          latent/StreakCounter.tsx motion component, animated counter with
+          multi-keyframe interpolate held landings, monochrome white flame
+          icon, counter at fontSize=144. 21.500s.
+
+      - beat_id: s10_b02_system_works_perfectly
+        hero_shot: h7_system_works
+        timecode_in: "10:43"
+        timecode_out: "10:58"
+        production_unit: hero
+        production_status: PICTURE_LOCKED
+        pinned_asset: ep1/h7_system_works/assembled/EP1_H7_picture_v1.mp4
+        description: >
+          Hero-grade typography card: "The system works perfectly. / It's
+          just not working for you." — controlling idea in level-2/3 form
+          (same shape as K1, different audience-implication depth). Two-beat
+          ConceptCard, sequential REPLACEMENT pattern (each beat replaces
+          prior), 0.75s held-black pivot between beats, 1.5s trailing tail,
+          fontSize=88. 10.75s.
+
+  - section_id: s11_tiktok
+    section_name: "§11 TIKTOK"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§11"
+    archetypal_register: "Approach to Inmost Cave + Shadow encounter; Jung's Shadow card explicit invocation"
+    tags: [tiktok, approach_to_inmost_cave, jung_shadow, mirror_you_never_asked_for, algorithmic_composite]
+    narration_path: null
+    pinned_asset: null
+    beats:
+      - beat_id: s11_b01_mirror_you_never_asked_for
+        hero_shot: h8_tiktok_mirror
+        timecode_in: "12:29"
+        timecode_out: "12:45"
+        production_unit: hero
+        production_status: PICTURE_LOCKED_STATIC
+        pinned_asset: ep1/h8_tiktok_mirror/assembled/EP1_H8_picture_v1.mp4
+        description: >
+          "A mirror you never asked for." Protag face reflected in phone
+          screen — algorithmic composite, slightly distorted, not quite him.
+          Accepted distortion axis: asymmetric facial structure +
+          too-still expression. Shipped as static (Kling motion roll rejected
+          for plate-complexity failure); stillness reads as confrontation.
+          Jewelry-blanket constraint applied at plate generation (bare
+          wrists, bare neck, bare ears, no accessories). 4.0s.
+
+  - section_id: s12_the_confessions
+    section_name: "§12 THE CONFESSIONS"
+    act: "Act 2A — Progressive Complications"
+    five_act_grouping: "§12 (closes Act 2A)"
+    archetypal_register: "Threshold Guardians revealed as architects; Allies-in-truth-telling"
+    tags: [confessions, parker, rosenstein, harris, architects_revealed, allies_in_truth_telling]
+    narration_path: null
+    pinned_asset: null
+    note: "Closes Act 2A — confessions consolidate the apparatus-reads-me recognition before §13 cranks to deliberate-harm."
+    beats: []  # schema stub
+
+  # ============================================================
+  # ACT 2B — THE ORDEAL
+  # ============================================================
+
+  - section_id: s13_facebook_papers
+    section_name: "§13 FACEBOOK PAPERS"
+    act: "Act 2B — The Ordeal"
+    five_act_grouping: "§13 (stands alone as Act 2B)"
+    archetypal_register: "The Ordeal; Haugen as Herald bringing documents; system-not-individual thesis"
+    tags: [ordeal, haugen, facebook_papers, system_not_individual, architecture_not_negligence, 32b_year_math]
+    narration_path: null
+    pinned_asset: null
+    note: "Closes Ordeal on 'It's not negligence. It's architecture.' at maximum value-charge depth. Documentation density (Haugen's tens of thousands of pages + MBA-curriculum recognition + $32B/year math) crosses the Ordeal threshold within a single section."
+    beats: []  # schema stub
+
+  # ============================================================
+  # ACT 3A — REWARD
+  # ============================================================
+
+  - section_id: s13a_steelman
+    section_name: "§13A STEELMAN"
+    act: "Act 3A — Reward"
+    five_act_grouping: "§13A"
+    archetypal_register: "Anima's gift; technology serves real human good; structural reward earning the Act 3B return"
+    tags: [steelman, anima_gift, warm_register, content_warmth, visual_warmth, not_tonal_warmth, register_variance_asymmetry]
+    narration_path: null
+    pinned_asset: null
+    note: >
+      Peer top-level section, not subordinate to §13. NEW section per script
+      v2 (~60s). Anima gift lands via content-warmth + visual-warmth, NOT
+      tonal-warmth. Daniel's register stays calm/authoritative/slightly-
+      ominous per channel staple #9. Visual register's fully-warm discipline
+      per EP1_BROLL_PLAN_v1.md §13A carries tonal-equivalent work in a
+      different sensory channel.
+    beats: []  # schema stub
+
+  # ============================================================
+  # ACT 3B — THE ROAD BACK
+  # ============================================================
+
+  - section_id: s14_philip_morris_oxycontin
+    section_name: "§14 PHILIP MORRIS / OXYCONTIN"
+    act: "Act 3B — The Road Back"
+    five_act_grouping: "§14"
+    archetypal_register: "Road Back / Refusal of Return; institutional pattern; 'you're the inventory'"
+    tags: [institutional_pattern, philip_morris, oxycontin, inventory, four_step_pattern, channel_staple_13]
+    narration_path: null
+    pinned_asset: null
+    note: >
+      Compressed-form four-step pattern recognition (channel staple #13):
+      Capture revenue / Externalize cost / Bury research / Run the play
+      until someone makes you stop. Step 5 (Lobby against regulation)
+      implicit-as-ongoing-condition because tobacco/opioid cases ran the
+      play long enough for step 5 to succeed. Expanded from 70s to ~2 min
+      per script v2.
+    beats: []  # schema stub
+
+  # ============================================================
+  # ACT 4 — CRISIS AND CLIMAX
+  # ============================================================
+
+  - section_id: s15_return_to_skinner
+    section_name: "§15 RETURN TO SKINNER"
+    act: "Act 4 — Crisis and Climax"
+    five_act_grouping: "§15"
+    archetypal_register: "Approach to Resurrection; recursive moment; Section J protag/rat ring composition prefigures Resurrection"
+    tags: [recursive, return_to_skinner, protag_rat_callback, prefigure_resurrection, jewelry_leak_constraint]
+    narration_path: null
+    pinned_asset: null
+    note: >
+      ~25s. Architectural function depends on Section J composition reading
+      clearly and unambiguously. Production gate: confirm Section J on
+      production track before §15 picture-lock. Tracked in
+      project_latent_systems.md bootstrap memory under "Pending production
+      gates."
+    beats:
+      - beat_id: s15_b01_protag_rat_ring
+        composition: J_protag_rat_ring
+        production_unit: composition
+        production_status: PENDING_PRODUCTION_GATE
+        pinned_asset: null
+        description: >
+          Section J protag/rat ring composition — protag-and-rat-in-same-
+          frame. Visual cash-in of §4's "That's you in the box" line:
+          recognition staged twice in the episode (once as language at §4,
+          once as image at §15). The second staging is what permits K1 to
+          land as resurrection rather than recap. Jewelry-leak constraint:
+          bare wrists, bare neck, bare ears, no accessories
+          (project_latent_systems_jewelry_leak.md).
+
+  - section_id: s16_resolution
+    section_name: "§16 RESOLUTION"
+    act: "Act 4 — Crisis and Climax"
+    five_act_grouping: "§16"
+    archetypal_register: "Resurrection / Return with Elixir; Self enacted at K1; awareness as agency"
+    tags: [climax_of_climaxes, k1, compulsion_to_choice, typography_climax, negation_of_negation, audience_reads_is_choosing]
+    narration_path: null
+    pinned_asset: null
+    note: >
+      Crisis-and-climax compressed at K1. Audience's reading IS the choosing.
+      16.75s runtime is the structural budget for the audience to make the
+      choice the typography is reporting them to be making. K1 cleared the
+      v1.4 voice-profile functional test 2026-05-01 (Daniel — Radio News Host).
+    beats:
+      - beat_id: s16_b01_compulsion_becomes_choice
+        hero_shot: k1_compulsion_choice
+        climax_of_climaxes: true
+        production_unit: climax
+        production_status: PICTURE_LOCKED
+        runtime_seconds: 16.750
+        pinned_asset: ep1/k1_compulsion_choice/assembled/EP1_K1_picture_v1.mp4
+        description: >
+          K1 "A compulsion becomes a choice" typography sequence. Single
+          moment where the controlling idea is delivered through dramatic
+          action — the dramatic action is reading; reading IS choosing;
+          choosing IS the action. Variant A figured approach dropped per
+          ep1/k1_compulsion_choice/NOTES.md. Single canonical.
+
+  # ============================================================
+  # ACT 5 — RESOLUTION AND META-MOVE
+  # ============================================================
+
+  - section_id: s17_meta_move
+    section_name: "§17 META-MOVE"
+    act: "Act 5 — Resolution and Meta-Move"
+    five_act_grouping: "§17"
+    archetypal_register: "Master of Two Worlds; Wise Old Man enacting the deception channel identity has already declared; Ouroboros / Möbius; Inhabitant as new archetypal category"
+    tags: [meta_move, ai_native, inhabitant, ouroboros, mobius, admission_register_not_confession, no_outside, k1_echo_audio_test_gate]
+    narration_path: null
+    pinned_asset: null
+    note: >
+      Enactment of established channel identity, not reveal of hidden truth
+      (per channel staple #15, audience arrives already knowing the
+      documentary is AI-narrated and AI-visualized). Script v3 released
+      2026-05-01; ~75s. ¶6 K1-echo audio-test gate active downstream of full
+      19-section re-record at new voice profile. Production-artifact-as-
+      B-roll aesthetic at §17.B/C/D + partial §17.E; held-black + abstract-
+      meta at §17.A/F/G/H.
+    beats: []  # schema stub
+
+  - section_id: s18_ep2_tease
+    section_name: "§18 EP2 TEASE"
+    act: "Act 5 — Resolution and Meta-Move"
+    five_act_grouping: "§18"
+    archetypal_register: "Call to Adventure for next journey; Underworld Descent setup (Zimbardo basement); Conscience archetype (Maslach as lone outsider); Echo / repetition / return"
+    tags: [ep2_tease, zimbardo, stanford_1971, maslach, conscience, sound_familiar, basement, underworld_descent]
+    narration_path: null
+    pinned_asset: null
+    note: "REVISION rewritten per script v2 (~90s). H#9 picture-locked dominates section runtime (~30s of ~54-56s)."
+    beats:
+      - beat_id: s18_b01_basement_corridor_flicker
+        hero_shot: h9_ep2_tease
+        production_unit: hero
+        production_status: PICTURE_LOCKED
+        approx_runtime_seconds: 30
+        section_approx_runtime_seconds: "54-56"
+        pinned_asset: ep1/h9_ep2_tease/assembled/EP1_H9_picture_v1.mp4
+        description: >
+          Basement-corridor flicker composite. Visual register inherited from
+          H#9. Dominates section runtime. Multiplicative flicker-mask is the
+          original canonical reference implementation of the §9c.5 default-
+          pattern-for-mixed-source-composites pipeline (per handoff v10).
